@@ -1,0 +1,79 @@
+# Cartalyst
+
+**Tagline:** Your smart shopping analyst.
+
+Cartalyst is a local-first grocery intelligence mobile app. It helps people build grocery lists quickly, compare unit prices, track pantry inventory, and make smarter shopping decisions.
+
+This repository currently contains foundational product and architecture documentation for the first delivery phase.
+
+## Product Vision
+
+Build a smart, reliable, and polished shopping companion that works fast in real grocery conditions, including low-connectivity environments.
+
+## Product Personality
+
+Cartalyst should feel:
+- Analytical
+- Organized
+- Smart
+- Shopping-focused
+
+## V1 Scope
+
+- Fast grocery list
+- Quick product add
+- Product suggestions
+- Unit price comparator
+- Simple pantry inventory
+- Local persistence
+- Polished mobile UX
+
+## V1 Out Of Scope
+
+- Real authentication
+- Backend sync
+- Receipt OCR
+- AI predictions
+- Geofencing
+- Push notifications
+- Retailer integrations
+
+## Future Scope
+
+### V2
+
+- Receipt scanning
+- Spending tracking
+- Product normalization
+- Basic consumption learning
+- Smarter suggestions
+
+### V3
+
+- AI assistant
+- Geofencing
+- Collaborative shopping
+- Store recommendations
+- Retailer price integrations
+
+## Mobile Stack
+
+- Flutter
+- Dart
+- go_router
+- Riverpod
+- Drift + SQLite
+- freezed
+- json_serializable
+- mocktail
+- flutter_test
+- Material 3 custom theme
+
+## Documentation Index
+
+- [Product Blueprint](docs/product/product-blueprint.md)
+- [Mobile Architecture](docs/architecture/mobile-architecture.md)
+- [Local-First Strategy](docs/architecture/local-first-strategy.md)
+- [Coding Standards](docs/architecture/coding-standards.md)
+- [ADR 0001 - Use Flutter](docs/adr/0001-use-flutter.md)
+- [ADR 0002 - Local-First Architecture](docs/adr/0002-local-first-architecture.md)
