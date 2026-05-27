@@ -1,12 +1,19 @@
 import 'package:cartalyst_mobile/app/app.dart';
+import 'package:cartalyst_mobile/features/home/application/home_dashboard_controller.dart';
+import 'package:cartalyst_mobile/features/home/application/home_dashboard_state.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   testWidgets('renders the home shell', (WidgetTester tester) async {
     await tester.pumpWidget(
-      const ProviderScope(
-        child: CartalystApp(),
+      ProviderScope(
+        overrides: <Override>[
+          homeDashboardControllerProvider.overrideWith(
+            _TestHomeDashboardController.new,
+          ),
+        ],
+        child: const CartalystApp(),
       ),
     );
     await tester.pumpAndSettle();
@@ -17,4 +24,11 @@ void main() {
     expect(find.text('Compare'), findsOneWidget);
     expect(find.text('Settings'), findsOneWidget);
   });
+}
+
+class _TestHomeDashboardController extends HomeDashboardController {
+  @override
+  HomeDashboardState build() {
+    return const HomeDashboardState.initial();
+  }
 }
