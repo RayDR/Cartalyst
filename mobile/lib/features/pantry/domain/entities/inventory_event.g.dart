@@ -36,10 +36,10 @@ Map<String, dynamic> _$$InventoryEventImplToJson(
     };
 
 const _$InventoryEventTypeEnumMap = {
-  InventoryEventType.add: 'add',
+  InventoryEventType.purchase: 'purchase',
   InventoryEventType.consume: 'consume',
   InventoryEventType.adjust: 'adjust',
-  InventoryEventType.confirm: 'confirm',
+  InventoryEventType.finish: 'finish',
   InventoryEventType.discard: 'discard',
 };
 

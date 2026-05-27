@@ -5,10 +5,10 @@ part 'inventory_event.freezed.dart';
 part 'inventory_event.g.dart';
 
 enum InventoryEventType {
-  add,
+  purchase,
   consume,
   adjust,
-  confirm,
+  finish,
   discard,
 }
 

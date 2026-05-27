@@ -91,10 +91,10 @@ String _pantryStatusToDb(domain.PantryItemStatus status) {
 
 domain.InventoryEventType _inventoryEventTypeFromDb(String raw) {
   return switch (raw) {
-    'add' => domain.InventoryEventType.add,
+    'add' || 'purchase' => domain.InventoryEventType.purchase,
     'consume' => domain.InventoryEventType.consume,
     'adjust' => domain.InventoryEventType.adjust,
-    'confirm' => domain.InventoryEventType.confirm,
+    'confirm' || 'finish' => domain.InventoryEventType.finish,
     'discard' => domain.InventoryEventType.discard,
     _ => domain.InventoryEventType.adjust,
   };
@@ -102,10 +102,10 @@ domain.InventoryEventType _inventoryEventTypeFromDb(String raw) {
 
 String _inventoryEventTypeToDb(domain.InventoryEventType type) {
   return switch (type) {
-    domain.InventoryEventType.add => 'add',
+    domain.InventoryEventType.purchase => 'add',
     domain.InventoryEventType.consume => 'consume',
     domain.InventoryEventType.adjust => 'adjust',
-    domain.InventoryEventType.confirm => 'confirm',
+    domain.InventoryEventType.finish => 'confirm',
     domain.InventoryEventType.discard => 'discard',
   };
 }
