@@ -150,6 +150,45 @@ void main() {
       expect(result.first.parsedUnit, 'pack');
     });
 
+    test('normalizes gallon to gal in quick-add phrase', () {
+      final List<ProductSuggestion> result = service.suggest(
+        rawInput: '1 gallon milk',
+        availableProducts: products,
+        aliases: aliases,
+        usageStats: const <ProductUsageStat>[],
+      );
+
+      expect(result.first.suggestedProduct?.id, milk.id);
+      expect(result.first.parsedQuantity, 1);
+      expect(result.first.parsedUnit, 'gal');
+    });
+
+    test('normalizes gal alias to gal in spanish quick-add phrase', () {
+      final List<ProductSuggestion> result = service.suggest(
+        rawInput: '1 gal leche',
+        availableProducts: products,
+        aliases: aliases,
+        usageStats: const <ProductUsageStat>[],
+      );
+
+      expect(result.first.suggestedProduct?.id, milk.id);
+      expect(result.first.parsedQuantity, 1);
+      expect(result.first.parsedUnit, 'gal');
+    });
+
+    test('normalizes plural gallons to gal', () {
+      final List<ProductSuggestion> result = service.suggest(
+        rawInput: '2 gallons milk',
+        availableProducts: products,
+        aliases: aliases,
+        usageStats: const <ProductUsageStat>[],
+      );
+
+      expect(result.first.suggestedProduct?.id, milk.id);
+      expect(result.first.parsedQuantity, 2);
+      expect(result.first.parsedUnit, 'gal');
+    });
+
     test('ranks by frequency when match tier is equal', () {
       final List<Product> localProducts = <Product>[
         product(id: 'p10', name: 'milk a', category: 'dairy', unitCode: 'liter'),

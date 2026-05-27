@@ -69,9 +69,9 @@ class ProductSuggestionService {
     'milliliters': 'ml',
     'pack': 'pack',
     'packs': 'pack',
-    'gallon': 'gallon',
-    'gallons': 'gallon',
-    'gal': 'gallon',
+    'gallon': 'gal',
+    'gallons': 'gal',
+    'gal': 'gal',
   };
 
   List<ProductSuggestion> suggest({

@@ -365,10 +365,6 @@ class ShoppingListController extends Notifier<ShoppingListState> {
 
     final String normalized = code.trim().toLowerCase();
 
-    if (normalized == 'gallon') {
-      return Unit.fromCode('liter');
-    }
-
     if (!Unit.supportedCodes.contains(normalized)) {
       return null;
     }

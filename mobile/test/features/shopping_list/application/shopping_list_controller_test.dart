@@ -98,6 +98,39 @@ void main() {
       expect(state.pendingItems.first.source, ShoppingListItemSource.manual);
     });
 
+    test('quick add preserves gal unit for gallon variants', () async {
+      await waitForActiveList();
+
+      final ShoppingListController controller = container.read(shoppingListControllerProvider.notifier);
+
+      controller.updateQuickAddInput('1 gallon milk');
+      await controller.addFromQuickAdd();
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+
+      ShoppingListState state = container.read(shoppingListControllerProvider);
+      expect(state.pendingItems.length, 1);
+      expect(state.pendingItems.first.unit?.code, 'gal');
+      expect(state.pendingItems.first.quantity, 1);
+
+      controller.updateQuickAddInput('1 gal leche');
+      await controller.addFromQuickAdd();
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+
+      state = container.read(shoppingListControllerProvider);
+      expect(state.pendingItems.length, 2);
+      expect(state.pendingItems[1].unit?.code, 'gal');
+      expect(state.pendingItems[1].quantity, 1);
+
+      controller.updateQuickAddInput('2 gallons milk');
+      await controller.addFromQuickAdd();
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+
+      state = container.read(shoppingListControllerProvider);
+      expect(state.pendingItems.length, 3);
+      expect(state.pendingItems[2].unit?.code, 'gal');
+      expect(state.pendingItems[2].quantity, 2);
+    });
+
     test('purchased status transition', () async {
       await waitForActiveList();
 

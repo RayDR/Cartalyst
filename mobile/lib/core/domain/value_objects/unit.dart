@@ -15,6 +15,7 @@ class Unit with _$Unit {
     'unit',
     'kg',
     'g',
+    'gal',
     'liter',
     'ml',
     'pack',
