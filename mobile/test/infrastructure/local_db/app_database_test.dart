@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:cartalyst_mobile/infrastructure/local_db/app_database.dart';
+import 'package:drift/drift.dart' as drift;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:uuid/uuid.dart';
@@ -55,6 +58,66 @@ void main() {
           return;
         }
         rethrow;
+      }
+    });
+
+    test('persists shopping list items after database restart', () async {
+      final bool previousWarnValue =
+          drift.driftRuntimeOptions.dontWarnAboutMultipleDatabases;
+      drift.driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
+
+      final String filePath =
+          '${Directory.systemTemp.path}/cartalyst_persistence_${DateTime.now().microsecondsSinceEpoch}.sqlite';
+      final File dbFile = File(filePath);
+
+      AppDatabase? first;
+      AppDatabase? second;
+
+      try {
+        first = AppDatabase(executor: NativeDatabase(dbFile));
+        final String listId = const Uuid().v4();
+        final String itemId = const Uuid().v4();
+
+        await first.into(first.shoppingLists).insert(
+              ShoppingListsCompanion.insert(
+                id: listId,
+                name: 'Restart list',
+              ),
+            );
+
+        await first.into(first.shoppingListItems).insert(
+              ShoppingListItemsCompanion.insert(
+                id: itemId,
+                shoppingListId: listId,
+                rawText: 'milk',
+                quantity: const drift.Value(1),
+                unit: const drift.Value('gal'),
+              ),
+            );
+
+        await first.close();
+        first = null;
+
+        second = AppDatabase(executor: NativeDatabase(dbFile));
+        final List<ShoppingListItem> reloadedItems =
+            await second.select(second.shoppingListItems).get();
+
+        expect(reloadedItems.length, 1);
+        expect(reloadedItems.first.rawText, 'milk');
+        expect(reloadedItems.first.quantity, 1);
+        expect(reloadedItems.first.unit, 'gal');
+      } on ArgumentError catch (error) {
+        if (_isMissingSqlite(error)) {
+          return;
+        }
+        rethrow;
+      } finally {
+        drift.driftRuntimeOptions.dontWarnAboutMultipleDatabases = previousWarnValue;
+        await first?.close();
+        await second?.close();
+        if (dbFile.existsSync()) {
+          dbFile.deleteSync();
+        }
       }
     });
   });

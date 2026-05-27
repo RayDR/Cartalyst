@@ -2803,7 +2803,7 @@ class $InventoryEventsTable extends InventoryEvents
       type: DriftSqlType.string,
       requiredDuringInsert: false,
       $customConstraints:
-          'NOT NULL DEFAULT \'adjust\' CHECK (event_type IN (\'add\', \'consume\', \'adjust\', \'confirm\', \'discard\'))',
+          'NOT NULL DEFAULT \'adjust\' CHECK (event_type IN (\'add\', \'purchase\', \'consume\', \'adjust\', \'confirm\', \'finish\', \'discard\'))',
       defaultValue: const CustomExpression('\'adjust\''));
   static const VerificationMeta _quantityMeta =
       const VerificationMeta('quantity');
