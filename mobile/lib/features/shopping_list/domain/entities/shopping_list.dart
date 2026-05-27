@@ -1,0 +1,27 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'shopping_list.freezed.dart';
+part 'shopping_list.g.dart';
+
+enum ShoppingListStatus {
+  active,
+  completed,
+  archived,
+}
+
+@freezed
+class ShoppingList with _$ShoppingList {
+  const factory ShoppingList({
+    required String id,
+    required String name,
+    required ShoppingListStatus status,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    DateTime? deletedAt,
+    required String syncStatus,
+    required int version,
+  }) = _ShoppingList;
+
+  factory ShoppingList.fromJson(Map<String, Object?> json) =>
+      _$ShoppingListFromJson(json);
+}

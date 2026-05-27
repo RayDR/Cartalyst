@@ -6785,71 +6785,20 @@ class $AppDatabaseManager {
 mixin _$ProductsDaoMixin on DatabaseAccessor<AppDatabase> {
   $ProductsTable get products => attachedDatabase.products;
   $ProductAliasesTable get productAliases => attachedDatabase.productAliases;
-  ProductsDaoManager get managers => ProductsDaoManager(this);
 }
-
-class ProductsDaoManager {
-  final _$ProductsDaoMixin _db;
-  ProductsDaoManager(this._db);
-  $$ProductsTableTableManager get products =>
-      $$ProductsTableTableManager(_db.attachedDatabase, _db.products);
-  $$ProductAliasesTableTableManager get productAliases =>
-      $$ProductAliasesTableTableManager(
-          _db.attachedDatabase, _db.productAliases);
-}
-
 mixin _$ShoppingListsDaoMixin on DatabaseAccessor<AppDatabase> {
   $ShoppingListsTable get shoppingLists => attachedDatabase.shoppingLists;
   $ProductsTable get products => attachedDatabase.products;
   $ShoppingListItemsTable get shoppingListItems =>
       attachedDatabase.shoppingListItems;
-  ShoppingListsDaoManager get managers => ShoppingListsDaoManager(this);
 }
-
-class ShoppingListsDaoManager {
-  final _$ShoppingListsDaoMixin _db;
-  ShoppingListsDaoManager(this._db);
-  $$ShoppingListsTableTableManager get shoppingLists =>
-      $$ShoppingListsTableTableManager(_db.attachedDatabase, _db.shoppingLists);
-  $$ProductsTableTableManager get products =>
-      $$ProductsTableTableManager(_db.attachedDatabase, _db.products);
-  $$ShoppingListItemsTableTableManager get shoppingListItems =>
-      $$ShoppingListItemsTableTableManager(
-          _db.attachedDatabase, _db.shoppingListItems);
-}
-
 mixin _$PantryDaoMixin on DatabaseAccessor<AppDatabase> {
   $ProductsTable get products => attachedDatabase.products;
   $PantryItemsTable get pantryItems => attachedDatabase.pantryItems;
   $InventoryEventsTable get inventoryEvents => attachedDatabase.inventoryEvents;
-  PantryDaoManager get managers => PantryDaoManager(this);
 }
-
-class PantryDaoManager {
-  final _$PantryDaoMixin _db;
-  PantryDaoManager(this._db);
-  $$ProductsTableTableManager get products =>
-      $$ProductsTableTableManager(_db.attachedDatabase, _db.products);
-  $$PantryItemsTableTableManager get pantryItems =>
-      $$PantryItemsTableTableManager(_db.attachedDatabase, _db.pantryItems);
-  $$InventoryEventsTableTableManager get inventoryEvents =>
-      $$InventoryEventsTableTableManager(
-          _db.attachedDatabase, _db.inventoryEvents);
-}
-
 mixin _$PriceObservationsDaoMixin on DatabaseAccessor<AppDatabase> {
   $ProductsTable get products => attachedDatabase.products;
   $PriceObservationsTable get priceObservations =>
       attachedDatabase.priceObservations;
-  PriceObservationsDaoManager get managers => PriceObservationsDaoManager(this);
-}
-
-class PriceObservationsDaoManager {
-  final _$PriceObservationsDaoMixin _db;
-  PriceObservationsDaoManager(this._db);
-  $$ProductsTableTableManager get products =>
-      $$ProductsTableTableManager(_db.attachedDatabase, _db.products);
-  $$PriceObservationsTableTableManager get priceObservations =>
-      $$PriceObservationsTableTableManager(
-          _db.attachedDatabase, _db.priceObservations);
 }
