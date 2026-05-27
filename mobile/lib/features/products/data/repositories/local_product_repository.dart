@@ -23,6 +23,16 @@ class LocalProductRepository implements ProductRepository {
   }
 
   @override
+  Future<List<domain.ProductAlias>> findAliasesForProducts(List<String> productIds) async {
+    if (productIds.isEmpty) {
+      return const <domain.ProductAlias>[];
+    }
+
+    final rows = await _database.productsDao.findAliasesForProducts(productIds);
+    return rows.map(toDomainProductAlias).toList(growable: false);
+  }
+
+  @override
   Future<void> saveProduct(domain.Product product) {
     return _database.productsDao.upsertProduct(toProductCompanion(product));
   }

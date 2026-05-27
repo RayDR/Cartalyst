@@ -6,6 +6,8 @@ abstract interface class ProductRepository {
 
   Future<List<ProductAlias>> findAliasesForProduct(String productId);
 
+  Future<List<ProductAlias>> findAliasesForProducts(List<String> productIds);
+
   Future<void> saveProduct(Product product);
 
   Future<void> saveAlias(ProductAlias alias);

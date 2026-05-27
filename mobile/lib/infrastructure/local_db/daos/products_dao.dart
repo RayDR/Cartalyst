@@ -35,4 +35,10 @@ class ProductsDao extends DatabaseAccessor<AppDatabase> with _$ProductsDaoMixin 
       ..where((tbl) => tbl.productId.equals(productId));
     return query.get();
   }
+
+  Future<List<ProductAliase>> findAliasesForProducts(List<String> productIds) {
+    final query = select(productAliases)
+      ..where((tbl) => tbl.productId.isIn(productIds));
+    return query.get();
+  }
 }
