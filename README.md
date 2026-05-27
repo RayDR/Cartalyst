@@ -6,6 +6,24 @@ Cartalyst is a local-first grocery intelligence mobile app. It helps people buil
 
 This repository currently contains foundational product and architecture documentation for the first delivery phase.
 
+## Run Mobile App
+
+The Flutter foundation lives in `mobile/`.
+
+```bash
+cd mobile
+flutter pub get
+flutter run
+```
+
+Optional quality checks:
+
+```bash
+cd mobile
+flutter analyze
+flutter test
+```
+
 ## Product Vision
 
 Build a smart, reliable, and polished shopping companion that works fast in real grocery conditions, including low-connectivity environments.
