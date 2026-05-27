@@ -1,3 +1,4 @@
+import 'package:cartalyst_mobile/core/design/app_radius.dart';
 import 'package:cartalyst_mobile/core/design/app_spacing.dart';
 import 'package:cartalyst_mobile/core/domain/value_objects/unit.dart';
 import 'package:cartalyst_mobile/core/widgets/app_button.dart';
@@ -253,7 +254,7 @@ class _ItemCard extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: isHighlighted ? colors.secondaryContainer : null,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppRadius.lg),
         ),
         child: Column(
           children: <Widget>[

@@ -90,8 +90,14 @@ Cartalyst should feel:
 ## Documentation Index
 
 - [Product Blueprint](docs/product/product-blueprint.md)
+- [V1 Definition of Done](docs/product/v1-definition-of-done.md)
 - [Mobile Architecture](docs/architecture/mobile-architecture.md)
 - [Local-First Strategy](docs/architecture/local-first-strategy.md)
 - [Coding Standards](docs/architecture/coding-standards.md)
+- [Testing Strategy](docs/architecture/testing-strategy.md)
 - [ADR 0001 - Use Flutter](docs/adr/0001-use-flutter.md)
 - [ADR 0002 - Local-First Architecture](docs/adr/0002-local-first-architecture.md)
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution workflow, V1 scope guardrails, and quality checks.

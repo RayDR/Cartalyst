@@ -102,10 +102,10 @@ domain.InventoryEventType _inventoryEventTypeFromDb(String raw) {
 
 String _inventoryEventTypeToDb(domain.InventoryEventType type) {
   return switch (type) {
-    domain.InventoryEventType.purchase => 'add',
+    domain.InventoryEventType.purchase => 'purchase',
     domain.InventoryEventType.consume => 'consume',
     domain.InventoryEventType.adjust => 'adjust',
-    domain.InventoryEventType.finish => 'confirm',
+    domain.InventoryEventType.finish => 'finish',
     domain.InventoryEventType.discard => 'discard',
   };
 }

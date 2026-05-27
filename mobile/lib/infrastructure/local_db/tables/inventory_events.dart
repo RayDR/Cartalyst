@@ -9,7 +9,7 @@ class InventoryEvents extends Table {
 
   TextColumn get eventType =>
     text().customConstraint(
-      "NOT NULL DEFAULT 'adjust' CHECK (event_type IN ('add', 'consume', 'adjust', 'confirm', 'discard'))",
+      "NOT NULL DEFAULT 'adjust' CHECK (event_type IN ('add', 'purchase', 'consume', 'adjust', 'confirm', 'finish', 'discard'))",
         )();
 
   RealColumn get quantity => real().nullable()();
