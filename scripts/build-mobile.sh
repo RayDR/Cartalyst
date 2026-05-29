@@ -137,31 +137,107 @@ flutter_config_android_sdk_path() {
   local line path
   line="$(flutter config --list 2>/dev/null | grep -E '^android-sdk\s*=\s*' || true)"
   path="${line#*=}"
+  path="${path%\"}"
+  path="${path#\"}"
   path="$(echo "${path}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
   echo "${path}"
 }
 
-preflight_android() {
-  local doctor_output sdk_from_config
-  doctor_output="$(flutter doctor 2>&1 || true)"
+is_valid_android_sdk_dir() {
+  local candidate="$1"
+  if [[ -z "${candidate}" || ! -d "${candidate}" ]]; then
+    return 1
+  fi
 
-  if echo "${doctor_output}" | grep -q "No Android SDK found"; then
-    log_error "Android SDK not detected by Flutter."
+  if [[ -d "${candidate}/platform-tools" || -d "${candidate}/cmdline-tools" || -d "${candidate}/platforms" ]]; then
+    return 0
+  fi
+
+  return 1
+}
+
+prepend_path_if_dir() {
+  local path_dir="$1"
+  if [[ -d "${path_dir}" ]]; then
+    case ":${PATH}:" in
+      *":${path_dir}:"*)
+        ;;
+      *)
+        PATH="${path_dir}:${PATH}"
+        ;;
+    esac
+  fi
+}
+
+resolve_android_sdk_path() {
+  local sdk_from_config=""
+  sdk_from_config="$(flutter_config_android_sdk_path)"
+
+  if is_valid_android_sdk_dir "${ANDROID_HOME:-}"; then
+    echo "${ANDROID_HOME}"
+    return 0
+  fi
+
+  if is_valid_android_sdk_dir "${ANDROID_SDK_ROOT:-}"; then
+    echo "${ANDROID_SDK_ROOT}"
+    return 0
+  fi
+
+  if is_valid_android_sdk_dir "${sdk_from_config}"; then
+    echo "${sdk_from_config}"
+    return 0
+  fi
+
+  if is_valid_android_sdk_dir "${HOME}/Android/Sdk"; then
+    echo "${HOME}/Android/Sdk"
+    return 0
+  fi
+
+  if is_valid_android_sdk_dir "/opt/android-sdk"; then
+    echo "/opt/android-sdk"
+    return 0
+  fi
+
+  echo ""
+}
+
+preflight_android() {
+  local doctor_output sdk_path sdk_from_config
+
+  sdk_from_config="$(flutter_config_android_sdk_path)"
+  sdk_path="$(resolve_android_sdk_path)"
+
+  if [[ -z "${sdk_path}" ]]; then
+    log_error "No valid Android SDK path found."
     log_error "Next steps:"
     log_error "1) Run: flutter doctor"
     log_error "2) Install Android command-line tools"
-    log_error "3) Set ANDROID_HOME"
-    log_error "4) Run: flutter config --android-sdk \"\$ANDROID_HOME\""
+    log_error "3) Set: export ANDROID_HOME=\"$HOME/Android/Sdk\""
+    log_error "4) Set: export ANDROID_SDK_ROOT=\"\$ANDROID_HOME\""
+    log_error "5) Run: flutter config --android-sdk \"\$ANDROID_HOME\""
     exit 1
   fi
 
-  sdk_from_config="$(flutter_config_android_sdk_path)"
+  export ANDROID_HOME="${sdk_path}"
+  export ANDROID_SDK_ROOT="${sdk_path}"
 
-  if [[ -z "${ANDROID_HOME:-}" && -z "${ANDROID_SDK_ROOT:-}" && -z "${sdk_from_config}" ]]; then
-    log_error "ANDROID_HOME / ANDROID_SDK_ROOT are not set and Flutter config has no android-sdk path."
+  prepend_path_if_dir "${ANDROID_HOME}/cmdline-tools/latest/bin"
+  prepend_path_if_dir "${ANDROID_HOME}/platform-tools"
+  prepend_path_if_dir "${ANDROID_HOME}/emulator"
+
+  if ! is_valid_android_sdk_dir "${sdk_from_config}"; then
+    run_step "Configuring Flutter Android SDK path" flutter config --android-sdk "${ANDROID_HOME}"
+  fi
+
+  log_info "Android SDK path: ${ANDROID_HOME}"
+
+  doctor_output="$(flutter doctor 2>&1 || true)"
+
+  if echo "${doctor_output}" | grep -q "No Android SDK found"; then
+    log_error "Android SDK still not detected by Flutter after configuring this process environment."
     log_error "Next steps:"
-    log_error "1) Set: export ANDROID_HOME=\"$HOME/Android/Sdk\""
-    log_error "2) Set: export ANDROID_SDK_ROOT=\"\$ANDROID_HOME\""
+    log_error "1) Run: flutter doctor"
+    log_error "2) Verify SDK path exists and contains cmdline-tools/platform-tools/platforms"
     log_error "3) Run: flutter config --android-sdk \"\$ANDROID_HOME\""
     exit 1
   fi
