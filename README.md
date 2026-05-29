@@ -24,6 +24,25 @@ flutter analyze
 flutter test
 ```
 
+## Mobile Build Script
+
+Use the helper script to validate the mobile project and then build artifacts.
+
+```bash
+./scripts/build-mobile.sh
+./scripts/build-mobile.sh android --debug
+./scripts/build-mobile.sh android --release
+./scripts/build-mobile.sh all --release
+```
+
+The script runs these validation steps before any build:
+- `flutter pub get`
+- `dart run build_runner build --delete-conflicting-outputs`
+- `flutter analyze`
+- `flutter test` (unless `--skip-tests` is passed)
+
+iOS builds require macOS and Xcode. On Linux and Windows, iOS is skipped for `all` or fails clearly when explicitly requested.
+
 ## Product Vision
 
 Build a smart, reliable, and polished shopping companion that works fast in real grocery conditions, including low-connectivity environments.
