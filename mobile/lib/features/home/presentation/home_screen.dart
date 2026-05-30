@@ -2,7 +2,7 @@ import 'package:cartalyst_mobile/core/design/app_spacing.dart';
 import 'package:cartalyst_mobile/core/widgets/app_card.dart';
 import 'package:cartalyst_mobile/core/widgets/app_list_tile.dart';
 import 'package:cartalyst_mobile/core/widgets/app_scaffold.dart';
-import 'package:cartalyst_mobile/core/widgets/section_header.dart';
+import 'package:cartalyst_mobile/core/widgets/empty_state.dart';
 import 'package:cartalyst_mobile/features/shopping_list/application/lists_controller.dart';
 import 'package:cartalyst_mobile/features/shopping_list/application/lists_state.dart';
 import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list.dart';
@@ -18,44 +18,41 @@ class HomeScreen extends ConsumerWidget {
     final ListsState listsState = ref.watch(listsControllerProvider);
     final ListsController listsController = ref.read(listsControllerProvider.notifier);
 
-    final String greeting = _greetingForNow();
-
     return AppScaffold(
-      title: 'Cartalyst',
+      title: 'Home',
       child: ListView(
         children: <Widget>[
-          Text(
-            greeting,
-            style: Theme.of(context).textTheme.headlineMedium,
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          const Text('Your smart shopping assistant'),
-          const SizedBox(height: AppSpacing.md),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              onPressed: () => _showCreateDialog(context, listsController),
-              icon: const Icon(Icons.add),
-              label: const Text('New list'),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          SectionHeader(
-            title: 'Recent lists',
-            subtitle: listsState.isEmpty
-                ? 'Create your first list to get started.'
-                : 'Your most recently updated lists.',
-          ),
-          const SizedBox(height: AppSpacing.sm),
           if (listsState.isEmpty)
-            const AppCard(
-              child: AppListTile(
-                title: 'No lists yet',
-                subtitle: 'Tap "New list" above to create one.',
-                leading: Icon(Icons.shopping_cart_outlined),
-              ),
+            EmptyState(
+              title: 'Cartalyst',
+              description:
+                  'Keep your shopping lists local, organized, and ready whenever you are.',
+              icon: Icons.shopping_cart_outlined,
+              primaryActionLabel: 'Create shopping list',
+              onPrimaryActionPressed: () => _showCreateDialog(context, listsController),
             )
-          else
+          else ...<Widget>[
+            Text(
+              'Recent lists',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'Recently created or updated lists stay at the top.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: () => _showCreateDialog(context, listsController),
+                icon: const Icon(Icons.add),
+                label: const Text('Create shopping list'),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
             ...listsState.recentLists.map(
               (ShoppingList list) => Padding(
                 padding: const EdgeInsets.only(bottom: AppSpacing.sm),
@@ -63,31 +60,14 @@ class HomeScreen extends ConsumerWidget {
                   onTap: () => context.go('/lists/${list.id}'),
                   child: AppListTile(
                     title: list.name,
-                    subtitle: 'Updated ${_formatTimestamp(list.updatedAt)}',
+                    subtitle: _recentActivityLabel(list.updatedAt),
                     leading: const Icon(Icons.shopping_cart_outlined),
                     trailing: const Icon(Icons.chevron_right),
                   ),
                 ),
               ),
             ),
-          if (!listsState.isEmpty) ...<Widget>[
-            const SizedBox(height: AppSpacing.xs),
-            TextButton(
-              onPressed: () => context.go('/lists'),
-              child: const Text('See all lists'),
-            ),
           ],
-          const SizedBox(height: AppSpacing.md),
-          AppCard(
-            onTap: () => context.go('/price-compare'),
-            child: const AppListTile(
-              title: 'Compare package value',
-              subtitle: 'Check unit price between options.',
-              leading: Icon(Icons.balance_outlined),
-              trailing: Icon(Icons.chevron_right),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.md),
         ],
       ),
     );
@@ -102,45 +82,37 @@ class HomeScreen extends ConsumerWidget {
       isScrollControlled: true,
       showDragHandle: true,
       useSafeArea: true,
-      builder: (BuildContext context) => _NameSheet(),
+      builder: (BuildContext context) => const _NameSheet(),
     );
     if (name == null || !context.mounted) {
       return;
     }
+
     final String? newId = await controller.createList(name);
     if (newId != null && context.mounted) {
       context.go('/lists/$newId');
     }
   }
 
-  static String _greetingForNow() {
-    final int hour = DateTime.now().hour;
-    if (hour < 12) {
-      return 'Good morning';
-    }
-    if (hour < 18) {
-      return 'Good afternoon';
-    }
-    return 'Good evening';
-  }
-
-  static String _formatTimestamp(DateTime value) {
+  static String _recentActivityLabel(DateTime value) {
     final DateTime now = DateTime.now();
     final Duration diff = now.difference(value);
     if (diff.inMinutes < 1) {
-      return 'just now';
+      return 'Updated just now';
     }
     if (diff.inHours < 1) {
-      return '${diff.inMinutes}m ago';
+      return 'Updated ${diff.inMinutes}m ago';
     }
     if (diff.inDays < 1) {
-      return '${diff.inHours}h ago';
+      return 'Updated ${diff.inHours}h ago';
     }
-    return '${diff.inDays}d ago';
+    return 'Updated ${diff.inDays}d ago';
   }
 }
 
 class _NameSheet extends StatefulWidget {
+  const _NameSheet();
+
   @override
   State<_NameSheet> createState() => _NameSheetState();
 }
