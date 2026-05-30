@@ -598,6 +598,173 @@ void main() {
       expect(state.pendingItems.length, 2);
       expect(state.pendingItems.last.categoryId, 'cat-produce');
     });
+
+    test('purchased item routes to one inventory category', () async {
+      await shoppingListRepository.saveShoppingList(
+        shoppingListRepository.lists.first.copyWith(
+          listType: ShoppingListType.organized,
+          routingMode: ShoppingListRoutingMode.inventoryCategories,
+        ),
+      );
+      await shoppingListRepository.linkListToInventory(
+        shoppingListId: testListId,
+        inventoryId: 'inv-main',
+      );
+      shoppingListRepository.seedCategory(
+        ShoppingListCategory(
+          id: 'slc-dairy-map',
+          shoppingListId: testListId,
+          categoryId: 'cat-dairy',
+          targetInventoryId: 'inv-main',
+          targetInventoryCategoryId: 'invcat-dairy',
+          sortOrder: 2,
+          createdAt: DateTime(2026),
+          updatedAt: DateTime(2026),
+          categoryName: 'dairy',
+        ),
+      );
+
+      final ShoppingListController controller =
+          container.read(shoppingListControllerProvider(testListId).notifier);
+      final bool added = await controller.addItemWithDetails(
+        name: 'milk',
+        categoryId: 'cat-dairy',
+      );
+      expect(added, isTrue);
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+
+      final ShoppingListState beforePurchase =
+          container.read(shoppingListControllerProvider(testListId));
+      final bool purchased =
+          await controller.markPurchased(beforePurchase.pendingItems.first);
+
+      expect(purchased, isTrue);
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+
+      expect(inventoryRepository.savedItems.length, 1);
+      expect(inventoryRepository.savedItems.first.inventoryId, 'inv-main');
+      expect(
+        inventoryRepository.savedItems.first.inventoryCategoryId,
+        'invcat-dairy',
+      );
+    });
+
+    test('purchased item routes to category-as-inventory target', () async {
+      await shoppingListRepository.saveShoppingList(
+        shoppingListRepository.lists.first.copyWith(
+          listType: ShoppingListType.organized,
+          routingMode: ShoppingListRoutingMode.categoryAsInventory,
+        ),
+      );
+      shoppingListRepository.seedCategory(
+        ShoppingListCategory(
+          id: 'slc-produce-map',
+          shoppingListId: testListId,
+          categoryId: 'cat-produce',
+          targetInventoryId: 'inv-produce',
+          targetInventoryCategoryId: 'invcat-produce',
+          sortOrder: 3,
+          createdAt: DateTime(2026),
+          updatedAt: DateTime(2026),
+          categoryName: 'produce',
+        ),
+      );
+
+      final ShoppingListController controller =
+          container.read(shoppingListControllerProvider(testListId).notifier);
+      await controller.addItemWithDetails(
+        name: 'apples',
+        categoryId: 'cat-produce',
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+
+      final ShoppingListState beforePurchase =
+          container.read(shoppingListControllerProvider(testListId));
+      await controller.markPurchased(beforePurchase.pendingItems.first);
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+
+      expect(inventoryRepository.savedItems.length, 1);
+      expect(inventoryRepository.savedItems.first.inventoryId, 'inv-produce');
+      expect(
+        inventoryRepository.savedItems.first.inventoryCategoryId,
+        'invcat-produce',
+      );
+    });
+
+    test('purchased routing falls back to Uncategorized category', () async {
+      await shoppingListRepository.saveShoppingList(
+        shoppingListRepository.lists.first.copyWith(
+          listType: ShoppingListType.organized,
+          routingMode: ShoppingListRoutingMode.inventoryCategories,
+        ),
+      );
+      await shoppingListRepository.linkListToInventory(
+        shoppingListId: testListId,
+        inventoryId: 'inv-main',
+      );
+
+      final ShoppingListController controller =
+          container.read(shoppingListControllerProvider(testListId).notifier);
+      await controller.addItemWithDetails(
+        name: 'unknown',
+        categoryId: 'cat-missing-map',
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+
+      final ShoppingListState beforePurchase =
+          container.read(shoppingListControllerProvider(testListId));
+      await controller.markPurchased(beforePurchase.pendingItems.first);
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+
+      expect(inventoryRepository.savedItems.length, 1);
+      expect(
+        inventoryRepository.savedItems.first.inventoryCategoryId,
+        'inv-main::inventory-uncategorized',
+      );
+    });
+
+    test('routing failure handled safely while keeping item purchased',
+        () async {
+      await shoppingListRepository.saveShoppingList(
+        shoppingListRepository.lists.first.copyWith(
+          listType: ShoppingListType.organized,
+          routingMode: ShoppingListRoutingMode.categoryAsInventory,
+        ),
+      );
+      inventoryRepository.throwOnSave = true;
+      shoppingListRepository.seedCategory(
+        ShoppingListCategory(
+          id: 'slc-fail-map',
+          shoppingListId: testListId,
+          categoryId: 'cat-dairy',
+          targetInventoryId: 'inv-main',
+          sortOrder: 4,
+          createdAt: DateTime(2026),
+          updatedAt: DateTime(2026),
+          categoryName: 'dairy',
+        ),
+      );
+
+      final ShoppingListController controller =
+          container.read(shoppingListControllerProvider(testListId).notifier);
+      await controller.addItemWithDetails(
+          name: 'milk', categoryId: 'cat-dairy');
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+
+      final ShoppingListState beforePurchase =
+          container.read(shoppingListControllerProvider(testListId));
+      await controller.markPurchased(beforePurchase.pendingItems.first);
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+
+      final ShoppingListState afterPurchase =
+          container.read(shoppingListControllerProvider(testListId));
+      expect(afterPurchase.purchasedItems.length, 1);
+      expect(afterPurchase.errorMessage, isNotNull);
+      expect(
+        afterPurchase.errorMessage,
+        contains('Unable to update item'),
+      );
+    });
   });
 }
 
@@ -921,6 +1088,9 @@ class FakeProductRepository implements ProductRepository {
 }
 
 class FakeInventoryRepository extends InventoryRepository {
+  bool throwOnSave = false;
+  final List<InventoryItem> savedItems = <InventoryItem>[];
+
   @override
   Stream<List<Inventory>> watchAllInventories() {
     return Stream<List<Inventory>>.value(const <Inventory>[]);
@@ -938,11 +1108,22 @@ class FakeInventoryRepository extends InventoryRepository {
   Future<void> deleteInventory(String id) async {}
 
   @override
-  Future<void> saveInventoryItem(InventoryItem item) async {}
-
-  @override
   Future<void> deleteInventoryItem(String id) async {}
 
   @override
   Future<void> addInventoryEvent(InventoryEvent event) async {}
+
+  @override
+  Future<void> saveInventoryItem(InventoryItem item) async {
+    if (throwOnSave) {
+      throw StateError('save failed');
+    }
+    savedItems.add(item);
+  }
+
+  @override
+  Future<String> ensureUncategorizedInventoryCategory(
+      String inventoryId) async {
+    return '$inventoryId::inventory-uncategorized';
+  }
 }

@@ -840,7 +840,11 @@ class ShoppingListController extends FamilyNotifier<ShoppingListState, String> {
         item,
       );
       if (item.status == ShoppingListItemStatus.purchased) {
-        await _savePurchasedItemToLinkedInventories(item);
+        final String? routingMessage =
+            await _savePurchasedItemToLinkedInventories(item);
+        if (routingMessage != null) {
+          state = state.copyWith(errorMessage: routingMessage);
+        }
       }
       if (undoItem != null) {
         _undoStack.add(_ShoppingListUndoEntry(item: undoItem));
@@ -856,50 +860,202 @@ class ShoppingListController extends FamilyNotifier<ShoppingListState, String> {
     }
   }
 
-  Future<void> _savePurchasedItemToLinkedInventories(
+  Future<String?> _savePurchasedItemToLinkedInventories(
     ShoppingListItem purchased,
   ) async {
+    final ShoppingList? currentList = await _readCurrentList();
+    if (currentList == null ||
+        currentList.listType == ShoppingListType.simple ||
+        currentList.routingMode == ShoppingListRoutingMode.none) {
+      return _routePurchasedAsSimple(purchased);
+    }
+
+    if (currentList.routingMode ==
+        ShoppingListRoutingMode.inventoryCategories) {
+      return _routePurchasedToSingleInventoryByCategory(
+        purchased,
+        list: currentList,
+      );
+    }
+
+    return _routePurchasedByCategoryTargetInventory(purchased);
+  }
+
+  Future<String?> _routePurchasedAsSimple(ShoppingListItem purchased) async {
     final List<Inventory> linkedInventories =
         await _shoppingListRepository.watchInventoriesForList(arg).first;
 
     if (linkedInventories.isEmpty) {
-      return;
+      return null;
     }
 
     final DateTime now = DateTime.now();
     for (final Inventory inventory in linkedInventories) {
-      final InventoryItem inventoryItem = InventoryItem(
-        id: _uuid.v4(),
+      await _createInventoryItemFromPurchased(
+        purchased,
         inventoryId: inventory.id,
-        productId: purchased.productId,
-        rawName: purchased.productId == null ? purchased.rawText : null,
-        quantityEstimated: purchased.quantity,
-        unit: purchased.unit,
-        status: InventoryItemStatus.inStock,
-        confidenceScore: purchased.productId == null ? 0.6 : 0.95,
-        lastConfirmedAt: now,
-        createdAt: now,
-        updatedAt: now,
-        syncStatus: 'pending_sync',
-        version: 1,
-      );
-
-      final InventoryEvent inventoryEvent = InventoryEvent(
-        id: _uuid.v4(),
-        productId: purchased.productId,
-        inventoryId: inventory.id,
-        inventoryItemId: inventoryItem.id,
-        eventType: InventoryEventType.purchase,
-        quantity: purchased.quantity,
-        unit: purchased.unit,
-        source: InventoryEventSource.system,
+        inventoryCategoryId: null,
         occurredAt: now,
-        createdAt: now,
       );
-
-      await _inventoryRepository.saveInventoryItem(inventoryItem);
-      await _inventoryRepository.addInventoryEvent(inventoryEvent);
     }
+
+    return null;
+  }
+
+  Future<String?> _routePurchasedToSingleInventoryByCategory(
+    ShoppingListItem purchased, {
+    required ShoppingList list,
+  }) async {
+    final List<ShoppingListCategory> mappings =
+        await _shoppingListRepository.watchCategoriesForList(arg).first;
+
+    ShoppingListCategory? mapping;
+    final String? itemCategoryId = purchased.categoryId;
+    if (itemCategoryId != null) {
+      for (final ShoppingListCategory value in mappings) {
+        if (value.categoryId != itemCategoryId) {
+          continue;
+        }
+        if (mapping == null) {
+          mapping = value;
+          continue;
+        }
+        final bool currentHasTarget =
+            (mapping.targetInventoryCategoryId != null &&
+                    mapping.targetInventoryCategoryId!.trim().isNotEmpty) ||
+                (mapping.targetInventoryId != null &&
+                    mapping.targetInventoryId!.trim().isNotEmpty);
+        final bool candidateHasTarget =
+            (value.targetInventoryCategoryId != null &&
+                    value.targetInventoryCategoryId!.trim().isNotEmpty) ||
+                (value.targetInventoryId != null &&
+                    value.targetInventoryId!.trim().isNotEmpty);
+        if (!currentHasTarget && candidateHasTarget) {
+          mapping = value;
+        }
+      }
+    }
+
+    final List<Inventory> linkedInventories =
+        await _shoppingListRepository.watchInventoriesForList(arg).first;
+    final String? inventoryId = mapping?.targetInventoryId ??
+        (linkedInventories.isEmpty
+            ? list.inventoryId
+            : linkedInventories.first.id);
+
+    if (inventoryId == null || inventoryId.trim().isEmpty) {
+      return 'Item marked as purchased. Select an inventory to complete routing.';
+    }
+
+    final String inventoryCategoryId = mapping?.targetInventoryCategoryId ??
+        await _inventoryRepository.ensureUncategorizedInventoryCategory(
+          inventoryId,
+        );
+
+    await _createInventoryItemFromPurchased(
+      purchased,
+      inventoryId: inventoryId,
+      inventoryCategoryId: inventoryCategoryId,
+      occurredAt: DateTime.now(),
+    );
+    return null;
+  }
+
+  Future<String?> _routePurchasedByCategoryTargetInventory(
+    ShoppingListItem purchased,
+  ) async {
+    final List<ShoppingListCategory> mappings =
+        await _shoppingListRepository.watchCategoriesForList(arg).first;
+
+    final String? itemCategoryId = purchased.categoryId;
+    ShoppingListCategory? mapping;
+    if (itemCategoryId != null) {
+      for (final ShoppingListCategory value in mappings) {
+        if (value.categoryId != itemCategoryId) {
+          continue;
+        }
+        if (mapping == null) {
+          mapping = value;
+          continue;
+        }
+        final bool currentHasTarget = mapping.targetInventoryId != null &&
+            mapping.targetInventoryId!.trim().isNotEmpty;
+        final bool candidateHasTarget = value.targetInventoryId != null &&
+            value.targetInventoryId!.trim().isNotEmpty;
+        if (!currentHasTarget && candidateHasTarget) {
+          mapping = value;
+        }
+      }
+    }
+
+    final String? targetInventoryId = mapping?.targetInventoryId;
+    if (targetInventoryId == null || targetInventoryId.trim().isEmpty) {
+      return 'Item marked as purchased. Choose or create a target inventory for this category.';
+    }
+
+    final String inventoryCategoryId = mapping?.targetInventoryCategoryId ??
+        await _inventoryRepository.ensureUncategorizedInventoryCategory(
+          targetInventoryId,
+        );
+
+    await _createInventoryItemFromPurchased(
+      purchased,
+      inventoryId: targetInventoryId,
+      inventoryCategoryId: inventoryCategoryId,
+      occurredAt: DateTime.now(),
+    );
+    return null;
+  }
+
+  Future<void> _createInventoryItemFromPurchased(
+    ShoppingListItem purchased, {
+    required String inventoryId,
+    required String? inventoryCategoryId,
+    required DateTime occurredAt,
+  }) async {
+    final InventoryItem inventoryItem = InventoryItem(
+      id: _uuid.v4(),
+      inventoryId: inventoryId,
+      inventoryCategoryId: inventoryCategoryId,
+      productId: purchased.productId,
+      rawName: purchased.productId == null ? purchased.rawText : null,
+      quantityEstimated: purchased.quantity,
+      unit: purchased.unit,
+      status: InventoryItemStatus.inStock,
+      confidenceScore: purchased.productId == null ? 0.6 : 0.95,
+      lastConfirmedAt: occurredAt,
+      createdAt: occurredAt,
+      updatedAt: occurredAt,
+      syncStatus: 'pending_sync',
+      version: 1,
+    );
+
+    final InventoryEvent inventoryEvent = InventoryEvent(
+      id: _uuid.v4(),
+      productId: purchased.productId,
+      inventoryId: inventoryId,
+      inventoryItemId: inventoryItem.id,
+      eventType: InventoryEventType.purchase,
+      quantity: purchased.quantity,
+      unit: purchased.unit,
+      source: InventoryEventSource.system,
+      occurredAt: occurredAt,
+      createdAt: occurredAt,
+    );
+
+    await _inventoryRepository.saveInventoryItem(inventoryItem);
+    await _inventoryRepository.addInventoryEvent(inventoryEvent);
+  }
+
+  Future<ShoppingList?> _readCurrentList() async {
+    final List<ShoppingList> lists =
+        await _shoppingListRepository.watchAllLists().first;
+    for (final ShoppingList list in lists) {
+      if (list.id == arg) {
+        return list;
+      }
+    }
+    return null;
   }
 
   Future<void> _upsertDraftItem(ShoppingListItem item) async {
