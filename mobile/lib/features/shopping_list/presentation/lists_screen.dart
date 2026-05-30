@@ -51,15 +51,38 @@ class ListsScreen extends ConsumerWidget {
                       const SizedBox(height: AppSpacing.xs),
                   itemBuilder: (BuildContext context, int index) {
                     final ShoppingList list = state.lists[index];
-                    return _ListCard(
-                      list: list,
-                      inventoryName: list.inventoryId == null
-                          ? null
-                          : inventoriesById[list.inventoryId!]?.name,
-                      onTap: () => context.go('/lists/${list.id}'),
-                      onRename: () =>
-                          _showRenameDialog(context, controller, list),
-                      onDelete: () => _confirmDelete(context, controller, list),
+                    return Dismissible(
+                      key: ValueKey<String>(list.id),
+                      direction: DismissDirection.endToStart,
+                      background: const SizedBox.shrink(),
+                      secondaryBackground: Container(
+                        margin: const EdgeInsets.only(bottom: AppSpacing.xs),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.md,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.errorContainer,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        alignment: Alignment.centerRight,
+                        child: const Icon(Icons.delete_outline),
+                      ),
+                      onDismissed: (_) => _deleteListWithUndo(
+                        context,
+                        controller,
+                        list,
+                      ),
+                      child: _ListCard(
+                        list: list,
+                        inventoryName: list.inventoryId == null
+                            ? null
+                            : inventoriesById[list.inventoryId!]?.name,
+                        onTap: () => context.go('/lists/${list.id}'),
+                        onRename: () =>
+                            _showRenameDialog(context, controller, list),
+                        onDelete: () =>
+                            _confirmDelete(context, controller, list),
+                      ),
                     );
                   },
                 ),
@@ -98,7 +121,18 @@ class ListsScreen extends ConsumerWidget {
     if (newName == null) {
       return;
     }
-    await controller.renameList(list, newName);
+    final bool renamed = await controller.renameList(list, newName);
+    if (renamed && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Renamed "${list.name}"'),
+          action: SnackBarAction(
+            label: 'Undo',
+            onPressed: controller.undoLastAction,
+          ),
+        ),
+      );
+    }
   }
 
   Future<void> _confirmDelete(
@@ -128,19 +162,42 @@ class ListsScreen extends ConsumerWidget {
       return;
     }
 
-    await controller.deleteList(list);
+    final bool deleted = await controller.deleteList(list);
 
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('"${list.name}" deleted'),
-          action: SnackBarAction(
-            label: 'Undo',
-            onPressed: controller.restoreLastDeleted,
-          ),
-        ),
-      );
+    if (!deleted || !context.mounted) {
+      return;
     }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('"${list.name}" deleted'),
+        action: SnackBarAction(
+          label: 'Undo',
+          onPressed: controller.undoLastAction,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _deleteListWithUndo(
+    BuildContext context,
+    ListsController controller,
+    ShoppingList list,
+  ) async {
+    final bool deleted = await controller.deleteList(list);
+    if (!deleted || !context.mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('"${list.name}" deleted'),
+        action: SnackBarAction(
+          label: 'Undo',
+          onPressed: controller.undoLastAction,
+        ),
+      ),
+    );
   }
 
   Future<String?> _showNameSheet(

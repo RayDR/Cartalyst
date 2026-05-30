@@ -67,6 +67,12 @@ class _ListDetailScreenState extends ConsumerState<ListDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
+          if (currentList != null)
+            _EditableListHeader(
+              list: currentList,
+              onRename: () =>
+                  _showRenameDialog(context, controller, currentList),
+            ),
           if (currentList != null) _InventoryLinkCard(list: currentList),
           const SectionHeader(
             title: 'Quick product add',
@@ -174,6 +180,136 @@ class _ListDetailScreenState extends ConsumerState<ListDetailScreen> {
       }
     }
     return null;
+  }
+
+  Future<void> _showRenameDialog(
+    BuildContext context,
+    ShoppingListController controller,
+    ShoppingList list,
+  ) async {
+    final String? newName = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      useSafeArea: true,
+      builder: (BuildContext context) =>
+          _RenameListSheet(initialValue: list.name),
+    );
+    if (newName == null || !context.mounted) {
+      return;
+    }
+
+    final bool renamed = await controller.renameList(list, newName);
+    if (renamed && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Renamed "${list.name}"'),
+          action: SnackBarAction(
+            label: 'Undo',
+            onPressed: controller.undoLastAction,
+          ),
+        ),
+      );
+    }
+  }
+}
+
+class _EditableListHeader extends StatelessWidget {
+  const _EditableListHeader({
+    required this.list,
+    required this.onRename,
+  });
+
+  final ShoppingList list;
+  final VoidCallback onRename;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: AppCard(
+        onTap: onRename,
+        child: AppListTile(
+          title: list.name,
+          subtitle: 'Tap to rename the shopping list',
+          leading: const Icon(Icons.edit_outlined),
+        ),
+      ),
+    );
+  }
+}
+
+class _RenameListSheet extends StatefulWidget {
+  const _RenameListSheet({required this.initialValue});
+
+  final String initialValue;
+
+  @override
+  State<_RenameListSheet> createState() => _RenameListSheetState();
+}
+
+class _RenameListSheetState extends State<_RenameListSheet> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialValue);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.md + MediaQuery.viewInsetsOf(context).bottom,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            'Rename list',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          TextField(
+            controller: _controller,
+            autofocus: true,
+            textInputAction: TextInputAction.done,
+            decoration: const InputDecoration(
+              labelText: 'List name',
+              hintText: 'Example: Weekly groceries',
+            ),
+            onSubmitted: (_) => _submit(),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: _submit,
+              child: const Text('Save'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _submit() {
+    final String name = _controller.text.trim();
+    if (name.isEmpty) {
+      return;
+    }
+    Navigator.of(context).pop(name);
   }
 }
 
@@ -475,6 +611,15 @@ class _ItemsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    void showUndo(String message, VoidCallback onUndo) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          action: SnackBarAction(label: 'Undo', onPressed: onUndo),
+        ),
+      );
+    }
+
     return ListView(
       children: <Widget>[
         if (state.pendingItems.isNotEmpty) ...<Widget>[
@@ -486,11 +631,45 @@ class _ItemsView extends StatelessWidget {
           ...state.pendingItems.map(
             (ShoppingListItem item) => Padding(
               padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-              child: _ItemCard(
-                item: item,
-                controller: controller,
-                statusTone: StatusChipTone.neutral,
-                statusLabel: 'Pending',
+              child: Dismissible(
+                key: ValueKey<String>(item.id),
+                direction: DismissDirection.startToEnd,
+                background: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.secondaryContainer,
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                  ),
+                  alignment: Alignment.centerLeft,
+                  child: const Icon(Icons.report_gmailerrorred_outlined),
+                ),
+                confirmDismiss: (_) async => true,
+                onDismissed: (_) async {
+                  final bool skipped = await controller.markSkipped(item);
+                  if (skipped && context.mounted) {
+                    showUndo(
+                      'Marked "${item.rawText}" as skipped',
+                      controller.undoLastAction,
+                    );
+                  }
+                },
+                child: _ItemCard(
+                  item: item,
+                  controller: controller,
+                  statusTone: StatusChipTone.neutral,
+                  statusLabel: 'Pending',
+                  onDoubleTap: () async {
+                    final bool purchased = await controller.markPurchased(item);
+                    if (purchased && context.mounted) {
+                      showUndo(
+                        'Marked "${item.rawText}" as purchased',
+                        controller.undoLastAction,
+                      );
+                    }
+                  },
+                ),
               ),
             ),
           ),
@@ -511,6 +690,15 @@ class _ItemsView extends StatelessWidget {
                 statusTone: StatusChipTone.warning,
                 statusLabel: 'Skipped',
                 isHighlighted: true,
+                onDoubleTap: () async {
+                  final bool purchased = await controller.markPurchased(item);
+                  if (purchased && context.mounted) {
+                    showUndo(
+                      'Marked "${item.rawText}" as purchased',
+                      controller.undoLastAction,
+                    );
+                  }
+                },
               ),
             ),
           ),
@@ -554,6 +742,7 @@ class _ItemCard extends StatelessWidget {
     required this.controller,
     required this.statusTone,
     required this.statusLabel,
+    this.onDoubleTap,
     this.isHighlighted = false,
   });
 
@@ -561,6 +750,7 @@ class _ItemCard extends StatelessWidget {
   final ShoppingListController controller;
   final StatusChipTone statusTone;
   final String statusLabel;
+  final VoidCallback? onDoubleTap;
   final bool isHighlighted;
 
   @override
@@ -569,6 +759,7 @@ class _ItemCard extends StatelessWidget {
     final String subtitle = _subtitleFromItem(item);
 
     return AppCard(
+      onDoubleTap: onDoubleTap,
       child: Container(
         decoration: BoxDecoration(
           color: isHighlighted ? colors.secondaryContainer : null,

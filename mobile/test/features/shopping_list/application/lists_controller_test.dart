@@ -116,6 +116,27 @@ void main() {
       expect(state.lists.first.name, 'New name');
     });
 
+    test('undoLastAction restores renamed list', () async {
+      final ListsController controller =
+          container.read(listsControllerProvider.notifier);
+      await controller.createList('Old name');
+
+      await waitForLists();
+
+      final ShoppingList list =
+          container.read(listsControllerProvider).lists.first;
+      await controller.renameList(list, 'New name');
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+
+      final bool undone = await controller.undoLastAction();
+      expect(undone, isTrue);
+
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+
+      final ListsState state = container.read(listsControllerProvider);
+      expect(state.lists.first.name, 'Old name');
+    });
+
     test('deleteList soft-deletes and sets lastDeletedList', () async {
       final ListsController controller =
           container.read(listsControllerProvider.notifier);
@@ -135,6 +156,28 @@ void main() {
       // lastDeletedList is available for undo
       expect(state.lastDeletedList, isNotNull);
       expect(state.lastDeletedList!.name, 'To delete');
+    });
+
+    test('undoLastAction restores deleted list', () async {
+      final ListsController controller =
+          container.read(listsControllerProvider.notifier);
+      await controller.createList('Undo delete');
+
+      await waitForLists();
+
+      final ShoppingList list =
+          container.read(listsControllerProvider).lists.first;
+      await controller.deleteList(list);
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+
+      final bool undone = await controller.undoLastAction();
+      expect(undone, isTrue);
+
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+
+      final ListsState state = container.read(listsControllerProvider);
+      expect(state.lists.length, 1);
+      expect(state.lists.first.name, 'Undo delete');
     });
 
     test('restoreLastDeleted restores a soft-deleted list', () async {

@@ -8,9 +8,11 @@ import 'package:cartalyst_mobile/features/products/domain/repositories/product_r
 import 'package:cartalyst_mobile/features/products/domain/services/product_suggestion_service.dart';
 import 'package:cartalyst_mobile/features/shopping_list/application/shopping_list_state.dart';
 import 'package:cartalyst_mobile/features/shopping_list/data/repositories/local_shopping_list_repository.dart';
+import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list.dart';
 import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list_item.dart';
 import 'package:cartalyst_mobile/features/shopping_list/domain/repositories/shopping_list_repository.dart';
-import 'package:cartalyst_mobile/infrastructure/local_db/app_database.dart' show AppDatabase;
+import 'package:cartalyst_mobile/infrastructure/local_db/app_database.dart'
+    show AppDatabase;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
@@ -20,7 +22,8 @@ final appDatabaseProvider = Provider<AppDatabase>((Ref ref) {
   return database;
 });
 
-final shoppingListRepositoryProvider = Provider<ShoppingListRepository>((Ref ref) {
+final shoppingListRepositoryProvider =
+    Provider<ShoppingListRepository>((Ref ref) {
   return LocalShoppingListRepository(ref.watch(appDatabaseProvider));
 });
 
@@ -28,7 +31,8 @@ final productRepositoryProvider = Provider<ProductRepository>((Ref ref) {
   return LocalProductRepository(ref.watch(appDatabaseProvider));
 });
 
-final productSuggestionServiceProvider = Provider<ProductSuggestionService>((Ref ref) {
+final productSuggestionServiceProvider =
+    Provider<ProductSuggestionService>((Ref ref) {
   return const ProductSuggestionService();
 });
 
@@ -49,6 +53,7 @@ class ShoppingListController extends FamilyNotifier<ShoppingListState, String> {
 
   StreamSubscription<List<ShoppingListItem>>? _listItemsSubscription;
   StreamSubscription<List<Product>>? _productsSubscription;
+  final List<_ShoppingListUndoEntry> _undoStack = <_ShoppingListUndoEntry>[];
 
   List<Product> _products = const <Product>[];
   List<ProductAlias> _aliases = const <ProductAlias>[];
@@ -86,38 +91,50 @@ class ShoppingListController extends FamilyNotifier<ShoppingListState, String> {
       return;
     }
 
-    final ProductSuggestion fallbackSuggestion = _suggestionService.suggest(
-      rawInput: trimmedInput,
-      availableProducts: _products,
-      aliases: _aliases,
-      usageStats: _usageStats,
-      maxResults: 1,
-    ).first;
+    final ProductSuggestion fallbackSuggestion = _suggestionService
+        .suggest(
+          rawInput: trimmedInput,
+          availableProducts: _products,
+          aliases: _aliases,
+          usageStats: _usageStats,
+          maxResults: 1,
+        )
+        .first;
 
-    final ProductSuggestion baseSuggestion = selectedSuggestion ?? fallbackSuggestion;
+    final ProductSuggestion baseSuggestion =
+        selectedSuggestion ?? fallbackSuggestion;
 
-    final Product? matchedProduct =
-        forceCustom ? null : _resolveMatchedProduct(baseSuggestion, fallbackSuggestion);
+    final Product? matchedProduct = forceCustom
+        ? null
+        : _resolveMatchedProduct(baseSuggestion, fallbackSuggestion);
 
     final DateTime now = DateTime.now();
-    final Unit? parsedUnit = _toSupportedUnit(baseSuggestion.parsedUnit ?? fallbackSuggestion.parsedUnit);
+    final Unit? parsedUnit = _toSupportedUnit(
+      baseSuggestion.parsedUnit ?? fallbackSuggestion.parsedUnit,
+    );
 
-    final String normalizedRawText =
-        (baseSuggestion.normalizedQuery.isNotEmpty ? baseSuggestion.normalizedQuery : trimmedInput)
-            .trim();
+    final String normalizedRawText = (baseSuggestion.normalizedQuery.isNotEmpty
+            ? baseSuggestion.normalizedQuery
+            : trimmedInput)
+        .trim();
 
     final ShoppingListItem item = ShoppingListItem(
       id: _uuid.v4(),
       shoppingListId: arg,
       productId: matchedProduct?.id,
       rawText: matchedProduct?.canonicalName ?? normalizedRawText,
-      quantity: baseSuggestion.parsedQuantity ?? fallbackSuggestion.parsedQuantity,
+      quantity:
+          baseSuggestion.parsedQuantity ?? fallbackSuggestion.parsedQuantity,
       unit: parsedUnit,
       status: ShoppingListItemStatus.pending,
-      source: matchedProduct == null ? ShoppingListItemSource.manual : ShoppingListItemSource.suggestion,
+      source: matchedProduct == null
+          ? ShoppingListItemSource.manual
+          : ShoppingListItemSource.suggestion,
       priorityScore: matchedProduct == null
           ? 0.1
-          : (baseSuggestion.confidenceScore > 0 ? baseSuggestion.confidenceScore : fallbackSuggestion.confidenceScore),
+          : (baseSuggestion.confidenceScore > 0
+              ? baseSuggestion.confidenceScore
+              : fallbackSuggestion.confidenceScore),
       createdAt: now,
       updatedAt: now,
       syncStatus: 'pending_sync',
@@ -144,7 +161,36 @@ class ShoppingListController extends FamilyNotifier<ShoppingListState, String> {
     return addFromQuickAdd(forceCustom: true);
   }
 
-  Future<void> updateItemQuantityAndUnit({
+  Future<bool> renameList(ShoppingList list, String newName) async {
+    final String trimmed = newName.trim();
+    if (trimmed.isEmpty) {
+      return false;
+    }
+
+    final DateTime now = DateTime.now();
+    final ShoppingList updated = ShoppingList(
+      id: list.id,
+      inventoryId: list.inventoryId,
+      name: trimmed,
+      status: list.status,
+      createdAt: list.createdAt,
+      updatedAt: now,
+      deletedAt: list.deletedAt,
+      syncStatus: 'pending_sync',
+      version: list.version + 1,
+    );
+
+    try {
+      await _shoppingListRepository.saveShoppingList(updated);
+      _undoStack.add(_ShoppingListUndoEntry(list: list));
+      return true;
+    } catch (_) {
+      state = state.copyWith(errorMessage: 'Unable to rename list.');
+      return false;
+    }
+  }
+
+  Future<bool> updateItemQuantityAndUnit({
     required ShoppingListItem item,
     double? quantity,
     String? unitCode,
@@ -162,19 +208,28 @@ class ShoppingListController extends FamilyNotifier<ShoppingListState, String> {
     );
   }
 
-  Future<void> markPurchased(ShoppingListItem item) {
-    return _saveItem(item.transitionTo(ShoppingListItemStatus.purchased));
+  Future<bool> markPurchased(ShoppingListItem item) {
+    return _saveItem(
+      item.transitionTo(ShoppingListItemStatus.purchased),
+      undoItem: item,
+    );
   }
 
-  Future<void> markSkipped(ShoppingListItem item) {
-    return _saveItem(item.transitionTo(ShoppingListItemStatus.skipped));
+  Future<bool> markSkipped(ShoppingListItem item) {
+    return _saveItem(
+      item.transitionTo(ShoppingListItemStatus.skipped),
+      undoItem: item,
+    );
   }
 
-  Future<void> restorePending(ShoppingListItem item) {
-    return _saveItem(item.transitionTo(ShoppingListItemStatus.pending));
+  Future<bool> restorePending(ShoppingListItem item) {
+    return _saveItem(
+      item.transitionTo(ShoppingListItemStatus.pending),
+      undoItem: item,
+    );
   }
 
-  Future<void> softDelete(ShoppingListItem item) {
+  Future<bool> softDelete(ShoppingListItem item) {
     final DateTime now = DateTime.now();
     return _saveItem(
       item.copyWith(
@@ -183,6 +238,7 @@ class ShoppingListController extends FamilyNotifier<ShoppingListState, String> {
         version: item.version + 1,
         syncStatus: 'pending_sync',
       ),
+      undoItem: item,
     );
   }
 
@@ -204,7 +260,9 @@ class ShoppingListController extends FamilyNotifier<ShoppingListState, String> {
 
   void _subscribeProducts() {
     _productsSubscription?.cancel();
-    _productsSubscription = _productRepository.watchActiveProducts().listen((List<Product> products) {
+    _productsSubscription = _productRepository
+        .watchActiveProducts()
+        .listen((List<Product> products) {
       _products = products;
       _loadAliases();
       _refreshSuggestions();
@@ -213,23 +271,33 @@ class ShoppingListController extends FamilyNotifier<ShoppingListState, String> {
 
   void _subscribeListItems(String shoppingListId) {
     _listItemsSubscription?.cancel();
-    _listItemsSubscription =
-        _shoppingListRepository.watchItemsForList(shoppingListId).listen((List<ShoppingListItem> items) {
+    _listItemsSubscription = _shoppingListRepository
+        .watchItemsForList(shoppingListId)
+        .listen((List<ShoppingListItem> items) {
       final List<ShoppingListItem> pending = items
-          .where((ShoppingListItem item) => item.status == ShoppingListItemStatus.pending)
+          .where(
+            (ShoppingListItem item) =>
+                item.status == ShoppingListItemStatus.pending,
+          )
           .toList(growable: false);
       final List<ShoppingListItem> purchased = items
-          .where((ShoppingListItem item) => item.status == ShoppingListItemStatus.purchased)
+          .where(
+            (ShoppingListItem item) =>
+                item.status == ShoppingListItemStatus.purchased,
+          )
           .toList(growable: false);
       final List<ShoppingListItem> skipped = items
-          .where((ShoppingListItem item) => item.status == ShoppingListItemStatus.skipped)
+          .where(
+            (ShoppingListItem item) =>
+                item.status == ShoppingListItemStatus.skipped,
+          )
           .toList(growable: false);
 
       _usageStats = _buildUsageStats(items);
 
       final String? focusedItemId = state.focusedItemId;
-      final bool focusedStillExists =
-          focusedItemId != null && items.any((ShoppingListItem item) => item.id == focusedItemId);
+      final bool focusedStillExists = focusedItemId != null &&
+          items.any((ShoppingListItem item) => item.id == focusedItemId);
       final String? nextFocusedItemId = focusedStillExists
           ? focusedItemId
           : (pending.isNotEmpty ? pending.first.id : null);
@@ -291,7 +359,10 @@ class ShoppingListController extends FamilyNotifier<ShoppingListState, String> {
         .toList(growable: false);
   }
 
-  Product? _resolveMatchedProduct(ProductSuggestion base, ProductSuggestion fallback) {
+  Product? _resolveMatchedProduct(
+    ProductSuggestion base,
+    ProductSuggestion fallback,
+  ) {
     if (base.suggestedProduct != null &&
         base.reasonCode != SuggestionReasonCode.unknownProduct &&
         base.reasonCode != SuggestionReasonCode.emptyInput) {
@@ -337,24 +408,61 @@ class ShoppingListController extends FamilyNotifier<ShoppingListState, String> {
     );
 
     final List<ProductSuggestion> suggestions = all
-        .where((ProductSuggestion suggestion) => suggestion.suggestedProduct != null)
+        .where(
+          (ProductSuggestion suggestion) => suggestion.suggestedProduct != null,
+        )
         .toList(growable: false);
 
     state = state.copyWith(suggestions: suggestions);
   }
 
-  Future<void> _saveItem(ShoppingListItem item) async {
+  Future<bool> undoLastAction() async {
+    if (_undoStack.isEmpty) {
+      return false;
+    }
+
+    final _ShoppingListUndoEntry entry = _undoStack.removeLast();
+    try {
+      if (entry.item != null) {
+        await _shoppingListRepository.saveShoppingListItem(entry.item!);
+      } else if (entry.list != null) {
+        await _shoppingListRepository.saveShoppingList(entry.list!);
+      }
+      state = state.copyWith(clearErrorMessage: true);
+      return true;
+    } catch (_) {
+      state = state.copyWith(errorMessage: 'Unable to undo item action.');
+      return false;
+    }
+  }
+
+  Future<bool> _saveItem(
+    ShoppingListItem item, {
+    ShoppingListItem? undoItem,
+  }) async {
     try {
       state = state.copyWith(isBusy: true, clearErrorMessage: true);
       await _shoppingListRepository.saveShoppingListItem(
         item,
       );
+      if (undoItem != null) {
+        _undoStack.add(_ShoppingListUndoEntry(item: undoItem));
+      }
       state = state.copyWith(isBusy: false);
+      return true;
     } catch (_) {
       state = state.copyWith(
         isBusy: false,
         errorMessage: 'Unable to update item. Please try again.',
       );
+      return false;
     }
   }
+}
+
+class _ShoppingListUndoEntry {
+  const _ShoppingListUndoEntry({this.item, this.list});
+
+  final ShoppingListItem? item;
+  final ShoppingList? list;
 }

@@ -16,6 +16,7 @@ class ListsController extends Notifier<ListsState> {
   late final Uuid _uuid;
 
   StreamSubscription<List<ShoppingList>>? _subscription;
+  final List<_ListUndoEntry> _undoStack = <_ListUndoEntry>[];
 
   @override
   ListsState build() {
@@ -69,10 +70,10 @@ class ListsController extends Notifier<ListsState> {
     }
   }
 
-  Future<void> renameList(ShoppingList list, String newName) async {
+  Future<bool> renameList(ShoppingList list, String newName) async {
     final String trimmed = newName.trim();
     if (trimmed.isEmpty) {
-      return;
+      return false;
     }
 
     final DateTime now = DateTime.now();
@@ -90,59 +91,54 @@ class ListsController extends Notifier<ListsState> {
 
     try {
       await _repository.saveShoppingList(updated);
+      _pushUndo(
+        _ListUndoEntry(
+          label: 'Rename list',
+          undo: () => _repository.saveShoppingList(list),
+        ),
+      );
+      state = state.copyWith(clearLastDeleted: true);
+      return true;
     } catch (_) {
       state = state.copyWith(errorMessage: 'Unable to rename list.');
+      return false;
     }
   }
 
-  Future<void> deleteList(ShoppingList list) async {
+  Future<bool> deleteList(ShoppingList list) async {
     state = state.copyWith(lastDeletedList: list);
     try {
       await _repository.deleteShoppingList(list.id);
+      _pushUndo(
+        _ListUndoEntry(
+          label: 'Delete list',
+          undo: () => _repository.saveShoppingList(list),
+        ),
+      );
+      return true;
     } catch (_) {
       state = state.copyWith(
         clearLastDeleted: true,
         errorMessage: 'Unable to delete list.',
       );
+      return false;
     }
   }
 
   /// Undoes the most recent soft delete. No-op if nothing to restore.
-  Future<void> restoreLastDeleted() async {
-    final ShoppingList? deleted = state.lastDeletedList;
-    if (deleted == null) {
-      return;
-    }
-
-    final DateTime now = DateTime.now();
-    final ShoppingList restored = ShoppingList(
-      id: deleted.id,
-      inventoryId: deleted.inventoryId,
-      name: deleted.name,
-      status: deleted.status,
-      createdAt: deleted.createdAt,
-      updatedAt: now,
-      syncStatus: 'pending_sync',
-      version: deleted.version + 1,
-    );
-
-    state = state.copyWith(clearLastDeleted: true);
-    try {
-      await _repository.saveShoppingList(restored);
-    } catch (_) {
-      state = state.copyWith(errorMessage: 'Unable to restore list.');
-    }
+  Future<bool> restoreLastDeleted() {
+    return undoLastAction();
   }
 
-  Future<void> linkToInventory(ShoppingList list, String inventoryId) {
+  Future<bool> linkToInventory(ShoppingList list, String inventoryId) {
     return updateLinkedInventory(list, inventoryId);
   }
 
-  Future<void> unlinkFromInventory(ShoppingList list) {
+  Future<bool> unlinkFromInventory(ShoppingList list) {
     return updateLinkedInventory(list, null);
   }
 
-  Future<void> updateLinkedInventory(
+  Future<bool> updateLinkedInventory(
     ShoppingList list,
     String? inventoryId,
   ) async {
@@ -161,12 +157,46 @@ class ListsController extends Notifier<ListsState> {
 
     try {
       await _repository.saveShoppingList(updated);
+      return true;
     } catch (_) {
       state = state.copyWith(errorMessage: 'Unable to update list inventory.');
+      return false;
+    }
+  }
+
+  Future<bool> undoLastAction() async {
+    if (_undoStack.isEmpty) {
+      return false;
+    }
+
+    final _ListUndoEntry entry = _undoStack.removeLast();
+    try {
+      await entry.undo();
+      state = state.copyWith(clearLastDeleted: true, clearErrorMessage: true);
+      return true;
+    } catch (_) {
+      state = state.copyWith(
+        errorMessage: 'Unable to undo ${entry.label.toLowerCase()}.',
+      );
+      return false;
     }
   }
 
   void clearError() {
     state = state.copyWith(clearErrorMessage: true);
   }
+
+  void _pushUndo(_ListUndoEntry entry) {
+    _undoStack.add(entry);
+  }
+}
+
+class _ListUndoEntry {
+  const _ListUndoEntry({
+    required this.label,
+    required this.undo,
+  });
+
+  final String label;
+  final Future<void> Function() undo;
 }
