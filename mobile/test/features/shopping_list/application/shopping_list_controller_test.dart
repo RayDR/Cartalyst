@@ -10,6 +10,7 @@ import 'package:cartalyst_mobile/features/products/domain/entities/product_alias
 import 'package:cartalyst_mobile/features/products/domain/repositories/product_repository.dart';
 import 'package:cartalyst_mobile/features/shopping_list/application/shopping_list_controller.dart';
 import 'package:cartalyst_mobile/features/shopping_list/application/shopping_list_state.dart';
+import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list_category.dart';
 import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list.dart';
 import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list_item.dart';
 import 'package:cartalyst_mobile/features/shopping_list/domain/repositories/shopping_list_repository.dart';
@@ -63,6 +64,28 @@ void main() {
         updatedAt: DateTime(2026),
         syncStatus: 'local_only',
         version: 1,
+      ),
+    );
+    shoppingListRepository.seedCategory(
+      ShoppingListCategory(
+        id: 'slc-dairy',
+        shoppingListId: testListId,
+        categoryId: 'cat-dairy',
+        sortOrder: 0,
+        createdAt: DateTime(2026),
+        updatedAt: DateTime(2026),
+        categoryName: 'dairy',
+      ),
+    );
+    shoppingListRepository.seedCategory(
+      ShoppingListCategory(
+        id: 'slc-produce',
+        shoppingListId: testListId,
+        categoryId: 'cat-produce',
+        sortOrder: 1,
+        createdAt: DateTime(2026),
+        updatedAt: DateTime(2026),
+        categoryName: 'produce',
       ),
     );
 
@@ -530,6 +553,51 @@ void main() {
       expect(state.pendingItems.length, 1);
       expect(state.pendingItems.first.deletedAt, isNull);
     });
+
+    test('organized add falls back to Uncategorized category', () async {
+      final ShoppingListController controller =
+          container.read(shoppingListControllerProvider(testListId).notifier);
+
+      final bool added = await controller.addItemWithDetails(
+        name: 'mystery item',
+      );
+      expect(added, isTrue);
+
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      final ShoppingListState state =
+          container.read(shoppingListControllerProvider(testListId));
+      expect(state.pendingItems.length, 1);
+      expect(state.pendingItems.first.categoryId, 'cat-uncategorized');
+    });
+
+    test('manual category reassignment is remembered for future suggestions',
+        () async {
+      final ShoppingListController controller =
+          container.read(shoppingListControllerProvider(testListId).notifier);
+
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+
+      await controller.addItemWithDetails(name: 'milk');
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+
+      ShoppingListState state =
+          container.read(shoppingListControllerProvider(testListId));
+      expect(state.pendingItems.first.categoryId, 'cat-dairy');
+
+      final bool reassigned = await controller.reassignItemCategory(
+        state.pendingItems.first,
+        'cat-produce',
+      );
+      expect(reassigned, isTrue);
+
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      await controller.addItemWithDetails(name: 'milk');
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+
+      state = container.read(shoppingListControllerProvider(testListId));
+      expect(state.pendingItems.length, 2);
+      expect(state.pendingItems.last.categoryId, 'cat-produce');
+    });
   });
 }
 
@@ -548,6 +616,7 @@ class FakeShoppingListRepository extends ShoppingListRepository {
   final Map<String, ShoppingListDraft> _drafts = <String, ShoppingListDraft>{};
   final Map<String, Set<String>> _inventoryLinksByList =
       <String, Set<String>>{};
+  final List<ShoppingListCategory> _categories = <ShoppingListCategory>[];
 
   List<ShoppingList> get lists => List<ShoppingList>.unmodifiable(_lists);
 
@@ -573,6 +642,10 @@ class FakeShoppingListRepository extends ShoppingListRepository {
     }
   }
 
+  void seedCategory(ShoppingListCategory category) {
+    _categories.add(category);
+  }
+
   @override
   Stream<List<ShoppingList>> watchAllLists() {
     Future<void>.microtask(_emitAllLists);
@@ -594,6 +667,15 @@ class FakeShoppingListRepository extends ShoppingListRepository {
     );
     Future<void>.microtask(() => _emitItemsForList(shoppingListId));
     return controller.stream;
+  }
+
+  @override
+  Stream<List<ShoppingListCategory>> watchCategoriesForList(
+      String shoppingListId) {
+    final List<ShoppingListCategory> categories = _categories
+        .where((ShoppingListCategory c) => c.shoppingListId == shoppingListId)
+        .toList(growable: false);
+    return Stream<List<ShoppingListCategory>>.value(categories);
   }
 
   @override
@@ -710,6 +792,30 @@ class FakeShoppingListRepository extends ShoppingListRepository {
   @override
   Future<void> deleteDraft(String shoppingListId) async {
     _drafts.remove(shoppingListId);
+  }
+
+  @override
+  Future<void> ensureUncategorizedCategoryForList(String shoppingListId) async {
+    final bool exists = _categories.any(
+      (ShoppingListCategory category) =>
+          category.shoppingListId == shoppingListId &&
+          (category.categoryName ?? '').toLowerCase() == 'uncategorized',
+    );
+    if (exists) {
+      return;
+    }
+    final DateTime now = DateTime.now();
+    _categories.add(
+      ShoppingListCategory(
+        id: 'slc-uncategorized',
+        shoppingListId: shoppingListId,
+        categoryId: 'cat-uncategorized',
+        sortOrder: _categories.length,
+        createdAt: now,
+        updatedAt: now,
+        categoryName: 'Uncategorized',
+      ),
+    );
   }
 
   void _emitAllLists() {

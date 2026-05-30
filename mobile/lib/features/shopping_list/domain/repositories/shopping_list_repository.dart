@@ -63,4 +63,11 @@ abstract class ShoppingListRepository {
   Future<void> ensureUncategorizedCategoryForList(String shoppingListId) {
     return Future<void>.value();
   }
+
+  Future<String?> createCategoryForList({
+    required String shoppingListId,
+    required String name,
+  }) {
+    return Future<String?>.value(null);
+  }
 }

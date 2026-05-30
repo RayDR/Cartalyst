@@ -9,6 +9,7 @@ class ShoppingListCategory {
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
+    this.categoryName,
   });
 
   final String id;
@@ -20,4 +21,5 @@ class ShoppingListCategory {
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? deletedAt;
+  final String? categoryName;
 }

@@ -16,9 +16,18 @@ import 'package:cartalyst_mobile/features/shopping_list/application/lists_state.
 import 'package:cartalyst_mobile/features/shopping_list/application/shopping_list_controller.dart';
 import 'package:cartalyst_mobile/features/shopping_list/application/shopping_list_state.dart';
 import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list.dart';
+import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list_category.dart';
 import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+final shoppingListCategoriesProvider =
+    StreamProvider.family<List<ShoppingListCategory>, String>(
+  (Ref ref, String listId) {
+    final repository = ref.watch(shoppingListRepositoryProvider);
+    return repository.watchCategoriesForList(listId);
+  },
+);
 
 class ListDetailScreen extends ConsumerStatefulWidget {
   const ListDetailScreen({required this.listId, super.key});
@@ -50,6 +59,11 @@ class _ListDetailScreenState extends ConsumerState<ListDetailScreen> {
     final ListsState listsState = ref.watch(listsControllerProvider);
     final ShoppingList? currentList =
         _findList(listsState.lists, widget.listId);
+    final bool isOrganized =
+        currentList?.listType == ShoppingListType.organized;
+    final List<ShoppingListCategory> listCategories =
+        ref.watch(shoppingListCategoriesProvider(widget.listId)).valueOrNull ??
+            const <ShoppingListCategory>[];
     final List<Inventory> linkedInventories = ref
             .watch(linkedInventoriesForListProvider(widget.listId))
             .valueOrNull ??
@@ -172,7 +186,7 @@ class _ListDetailScreenState extends ConsumerState<ListDetailScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                if (currentList != null)
+                if (currentList != null && !isOrganized)
                   _ListMetaRow(
                     linkedInventories: linkedInventories,
                     hasDraft: state.hasDraft,
@@ -186,77 +200,93 @@ class _ListDetailScreenState extends ConsumerState<ListDetailScreen> {
                       allowUnlink: linkedInventories.isNotEmpty,
                     ),
                   ),
-                const SectionHeader(
-                  title: 'Quick product add',
-                  subtitle: 'Type once, pick a suggestion, and keep moving.',
-                ),
-                const SizedBox(height: AppSpacing.md),
-                AppTextField(
-                  label: 'Quick add',
-                  hint: 'Try: 2 milk, huevos 18, paper towels 12 pack',
-                  prefixIcon: Icons.search,
-                  controller: _quickAddController,
-                  onChanged: controller.updateQuickAddInput,
-                  textInputAction: TextInputAction.done,
-                ),
-                if (state.suggestions.isNotEmpty) ...<Widget>[
-                  const SizedBox(height: AppSpacing.sm),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: state.suggestions
-                          .map(
-                            (suggestion) => Padding(
-                              padding: const EdgeInsets.only(
-                                right: AppSpacing.xs,
-                              ),
-                              child: ActionChip(
-                                avatar: const Icon(Icons.local_offer_outlined),
-                                label: Text(
-                                  suggestion.suggestedProduct!.canonicalName,
-                                ),
-                                onPressed: () => controller.addFromQuickAdd(
-                                  selectedSuggestion: suggestion,
-                                ),
-                              ),
-                            ),
-                          )
-                          .toList(growable: false),
-                    ),
+                if (!isOrganized) ...<Widget>[
+                  const SectionHeader(
+                    title: 'Quick product add',
+                    subtitle: 'Type once, pick a suggestion, and keep moving.',
                   ),
-                ],
-                const SizedBox(height: AppSpacing.sm),
-                Row(
-                  children: <Widget>[
-                    Expanded(
-                      child: AppButton(
-                        label: 'Add best match',
-                        onPressed:
-                            state.isBusy ? null : controller.addFromQuickAdd,
-                        icon: Icons.playlist_add_check_circle_outlined,
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: AppButton(
-                        label: 'Add custom',
-                        onPressed:
-                            state.isBusy ? null : controller.addCustomItem,
-                        icon: Icons.edit_note_outlined,
-                        variant: AppButtonVariant.secondary,
+                  const SizedBox(height: AppSpacing.md),
+                  AppTextField(
+                    label: 'Quick add',
+                    hint: 'Try: 2 milk, huevos 18, paper towels 12 pack',
+                    prefixIcon: Icons.search,
+                    controller: _quickAddController,
+                    onChanged: controller.updateQuickAddInput,
+                    textInputAction: TextInputAction.done,
+                  ),
+                  if (state.suggestions.isNotEmpty) ...<Widget>[
+                    const SizedBox(height: AppSpacing.sm),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: state.suggestions
+                            .map(
+                              (suggestion) => Padding(
+                                padding: const EdgeInsets.only(
+                                  right: AppSpacing.xs,
+                                ),
+                                child: ActionChip(
+                                  avatar:
+                                      const Icon(Icons.local_offer_outlined),
+                                  label: Text(
+                                    suggestion.suggestedProduct!.canonicalName,
+                                  ),
+                                  onPressed: () => controller.addFromQuickAdd(
+                                    selectedSuggestion: suggestion,
+                                  ),
+                                ),
+                              ),
+                            )
+                            .toList(growable: false),
                       ),
                     ),
                   ],
-                ),
-                const SizedBox(height: AppSpacing.md),
-                SwitchListTile.adaptive(
-                  title: const Text('One-handed shopping mode'),
-                  subtitle: const Text(
-                    'Shows large bottom actions for the selected item.',
+                  const SizedBox(height: AppSpacing.sm),
+                  Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: AppButton(
+                          label: 'Add best match',
+                          onPressed:
+                              state.isBusy ? null : controller.addFromQuickAdd,
+                          icon: Icons.playlist_add_check_circle_outlined,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: AppButton(
+                          label: 'Add custom',
+                          onPressed:
+                              state.isBusy ? null : controller.addCustomItem,
+                          icon: Icons.edit_note_outlined,
+                          variant: AppButtonVariant.secondary,
+                        ),
+                      ),
+                    ],
                   ),
-                  value: state.shoppingModeEnabled,
-                  onChanged: controller.setShoppingModeEnabled,
-                ),
+                  const SizedBox(height: AppSpacing.md),
+                  SwitchListTile.adaptive(
+                    title: const Text('One-handed shopping mode'),
+                    subtitle: const Text(
+                      'Shows large bottom actions for the selected item.',
+                    ),
+                    value: state.shoppingModeEnabled,
+                    onChanged: controller.setShoppingModeEnabled,
+                  ),
+                ] else ...<Widget>[
+                  _OrganizedActionsBar(
+                    onAddItem: () => _showAddOrganizedItemSheet(
+                      context,
+                      controller,
+                      listCategories,
+                    ),
+                    onAddCategory: () => _showCreateCategorySheet(
+                      context,
+                      controller,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                ],
                 if (state.errorMessage != null) ...<Widget>[
                   const SizedBox(height: AppSpacing.xs),
                   AppCard(
@@ -271,21 +301,38 @@ class _ListDetailScreenState extends ConsumerState<ListDetailScreen> {
                 ],
                 const SizedBox(height: AppSpacing.sm),
                 if (state.hasItems)
-                  _ItemsView(
-                    state: state,
-                    controller: controller,
-                    isEditMode: state.isEditMode,
-                  )
+                  isOrganized
+                      ? _OrganizedItemsView(
+                          state: state,
+                          controller: controller,
+                          categories: listCategories,
+                          isEditMode: state.isEditMode,
+                        )
+                      : _ItemsView(
+                          state: state,
+                          controller: controller,
+                          isEditMode: state.isEditMode,
+                        )
                 else
                   EmptyState(
                     title: 'This list is empty',
-                    description: 'Use Quick Add to build your list in seconds.',
+                    description: isOrganized
+                        ? 'Add your first item and organize it by category.'
+                        : 'Use Quick Add to build your list in seconds.',
                     icon: Icons.shopping_cart_outlined,
-                    primaryActionLabel: 'Add custom item',
-                    onPrimaryActionPressed: controller.addCustomItem,
+                    primaryActionLabel:
+                        isOrganized ? 'Add item' : 'Add custom item',
+                    onPrimaryActionPressed: isOrganized
+                        ? () => _showAddOrganizedItemSheet(
+                              context,
+                              controller,
+                              listCategories,
+                            )
+                        : controller.addCustomItem,
                   ),
                 if (state.shoppingModeEnabled &&
-                    state.focusedItem != null) ...<Widget>[
+                    state.focusedItem != null &&
+                    !isOrganized) ...<Widget>[
                   const SizedBox(height: AppSpacing.sm),
                   _ShoppingModeBar(
                     item: state.focusedItem!,
@@ -296,6 +343,42 @@ class _ListDetailScreenState extends ConsumerState<ListDetailScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Future<void> _showCreateCategorySheet(
+    BuildContext context,
+    ShoppingListController controller,
+  ) async {
+    final String? name = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      useSafeArea: true,
+      builder: (BuildContext context) => const _CategoryNameSheet(),
+    );
+
+    if (name == null || name.trim().isEmpty) {
+      return;
+    }
+
+    await controller.createCategory(name);
+  }
+
+  Future<void> _showAddOrganizedItemSheet(
+    BuildContext context,
+    ShoppingListController controller,
+    List<ShoppingListCategory> categories,
+  ) {
+    return showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      useSafeArea: true,
+      builder: (BuildContext context) => _AddOrganizedItemSheet(
+        controller: controller,
+        categories: categories,
       ),
     );
   }
@@ -831,6 +914,562 @@ class _InventoryNameDialogState extends State<_InventoryNameDialog> {
       return;
     }
     Navigator.of(context).pop(name);
+  }
+}
+
+class _OrganizedActionsBar extends StatelessWidget {
+  const _OrganizedActionsBar({
+    required this.onAddItem,
+    required this.onAddCategory,
+  });
+
+  final VoidCallback onAddItem;
+  final VoidCallback onAddCategory;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: <Widget>[
+        FilledButton.tonalIcon(
+          onPressed: onAddItem,
+          icon: const Icon(Icons.add),
+          label: const Text('+ Item'),
+        ),
+        const SizedBox(width: AppSpacing.xs),
+        FilledButton.tonalIcon(
+          onPressed: onAddCategory,
+          icon: const Icon(Icons.playlist_add),
+          label: const Text('+ Category'),
+        ),
+      ],
+    );
+  }
+}
+
+class _CategoryNameSheet extends StatefulWidget {
+  const _CategoryNameSheet();
+
+  @override
+  State<_CategoryNameSheet> createState() => _CategoryNameSheetState();
+}
+
+class _CategoryNameSheetState extends State<_CategoryNameSheet> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.md + MediaQuery.viewInsetsOf(context).bottom,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text('New category', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: AppSpacing.md),
+          TextField(
+            controller: _controller,
+            autofocus: true,
+            textInputAction: TextInputAction.done,
+            decoration: const InputDecoration(
+              labelText: 'Category name',
+              hintText: 'Example: Produce',
+            ),
+            onSubmitted: (_) => _submit(),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: _submit,
+              child: const Text('Create category'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _submit() {
+    final String value = _controller.text.trim();
+    if (value.isEmpty) {
+      return;
+    }
+    Navigator.of(context).pop(value);
+  }
+}
+
+class _AddOrganizedItemSheet extends StatefulWidget {
+  const _AddOrganizedItemSheet({
+    required this.controller,
+    required this.categories,
+  });
+
+  final ShoppingListController controller;
+  final List<ShoppingListCategory> categories;
+
+  @override
+  State<_AddOrganizedItemSheet> createState() => _AddOrganizedItemSheetState();
+}
+
+class _AddOrganizedItemSheetState extends State<_AddOrganizedItemSheet> {
+  late final TextEditingController _nameController;
+  late final TextEditingController _quantityController;
+  String? _unitCode;
+  String? _selectedCategoryId;
+  bool _categoryTouchedByUser = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController();
+    _quantityController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _quantityController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final List<String> units = Unit.supportedCodes.toList(growable: false)
+      ..sort();
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.md + MediaQuery.viewInsetsOf(context).bottom,
+      ),
+      child: KeyboardAwareScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text('Add item', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: AppSpacing.md),
+            TextField(
+              controller: _nameController,
+              autofocus: true,
+              textInputAction: TextInputAction.next,
+              decoration: const InputDecoration(
+                labelText: 'Item name',
+                hintText: 'Example: Milk',
+              ),
+              onChanged: _updateSuggestedCategory,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            TextField(
+              controller: _quantityController,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                labelText: 'Quantity (optional)',
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            DropdownButtonFormField<String?>(
+              initialValue: _unitCode,
+              decoration: const InputDecoration(labelText: 'Unit (optional)'),
+              items: <DropdownMenuItem<String?>>[
+                const DropdownMenuItem<String?>(
+                  value: null,
+                  child: Text('No unit'),
+                ),
+                ...units.map(
+                  (String value) => DropdownMenuItem<String?>(
+                    value: value,
+                    child: Text(value),
+                  ),
+                ),
+              ],
+              onChanged: (String? value) {
+                setState(() {
+                  _unitCode = value;
+                });
+              },
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            DropdownButtonFormField<String?>(
+              initialValue: _selectedCategoryId,
+              decoration: const InputDecoration(labelText: 'Category'),
+              items: widget.categories
+                  .map(
+                    (ShoppingListCategory option) => DropdownMenuItem<String?>(
+                      value: option.categoryId,
+                      child: Text(option.categoryName ?? option.categoryId),
+                    ),
+                  )
+                  .toList(growable: false),
+              onChanged: (String? value) {
+                setState(() {
+                  _categoryTouchedByUser = true;
+                  _selectedCategoryId = value;
+                });
+              },
+            ),
+            const SizedBox(height: AppSpacing.md),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: _submit,
+                child: const Text('Save item'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _updateSuggestedCategory(String value) async {
+    if (_categoryTouchedByUser) {
+      return;
+    }
+    final String? suggestion =
+        await widget.controller.suggestCategoryForInput(value);
+    if (!mounted || suggestion == null) {
+      return;
+    }
+    setState(() {
+      _selectedCategoryId = suggestion;
+    });
+  }
+
+  Future<void> _submit() async {
+    final String name = _nameController.text.trim();
+    if (name.isEmpty) {
+      return;
+    }
+    final String rawQty = _quantityController.text.trim();
+    final double? quantity = rawQty.isEmpty ? null : double.tryParse(rawQty);
+
+    final bool saved = await widget.controller.addItemWithDetails(
+      name: name,
+      quantity: quantity,
+      unitCode: _unitCode,
+      categoryId: _selectedCategoryId,
+    );
+    if (saved && mounted) {
+      Navigator.of(context).pop();
+    }
+  }
+}
+
+class _OrganizedItemsView extends StatelessWidget {
+  const _OrganizedItemsView({
+    required this.state,
+    required this.controller,
+    required this.categories,
+    required this.isEditMode,
+  });
+
+  final ShoppingListState state;
+  final ShoppingListController controller;
+  final List<ShoppingListCategory> categories;
+  final bool isEditMode;
+
+  @override
+  Widget build(BuildContext context) {
+    final List<ShoppingListItem> allItems = <ShoppingListItem>[
+      ...state.pendingItems,
+      ...state.skippedItems,
+      ...state.purchasedItems,
+    ];
+    final Map<String, List<ShoppingListItem>> grouped =
+        <String, List<ShoppingListItem>>{};
+    final Map<String, String> labelByCategoryId = <String, String>{
+      for (final ShoppingListCategory c in categories)
+        c.categoryId: c.categoryName ?? c.categoryId,
+    };
+
+    for (final ShoppingListItem item in allItems) {
+      final String key = item.categoryId ?? '__uncategorized__';
+      grouped.putIfAbsent(key, () => <ShoppingListItem>[]).add(item);
+    }
+
+    final List<String> orderedKeys = <String>[
+      ...categories.map((ShoppingListCategory c) => c.categoryId),
+      ...grouped.keys.where(
+        (String key) => !categories.any(
+          (ShoppingListCategory c) => c.categoryId == key,
+        ),
+      ),
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: orderedKeys
+          .where((String key) =>
+              (grouped[key] ?? const <ShoppingListItem>[]).isNotEmpty)
+          .map(
+        (String key) {
+          final List<ShoppingListItem> items = grouped[key]!;
+          final String title = key == '__uncategorized__'
+              ? 'Uncategorized'
+              : (labelByCategoryId[key] ?? 'Uncategorized');
+
+          return Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.md),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                SectionHeader(title: title),
+                const SizedBox(height: AppSpacing.xs),
+                ...items.map(
+                  (ShoppingListItem item) => Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+                    child: _OrganizedItemCard(
+                      item: item,
+                      controller: controller,
+                      categories: categories,
+                      isEditMode: isEditMode,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ).toList(growable: false),
+    );
+  }
+}
+
+class _OrganizedItemCard extends StatelessWidget {
+  const _OrganizedItemCard({
+    required this.item,
+    required this.controller,
+    required this.categories,
+    required this.isEditMode,
+  });
+
+  final ShoppingListItem item;
+  final ShoppingListController controller;
+  final List<ShoppingListCategory> categories;
+  final bool isEditMode;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      child: AppListTile(
+        title: item.rawText,
+        subtitle: _subtitle(item),
+        trailing: PopupMenuButton<String>(
+          onSelected: (String action) async {
+            if (action == 'edit') {
+              await showModalBottomSheet<void>(
+                context: context,
+                showDragHandle: true,
+                useSafeArea: true,
+                isScrollControlled: true,
+                builder: (BuildContext context) => _EditOrganizedItemSheet(
+                  item: item,
+                  controller: controller,
+                  categories: categories,
+                ),
+              );
+            } else if (action == 'delete') {
+              await controller.softDelete(item);
+            } else if (action == 'purchase') {
+              await controller.markPurchased(item);
+            } else if (action == 'skip') {
+              await controller.markSkipped(item);
+            } else if (action == 'restore') {
+              await controller.restorePending(item);
+            }
+          },
+          itemBuilder: (_) => <PopupMenuEntry<String>>[
+            const PopupMenuItem<String>(
+              value: 'edit',
+              child: Text('Edit'),
+            ),
+            if (item.status ==
+                ShoppingListItemStatus.pending) ...<PopupMenuEntry<String>>[
+              const PopupMenuItem<String>(
+                value: 'purchase',
+                child: Text('Mark purchased'),
+              ),
+              const PopupMenuItem<String>(
+                value: 'skip',
+                child: Text('Mark skipped'),
+              ),
+            ] else
+              const PopupMenuItem<String>(
+                value: 'restore',
+                child: Text('Restore pending'),
+              ),
+            if (!isEditMode)
+              const PopupMenuItem<String>(
+                value: 'delete',
+                child: Text('Delete'),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _subtitle(ShoppingListItem item) {
+    final String qty = item.quantity == null
+        ? 'Qty -'
+        : (item.quantity! % 1 == 0
+            ? 'Qty ${item.quantity!.toInt()}'
+            : 'Qty ${item.quantity}');
+    final String unit = item.unit?.code ?? '-';
+    return '$qty • $unit • ${item.status.name}';
+  }
+}
+
+class _EditOrganizedItemSheet extends StatefulWidget {
+  const _EditOrganizedItemSheet({
+    required this.item,
+    required this.controller,
+    required this.categories,
+  });
+
+  final ShoppingListItem item;
+  final ShoppingListController controller;
+  final List<ShoppingListCategory> categories;
+
+  @override
+  State<_EditOrganizedItemSheet> createState() =>
+      _EditOrganizedItemSheetState();
+}
+
+class _EditOrganizedItemSheetState extends State<_EditOrganizedItemSheet> {
+  late final TextEditingController _quantityController;
+  String? _unitCode;
+  String? _categoryId;
+
+  @override
+  void initState() {
+    super.initState();
+    _quantityController = TextEditingController(
+      text: widget.item.quantity?.toString() ?? '',
+    );
+    _unitCode = widget.item.unit?.code;
+    _categoryId = widget.item.categoryId;
+  }
+
+  @override
+  void dispose() {
+    _quantityController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final List<String> units = Unit.supportedCodes.toList(growable: false)
+      ..sort();
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.md + MediaQuery.viewInsetsOf(context).bottom,
+      ),
+      child: KeyboardAwareScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text('Edit item', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: AppSpacing.md),
+            TextField(
+              controller: _quantityController,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(labelText: 'Quantity'),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            DropdownButtonFormField<String?>(
+              initialValue: _unitCode,
+              decoration: const InputDecoration(labelText: 'Unit'),
+              items: <DropdownMenuItem<String?>>[
+                const DropdownMenuItem<String?>(
+                  value: null,
+                  child: Text('No unit'),
+                ),
+                ...units.map(
+                  (String value) => DropdownMenuItem<String?>(
+                    value: value,
+                    child: Text(value),
+                  ),
+                ),
+              ],
+              onChanged: (String? value) {
+                setState(() {
+                  _unitCode = value;
+                });
+              },
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            DropdownButtonFormField<String?>(
+              initialValue: _categoryId,
+              decoration: const InputDecoration(labelText: 'Category'),
+              items: widget.categories
+                  .map(
+                    (ShoppingListCategory category) =>
+                        DropdownMenuItem<String?>(
+                      value: category.categoryId,
+                      child: Text(category.categoryName ?? category.categoryId),
+                    ),
+                  )
+                  .toList(growable: false),
+              onChanged: (String? value) {
+                setState(() {
+                  _categoryId = value;
+                });
+              },
+            ),
+            const SizedBox(height: AppSpacing.md),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: _submit,
+                child: const Text('Save changes'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _submit() async {
+    final String rawQty = _quantityController.text.trim();
+    final double? quantity = rawQty.isEmpty ? null : double.tryParse(rawQty);
+    await widget.controller.updateItemQuantityAndUnit(
+      item: widget.item,
+      quantity: quantity,
+      unitCode: _unitCode,
+      categoryId: _categoryId,
+    );
+    if (mounted) {
+      Navigator.of(context).pop();
+    }
   }
 }
 

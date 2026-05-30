@@ -9,6 +9,7 @@ import 'package:cartalyst_mobile/features/products/domain/entities/product.dart'
 import 'package:cartalyst_mobile/features/products/domain/entities/product_alias.dart';
 import 'package:cartalyst_mobile/features/products/domain/repositories/product_repository.dart';
 import 'package:cartalyst_mobile/features/shopping_list/application/shopping_list_controller.dart';
+import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list_category.dart';
 import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list.dart';
 import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list_item.dart';
 import 'package:cartalyst_mobile/features/shopping_list/domain/repositories/shopping_list_repository.dart';
@@ -166,6 +167,67 @@ void main() {
 
     expect(shoppingListRepository.deletedListIds, contains(list.id));
   });
+
+  testWidgets('organized detail groups items by category and uncategorized',
+      (WidgetTester tester) async {
+    final ShoppingList list = _sampleList(
+      name: 'Organized list',
+      listType: ShoppingListType.organized,
+    );
+    shoppingListRepository.seedList(list);
+    shoppingListRepository.seedCategory(
+      ShoppingListCategory(
+        id: 'slc-dairy',
+        shoppingListId: list.id,
+        categoryId: 'cat-dairy',
+        sortOrder: 0,
+        createdAt: DateTime(2026),
+        updatedAt: DateTime(2026),
+        categoryName: 'Dairy',
+      ),
+    );
+    shoppingListRepository.seedCategory(
+      ShoppingListCategory(
+        id: 'slc-produce',
+        shoppingListId: list.id,
+        categoryId: 'cat-produce',
+        sortOrder: 1,
+        createdAt: DateTime(2026),
+        updatedAt: DateTime(2026),
+        categoryName: 'Produce',
+      ),
+    );
+    shoppingListRepository.seedItem(
+      _sampleItem(
+        id: 'item-1',
+        listId: list.id,
+        name: 'Milk',
+        categoryId: 'cat-dairy',
+      ),
+    );
+    shoppingListRepository.seedItem(
+      _sampleItem(
+        id: 'item-2',
+        listId: list.id,
+        name: 'Mystery',
+      ),
+    );
+
+    await _pumpListDetail(
+      tester,
+      listId: list.id,
+      shoppingListRepository: shoppingListRepository,
+      productRepository: productRepository,
+      inventoryRepository: inventoryRepository,
+    );
+
+    expect(find.text('+ Item'), findsOneWidget);
+    expect(find.text('+ Category'), findsOneWidget);
+    expect(find.text('Dairy'), findsOneWidget);
+    expect(find.text('Uncategorized'), findsOneWidget);
+    expect(find.text('Milk'), findsOneWidget);
+    expect(find.text('Mystery'), findsOneWidget);
+  });
 }
 
 Future<void> _pumpListDetail(
@@ -196,11 +258,16 @@ Future<void> _pumpListDetail(
 ShoppingList _sampleList({
   required String name,
   String? inventoryId,
+  ShoppingListType listType = ShoppingListType.simple,
 }) {
   return ShoppingList(
     id: 'list-1',
     inventoryId: inventoryId,
     name: name,
+    listType: listType,
+    routingMode: listType == ShoppingListType.organized
+        ? ShoppingListRoutingMode.inventoryCategories
+        : ShoppingListRoutingMode.none,
     status: ShoppingListStatus.active,
     createdAt: DateTime(2026),
     updatedAt: DateTime(2026),
@@ -213,10 +280,12 @@ ShoppingListItem _sampleItem({
   required String id,
   required String listId,
   required String name,
+  String? categoryId,
 }) {
   return ShoppingListItem(
     id: id,
     shoppingListId: listId,
+    categoryId: categoryId,
     rawText: name,
     status: ShoppingListItemStatus.pending,
     source: ShoppingListItemSource.manual,
@@ -241,6 +310,7 @@ class _FakeShoppingListRepository extends ShoppingListRepository {
   final List<String> deletedListIds = <String>[];
   final Map<String, Set<String>> _inventoryLinksByList =
       <String, Set<String>>{};
+  final List<ShoppingListCategory> _categories = <ShoppingListCategory>[];
 
   void seedList(ShoppingList list) {
     lists.add(list);
@@ -254,6 +324,17 @@ class _FakeShoppingListRepository extends ShoppingListRepository {
 
   void seedItem(ShoppingListItem item) {
     _items.add(item);
+  }
+
+  void seedCategory(ShoppingListCategory category) {
+    _categories.add(category);
+  }
+
+  List<ShoppingListItem> itemsForList(String shoppingListId) {
+    return _items
+        .where((ShoppingListItem item) => item.shoppingListId == shoppingListId)
+        .where((ShoppingListItem item) => item.deletedAt == null)
+        .toList(growable: false);
   }
 
   @override
@@ -380,6 +461,41 @@ class _FakeShoppingListRepository extends ShoppingListRepository {
 
   @override
   Future<void> deleteDraft(String shoppingListId) async {}
+
+  @override
+  Stream<List<ShoppingListCategory>> watchCategoriesForList(
+    String shoppingListId,
+  ) {
+    return Stream<List<ShoppingListCategory>>.value(
+      _categories
+          .where((ShoppingListCategory c) => c.shoppingListId == shoppingListId)
+          .toList(growable: false),
+    );
+  }
+
+  @override
+  Future<void> ensureUncategorizedCategoryForList(String shoppingListId) async {
+    final bool exists = _categories.any(
+      (ShoppingListCategory category) =>
+          category.shoppingListId == shoppingListId &&
+          (category.categoryName ?? '').toLowerCase() == 'uncategorized',
+    );
+    if (exists) {
+      return;
+    }
+    final DateTime now = DateTime.now();
+    _categories.add(
+      ShoppingListCategory(
+        id: 'slc-uncat',
+        shoppingListId: shoppingListId,
+        categoryId: 'cat-uncategorized',
+        sortOrder: _categories.length,
+        createdAt: now,
+        updatedAt: now,
+        categoryName: 'Uncategorized',
+      ),
+    );
+  }
 
   void _emitAll() {
     final List<ShoppingList> visible = lists

@@ -183,6 +183,8 @@ class LocalShoppingListRepository implements ShoppingListRepository {
               createdAt: rowCategory.createdAt,
               updatedAt: rowCategory.updatedAt,
               deletedAt: rowCategory.deletedAt,
+              categoryName:
+                  row.readTable(_database.shoppingListsDao.categories).name,
             );
           }).toList(growable: false),
         );
@@ -259,6 +261,57 @@ class LocalShoppingListRepository implements ShoppingListRepository {
         updatedAt: Value(now),
       ),
     );
+  }
+
+  @override
+  Future<String?> createCategoryForList({
+    required String shoppingListId,
+    required String name,
+  }) async {
+    final String trimmed = name.trim();
+    if (trimmed.isEmpty) {
+      return null;
+    }
+
+    final List<TypedResult> existing = await _database.shoppingListsDao
+        .watchCategoriesForList(shoppingListId)
+        .first;
+    final String normalized = trimmed.toLowerCase();
+    for (final TypedResult row in existing) {
+      final Category categoryRow =
+          row.readTable(_database.shoppingListsDao.categories);
+      if (categoryRow.name.trim().toLowerCase() == normalized) {
+        return categoryRow.id;
+      }
+    }
+
+    final DateTime now = DateTime.now();
+    final String categoryId = _uuid.v4();
+
+    await _database.pantryDao.upsertCategory(
+      CategoriesCompanion.insert(
+        id: categoryId,
+        name: trimmed,
+        createdAt: Value(now),
+        updatedAt: Value(now),
+        deletedAt: const Value(null),
+        syncStatus: const Value('pending_sync'),
+        version: const Value(1),
+      ),
+    );
+
+    await _database.shoppingListsDao.upsertShoppingListCategory(
+      ShoppingListCategoriesCompanion.insert(
+        id: _uuid.v4(),
+        shoppingListId: shoppingListId,
+        categoryId: categoryId,
+        sortOrder: Value(existing.length),
+        createdAt: Value(now),
+        updatedAt: Value(now),
+      ),
+    );
+
+    return categoryId;
   }
 
   Map<String, Object?> _draftItemToJson(domain.ShoppingListItem item) {

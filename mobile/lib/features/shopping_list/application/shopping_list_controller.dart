@@ -12,6 +12,7 @@ import 'package:cartalyst_mobile/features/products/domain/entities/product_alias
 import 'package:cartalyst_mobile/features/products/domain/repositories/product_repository.dart';
 import 'package:cartalyst_mobile/features/products/domain/services/product_suggestion_service.dart';
 import 'package:cartalyst_mobile/features/shopping_list/application/shopping_list_state.dart';
+import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list_category.dart';
 import 'package:cartalyst_mobile/features/shopping_list/data/repositories/local_shopping_list_repository.dart';
 import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list.dart';
 import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list_item.dart';
@@ -73,6 +74,10 @@ class ShoppingListController extends FamilyNotifier<ShoppingListState, String> {
   List<Product> _products = const <Product>[];
   List<ProductAlias> _aliases = const <ProductAlias>[];
   List<ProductUsageStat> _usageStats = const <ProductUsageStat>[];
+  final Map<String, String> _manualCategoryPreferenceByProductId =
+      <String, String>{};
+  final Map<String, String> _manualCategoryPreferenceByItemName =
+      <String, String>{};
 
   @override
   ShoppingListState build(String arg) {
@@ -346,6 +351,125 @@ class ShoppingListController extends FamilyNotifier<ShoppingListState, String> {
     return addFromQuickAdd(forceCustom: true);
   }
 
+  Future<String?> createCategory(String name) {
+    return _shoppingListRepository.createCategoryForList(
+      shoppingListId: arg,
+      name: name,
+    );
+  }
+
+  Future<String?> suggestCategoryForInput(String rawInput) async {
+    final String trimmed = rawInput.trim();
+    if (trimmed.isEmpty) {
+      return null;
+    }
+
+    final ProductSuggestion fallbackSuggestion = _suggestionService
+        .suggest(
+          rawInput: trimmed,
+          availableProducts: _products,
+          aliases: _aliases,
+          usageStats: _usageStats,
+          maxResults: 1,
+        )
+        .first;
+    final Product? matchedProduct = _resolveMatchedProduct(
+      fallbackSuggestion,
+      fallbackSuggestion,
+    );
+
+    return _resolveSuggestedCategoryId(
+      rawInput: trimmed,
+      matchedProduct: matchedProduct,
+    );
+  }
+
+  Future<bool> addItemWithDetails({
+    required String name,
+    double? quantity,
+    String? unitCode,
+    String? categoryId,
+  }) async {
+    final String trimmed = name.trim();
+    if (trimmed.isEmpty) {
+      return false;
+    }
+
+    final ProductSuggestion fallbackSuggestion = _suggestionService
+        .suggest(
+          rawInput: trimmed,
+          availableProducts: _products,
+          aliases: _aliases,
+          usageStats: _usageStats,
+          maxResults: 1,
+        )
+        .first;
+    final Product? matchedProduct = _resolveMatchedProduct(
+      fallbackSuggestion,
+      fallbackSuggestion,
+    );
+
+    final String? resolvedCategoryId = categoryId ??
+        await _resolveSuggestedCategoryId(
+          rawInput: trimmed,
+          matchedProduct: matchedProduct,
+        );
+
+    if (resolvedCategoryId != null) {
+      _rememberManualCategoryChoice(
+        categoryId: resolvedCategoryId,
+        rawInput: trimmed,
+        productId: matchedProduct?.id,
+      );
+    }
+
+    final DateTime now = DateTime.now();
+    final ShoppingListItem item = ShoppingListItem(
+      id: _uuid.v4(),
+      shoppingListId: arg,
+      productId: matchedProduct?.id,
+      categoryId: resolvedCategoryId,
+      rawText: matchedProduct?.canonicalName ?? trimmed,
+      quantity: quantity,
+      unit: _toSupportedUnit(unitCode),
+      status: ShoppingListItemStatus.pending,
+      source: matchedProduct == null
+          ? ShoppingListItemSource.manual
+          : ShoppingListItemSource.suggestion,
+      priorityScore:
+          matchedProduct == null ? 0.2 : fallbackSuggestion.confidenceScore,
+      createdAt: now,
+      updatedAt: now,
+      syncStatus: 'pending_sync',
+      version: 1,
+    );
+
+    return _saveItem(item);
+  }
+
+  Future<bool> reassignItemCategory(
+    ShoppingListItem item,
+    String? categoryId,
+  ) {
+    final DateTime now = DateTime.now();
+    if (categoryId != null) {
+      _rememberManualCategoryChoice(
+        categoryId: categoryId,
+        rawInput: item.rawText,
+        productId: item.productId,
+      );
+    }
+    return _saveItem(
+      item.copyWith(
+        categoryId: categoryId,
+        updatedAt: now,
+        version: item.version + 1,
+        syncStatus: 'pending_sync',
+      ),
+      undoItem: item,
+    );
+  }
+
   Future<bool> renameList(ShoppingList list, String newName) async {
     final String trimmed = newName.trim();
     if (trimmed.isEmpty) {
@@ -400,13 +524,22 @@ class ShoppingListController extends FamilyNotifier<ShoppingListState, String> {
     required ShoppingListItem item,
     double? quantity,
     String? unitCode,
+    String? categoryId,
   }) {
     final DateTime now = DateTime.now();
     final Unit? unit = _toSupportedUnit(unitCode);
+    if (categoryId != null) {
+      _rememberManualCategoryChoice(
+        categoryId: categoryId,
+        rawInput: item.rawText,
+        productId: item.productId,
+      );
+    }
     return _saveItem(
       item.copyWith(
         quantity: quantity,
         unit: unit,
+        categoryId: categoryId ?? item.categoryId,
         updatedAt: now,
         version: item.version + 1,
         syncStatus: 'pending_sync',
@@ -536,6 +669,79 @@ class ShoppingListController extends FamilyNotifier<ShoppingListState, String> {
           ),
         )
         .toList(growable: false);
+  }
+
+  Future<String?> _resolveSuggestedCategoryId({
+    required String rawInput,
+    required Product? matchedProduct,
+  }) async {
+    final List<ShoppingListCategory> categories =
+        await _shoppingListRepository.watchCategoriesForList(arg).first;
+    final Map<String, String> nameToCategoryId = <String, String>{};
+    String? uncategorizedId;
+
+    for (final ShoppingListCategory category in categories) {
+      final String? name = category.categoryName;
+      if (name == null) {
+        continue;
+      }
+      final String normalized = name.trim().toLowerCase();
+      nameToCategoryId[normalized] = category.categoryId;
+      if (normalized == 'uncategorized') {
+        uncategorizedId = category.categoryId;
+      }
+    }
+
+    final String normalizedInput = rawInput.trim().toLowerCase();
+    final String? preferredByProduct = matchedProduct == null
+        ? null
+        : _manualCategoryPreferenceByProductId[matchedProduct.id];
+    if (preferredByProduct != null) {
+      return preferredByProduct;
+    }
+
+    final String? preferredByName =
+        _manualCategoryPreferenceByItemName[normalizedInput];
+    if (preferredByName != null) {
+      return preferredByName;
+    }
+
+    final String? fromProductDefault = matchedProduct == null
+        ? null
+        : nameToCategoryId[matchedProduct.category.trim().toLowerCase()];
+    if (fromProductDefault != null) {
+      return fromProductDefault;
+    }
+
+    if (uncategorizedId != null) {
+      return uncategorizedId;
+    }
+
+    await _shoppingListRepository.ensureUncategorizedCategoryForList(arg);
+    final List<ShoppingListCategory> refreshed =
+        await _shoppingListRepository.watchCategoriesForList(arg).first;
+    for (final ShoppingListCategory category in refreshed) {
+      final String? name = category.categoryName;
+      if (name != null && name.trim().toLowerCase() == 'uncategorized') {
+        return category.categoryId;
+      }
+    }
+
+    return null;
+  }
+
+  void _rememberManualCategoryChoice({
+    required String categoryId,
+    required String rawInput,
+    String? productId,
+  }) {
+    final String normalized = rawInput.trim().toLowerCase();
+    if (normalized.isNotEmpty) {
+      _manualCategoryPreferenceByItemName[normalized] = categoryId;
+    }
+    if (productId != null && productId.trim().isNotEmpty) {
+      _manualCategoryPreferenceByProductId[productId] = categoryId;
+    }
   }
 
   Product? _resolveMatchedProduct(
