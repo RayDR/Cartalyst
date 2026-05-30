@@ -1,4 +1,5 @@
 import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory_item.dart';
+import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory_category.dart';
 import 'package:cartalyst_mobile/features/products/domain/entities/product.dart';
 
 class InventoryNameSuggestion {
@@ -16,6 +17,7 @@ class InventoryDetailState {
     required this.isBusy,
     required this.products,
     required this.nameSuggestions,
+    required this.categories,
     required this.inStockItems,
     required this.lowItems,
     required this.finishedItems,
@@ -29,6 +31,7 @@ class InventoryDetailState {
   const InventoryDetailState.initial()
       : isBusy = false,
         products = const <Product>[],
+        categories = const <InventoryCategory>[],
         nameSuggestions = const <InventoryNameSuggestion>[],
         inStockItems = const <InventoryItem>[],
         lowItems = const <InventoryItem>[],
@@ -42,6 +45,7 @@ class InventoryDetailState {
   final bool isBusy;
   final List<Product> products;
   final List<InventoryNameSuggestion> nameSuggestions;
+  final List<InventoryCategory> categories;
   final List<InventoryItem> inStockItems;
   final List<InventoryItem> lowItems;
   final List<InventoryItem> finishedItems;
@@ -60,6 +64,7 @@ class InventoryDetailState {
     bool? isBusy,
     List<Product>? products,
     List<InventoryNameSuggestion>? nameSuggestions,
+    List<InventoryCategory>? categories,
     List<InventoryItem>? inStockItems,
     List<InventoryItem>? lowItems,
     List<InventoryItem>? finishedItems,
@@ -76,6 +81,7 @@ class InventoryDetailState {
       isBusy: isBusy ?? this.isBusy,
       products: products ?? this.products,
       nameSuggestions: nameSuggestions ?? this.nameSuggestions,
+      categories: categories ?? this.categories,
       inStockItems: inStockItems ?? this.inStockItems,
       lowItems: lowItems ?? this.lowItems,
       finishedItems: finishedItems ?? this.finishedItems,

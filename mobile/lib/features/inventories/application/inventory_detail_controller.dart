@@ -5,6 +5,8 @@ import 'package:cartalyst_mobile/features/inventories/application/inventories_co
     show inventoryRepositoryProvider;
 import 'package:cartalyst_mobile/features/inventories/application/inventory_detail_state.dart';
 import 'package:cartalyst_mobile/features/inventories/domain/repositories/inventory_repository.dart';
+import 'package:cartalyst_mobile/features/pantry/domain/entities/category.dart';
+import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory_category.dart';
 import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory_event.dart';
 import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory_item.dart';
 import 'package:cartalyst_mobile/features/products/domain/entities/product.dart';
@@ -31,9 +33,14 @@ class InventoryDetailController
   List<ProductAlias> _aliases = const <ProductAlias>[];
   List<ProductUsageStat> _usageStats = const <ProductUsageStat>[];
   Map<String, String> _customNamesByNormalized = const <String, String>{};
+  final Map<String, String> _manualCategoryPreferenceByProductId =
+      <String, String>{};
+  final Map<String, String> _manualCategoryPreferenceByName =
+      <String, String>{};
 
   StreamSubscription<List<InventoryItem>>? _itemsSubscription;
   StreamSubscription<List<Product>>? _productsSubscription;
+  StreamSubscription<List<InventoryCategory>>? _categoriesSubscription;
 
   @override
   InventoryDetailState build(String arg) {
@@ -45,6 +52,7 @@ class InventoryDetailController
     ref.onDispose(() {
       _itemsSubscription?.cancel();
       _productsSubscription?.cancel();
+      _categoriesSubscription?.cancel();
     });
 
     _itemsSubscription =
@@ -56,6 +64,11 @@ class InventoryDetailController
       _loadAliases();
       state = state.copyWith(products: prods);
       _refreshNameSuggestions();
+    });
+
+    _categoriesSubscription =
+        _repository.watchInventoryCategories(arg).listen((categories) {
+      state = state.copyWith(categories: categories);
     });
 
     return const InventoryDetailState.initial();
@@ -106,19 +119,57 @@ class InventoryDetailController
       return;
     }
 
-    final double? quantity = double.tryParse(state.quantityInput.trim());
-    final Unit? unit = _safeUnit(state.unitCode);
-    final DateTime now = DateTime.now();
+    await addItemWithDetails(
+      name: trimmedName,
+      quantity: double.tryParse(state.quantityInput.trim()),
+      unitCode: state.unitCode,
+      productId: productId,
+    );
 
+    state = state.copyWith(
+      nameInput: '',
+      clearSelectedProduct: true,
+      quantityInput: '',
+      clearUnitCode: true,
+      nameSuggestions: const <InventoryNameSuggestion>[],
+      message: 'Item added.',
+    );
+  }
+
+  Future<void> addItemWithDetails({
+    required String name,
+    double? quantity,
+    String? unitCode,
+    String? productId,
+    String? inventoryCategoryId,
+  }) async {
+    final String trimmedName = name.trim();
+    if (trimmedName.isEmpty) {
+      state = state.copyWith(message: 'Item name is required.');
+      return;
+    }
+
+    final String? resolvedProductId = productId?.trim().isEmpty == true
+        ? null
+        : (productId ?? _resolveExactMatchedProductId(trimmedName));
+    final Unit? unit = _safeUnit(unitCode);
+    final String resolvedCategoryId = inventoryCategoryId ??
+        await _resolveSuggestedCategoryId(
+          rawName: trimmedName,
+          productId: resolvedProductId,
+        );
+
+    final DateTime now = DateTime.now();
     final InventoryItem item = InventoryItem(
       id: _uuid.v4(),
       inventoryId: arg,
-      productId: productId,
-      rawName: productId == null ? trimmedName : null,
+      inventoryCategoryId: resolvedCategoryId,
+      productId: resolvedProductId,
+      rawName: resolvedProductId == null ? trimmedName : null,
       quantityEstimated: quantity,
       unit: unit,
       status: InventoryItemStatus.inStock,
-      confidenceScore: productId == null ? 0.5 : 0.9,
+      confidenceScore: resolvedProductId == null ? 0.5 : 0.9,
       lastConfirmedAt: now,
       createdAt: now,
       updatedAt: now,
@@ -135,16 +186,58 @@ class InventoryDetailController
     );
 
     await _saveItemAndEvent(item: item, event: event);
-
+    _rememberCategoryChoice(
+      categoryId: resolvedCategoryId,
+      rawName: trimmedName,
+      productId: resolvedProductId,
+    );
     _registerCustomName(item.rawName);
+  }
 
-    state = state.copyWith(
-      nameInput: '',
-      clearSelectedProduct: true,
-      quantityInput: '',
-      clearUnitCode: true,
-      nameSuggestions: const <InventoryNameSuggestion>[],
-      message: 'Item added.',
+  Future<String?> createCategory(String name) async {
+    final String trimmed = name.trim();
+    if (trimmed.isEmpty) {
+      return null;
+    }
+
+    final DateTime now = DateTime.now();
+    final String categoryId = _uuid.v4();
+    final String inventoryCategoryId = _uuid.v4();
+    final int sortOrder = state.categories.length;
+
+    await _repository.saveCategory(
+      Category(
+        id: categoryId,
+        name: trimmed,
+        createdAt: now,
+        updatedAt: now,
+        syncStatus: 'pending_sync',
+        version: 1,
+      ),
+    );
+
+    await _repository.saveInventoryCategory(
+      InventoryCategory(
+        id: inventoryCategoryId,
+        inventoryId: arg,
+        categoryId: categoryId,
+        name: trimmed,
+        sortOrder: sortOrder,
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
+
+    return inventoryCategoryId;
+  }
+
+  Future<String> suggestCategoryForName(
+    String rawName, {
+    String? productId,
+  }) {
+    return _resolveSuggestedCategoryId(
+      rawName: rawName,
+      productId: productId,
     );
   }
 
@@ -257,6 +350,13 @@ class InventoryDetailController
         occurredAt: now,
       ),
     );
+    if (inventoryCategoryId != null) {
+      _rememberCategoryChoice(
+        categoryId: inventoryCategoryId,
+        rawName: item.rawName ?? '',
+        productId: item.productId,
+      );
+    }
   }
 
   Future<void> softDelete(InventoryItem item) async {
@@ -512,6 +612,59 @@ class InventoryDetailController
         .replaceAll(RegExp(r'[^a-z0-9\s\.]'), ' ')
         .replaceAll(RegExp(r'\s+'), ' ')
         .trim();
+  }
+
+  Future<String> _resolveSuggestedCategoryId({
+    required String rawName,
+    String? productId,
+  }) async {
+    final String normalizedName = _normalize(rawName);
+    if (productId != null &&
+        _manualCategoryPreferenceByProductId[productId] != null) {
+      return _manualCategoryPreferenceByProductId[productId]!;
+    }
+    if (normalizedName.isNotEmpty &&
+        _manualCategoryPreferenceByName[normalizedName] != null) {
+      return _manualCategoryPreferenceByName[normalizedName]!;
+    }
+
+    final String? candidateProductId =
+        productId ?? _resolveExactMatchedProductId(rawName);
+    if (candidateProductId != null) {
+      Product? product;
+      for (final Product value in _products) {
+        if (value.id == candidateProductId) {
+          product = value;
+          break;
+        }
+      }
+      if (product != null) {
+        final String normalizedProductCategory =
+            _normalize(product.category).toLowerCase();
+        for (final InventoryCategory category in state.categories) {
+          if (_normalize(category.name).toLowerCase() ==
+              normalizedProductCategory) {
+            return category.id;
+          }
+        }
+      }
+    }
+
+    return _repository.ensureUncategorizedInventoryCategory(arg);
+  }
+
+  void _rememberCategoryChoice({
+    required String categoryId,
+    required String rawName,
+    String? productId,
+  }) {
+    final String normalizedName = _normalize(rawName);
+    if (normalizedName.isNotEmpty) {
+      _manualCategoryPreferenceByName[normalizedName] = categoryId;
+    }
+    if (productId != null && productId.trim().isNotEmpty) {
+      _manualCategoryPreferenceByProductId[productId] = categoryId;
+    }
   }
 
   InventoryEvent _buildEvent({
