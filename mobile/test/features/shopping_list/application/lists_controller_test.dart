@@ -5,8 +5,8 @@ import 'package:cartalyst_mobile/features/shopping_list/application/lists_state.
 import 'package:cartalyst_mobile/features/shopping_list/application/shopping_list_controller.dart'
     show shoppingListRepositoryProvider, uuidProvider;
 import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list.dart';
-import 'package:cartalyst_mobile/features/shopping_list/domain/repositories/shopping_list_repository.dart';
 import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list_item.dart';
+import 'package:cartalyst_mobile/features/shopping_list/domain/repositories/shopping_list_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:uuid/uuid.dart';
@@ -49,7 +49,8 @@ void main() {
     });
 
     test('createList adds a list and returns its id', () async {
-      final ListsController controller = container.read(listsControllerProvider.notifier);
+      final ListsController controller =
+          container.read(listsControllerProvider.notifier);
 
       final String? newId = await controller.createList('Weekly groceries');
 
@@ -65,7 +66,8 @@ void main() {
     });
 
     test('createList trims whitespace', () async {
-      final ListsController controller = container.read(listsControllerProvider.notifier);
+      final ListsController controller =
+          container.read(listsControllerProvider.notifier);
       await controller.createList('  Pantry run  ');
 
       await Future<void>.delayed(const Duration(milliseconds: 20));
@@ -74,8 +76,21 @@ void main() {
       expect(state.lists.first.name, 'Pantry run');
     });
 
+    test('createList can start linked to an inventory', () async {
+      final ListsController controller =
+          container.read(listsControllerProvider.notifier);
+
+      await controller.createList('Weekly groceries', inventoryId: 'inv-home');
+
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+
+      final ListsState state = container.read(listsControllerProvider);
+      expect(state.lists.first.inventoryId, 'inv-home');
+    });
+
     test('createList returns null for empty name', () async {
-      final ListsController controller = container.read(listsControllerProvider.notifier);
+      final ListsController controller =
+          container.read(listsControllerProvider.notifier);
       final String? id = await controller.createList('   ');
       expect(id, isNull);
 
@@ -85,12 +100,14 @@ void main() {
     });
 
     test('renameList updates list name', () async {
-      final ListsController controller = container.read(listsControllerProvider.notifier);
+      final ListsController controller =
+          container.read(listsControllerProvider.notifier);
       await controller.createList('Old name');
 
       await waitForLists();
 
-      final ShoppingList list = container.read(listsControllerProvider).lists.first;
+      final ShoppingList list =
+          container.read(listsControllerProvider).lists.first;
       await controller.renameList(list, 'New name');
 
       await Future<void>.delayed(const Duration(milliseconds: 20));
@@ -100,12 +117,14 @@ void main() {
     });
 
     test('deleteList soft-deletes and sets lastDeletedList', () async {
-      final ListsController controller = container.read(listsControllerProvider.notifier);
+      final ListsController controller =
+          container.read(listsControllerProvider.notifier);
       await controller.createList('To delete');
 
       await waitForLists();
 
-      final ShoppingList list = container.read(listsControllerProvider).lists.first;
+      final ShoppingList list =
+          container.read(listsControllerProvider).lists.first;
       await controller.deleteList(list);
 
       await Future<void>.delayed(const Duration(milliseconds: 20));
@@ -119,12 +138,14 @@ void main() {
     });
 
     test('restoreLastDeleted restores a soft-deleted list', () async {
-      final ListsController controller = container.read(listsControllerProvider.notifier);
+      final ListsController controller =
+          container.read(listsControllerProvider.notifier);
       await controller.createList('Restorable');
 
       await waitForLists();
 
-      final ShoppingList list = container.read(listsControllerProvider).lists.first;
+      final ShoppingList list =
+          container.read(listsControllerProvider).lists.first;
       await controller.deleteList(list);
 
       await Future<void>.delayed(const Duration(milliseconds: 20));
@@ -147,37 +168,43 @@ void main() {
       // Initialize the controller so it subscribes to the stream before we emit.
       container.read(listsControllerProvider);
 
-      final DateTime t1 = DateTime(2026, 1, 1);
+      final DateTime t1 = DateTime(2026);
       final DateTime t2 = DateTime(2026, 1, 3);
       final DateTime t3 = DateTime(2026, 1, 2);
 
-      repository.seedList(ShoppingList(
-        id: 'a',
-        name: 'List A',
-        status: ShoppingListStatus.active,
-        createdAt: t1,
-        updatedAt: t1,
-        syncStatus: 'local_only',
-        version: 1,
-      ));
-      repository.seedList(ShoppingList(
-        id: 'b',
-        name: 'List B',
-        status: ShoppingListStatus.active,
-        createdAt: t2,
-        updatedAt: t2,
-        syncStatus: 'local_only',
-        version: 1,
-      ));
-      repository.seedList(ShoppingList(
-        id: 'c',
-        name: 'List C',
-        status: ShoppingListStatus.active,
-        createdAt: t3,
-        updatedAt: t3,
-        syncStatus: 'local_only',
-        version: 1,
-      ));
+      repository.seedList(
+        ShoppingList(
+          id: 'a',
+          name: 'List A',
+          status: ShoppingListStatus.active,
+          createdAt: t1,
+          updatedAt: t1,
+          syncStatus: 'local_only',
+          version: 1,
+        ),
+      );
+      repository.seedList(
+        ShoppingList(
+          id: 'b',
+          name: 'List B',
+          status: ShoppingListStatus.active,
+          createdAt: t2,
+          updatedAt: t2,
+          syncStatus: 'local_only',
+          version: 1,
+        ),
+      );
+      repository.seedList(
+        ShoppingList(
+          id: 'c',
+          name: 'List C',
+          status: ShoppingListStatus.active,
+          createdAt: t3,
+          updatedAt: t3,
+          syncStatus: 'local_only',
+          version: 1,
+        ),
+      );
       repository.emitLists();
 
       await Future<void>.delayed(const Duration(milliseconds: 20));
@@ -191,12 +218,14 @@ void main() {
     });
 
     test('linkToInventory sets inventoryId on list', () async {
-      final ListsController controller = container.read(listsControllerProvider.notifier);
+      final ListsController controller =
+          container.read(listsControllerProvider.notifier);
       await controller.createList('Linked list');
 
       await waitForLists();
 
-      final ShoppingList list = container.read(listsControllerProvider).lists.first;
+      final ShoppingList list =
+          container.read(listsControllerProvider).lists.first;
       expect(list.inventoryId, isNull);
 
       await controller.linkToInventory(list, 'inv-123');
@@ -207,19 +236,59 @@ void main() {
       expect(state.lists.first.inventoryId, 'inv-123');
     });
 
+    test('linkToInventory can change an existing inventory link', () async {
+      final ListsController controller =
+          container.read(listsControllerProvider.notifier);
+      await controller.createList('Linked list', inventoryId: 'inv-123');
+
+      await waitForLists();
+
+      final ShoppingList list =
+          container.read(listsControllerProvider).lists.first;
+      expect(list.inventoryId, 'inv-123');
+
+      await controller.linkToInventory(list, 'inv-456');
+
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+
+      final ListsState state = container.read(listsControllerProvider);
+      expect(state.lists.first.inventoryId, 'inv-456');
+    });
+
+    test('unlinkFromInventory clears inventoryId on list', () async {
+      final ListsController controller =
+          container.read(listsControllerProvider.notifier);
+      await controller.createList('Linked list', inventoryId: 'inv-123');
+
+      await waitForLists();
+
+      final ShoppingList list =
+          container.read(listsControllerProvider).lists.first;
+      expect(list.inventoryId, 'inv-123');
+
+      await controller.unlinkFromInventory(list);
+
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+
+      final ListsState state = container.read(listsControllerProvider);
+      expect(state.lists.first.inventoryId, isNull);
+    });
+
     test('recentLists returns at most 5 lists', () async {
       for (int i = 1; i <= 7; i++) {
         // Initialize the controller before seeding so it subscribes to the stream.
         container.read(listsControllerProvider);
-        repository.seedList(ShoppingList(
-          id: 'list-$i',
-          name: 'List $i',
-          status: ShoppingListStatus.active,
-          createdAt: DateTime(2026, 1, i),
-          updatedAt: DateTime(2026, 1, i),
-          syncStatus: 'local_only',
-          version: 1,
-        ));
+        repository.seedList(
+          ShoppingList(
+            id: 'list-$i',
+            name: 'List $i',
+            status: ShoppingListStatus.active,
+            createdAt: DateTime(2026, 1, i),
+            updatedAt: DateTime(2026, 1, i),
+            syncStatus: 'local_only',
+            version: 1,
+          ),
+        );
       }
       repository.emitLists();
 
@@ -243,8 +312,8 @@ class FakeShoppingListRepository implements ShoppingListRepository {
   final StreamController<List<ShoppingList>> _activeListsController =
       StreamController<List<ShoppingList>>.broadcast();
 
-  final Map<String, StreamController<List<ShoppingListItem>>> _itemsControllers =
-      <String, StreamController<List<ShoppingListItem>>>{};
+  final Map<String, StreamController<List<ShoppingListItem>>>
+      _itemsControllers = <String, StreamController<List<ShoppingListItem>>>{};
 
   final List<ShoppingList> _lists = <ShoppingList>[];
   final List<ShoppingListItem> _items = <ShoppingListItem>[];
@@ -327,18 +396,25 @@ class FakeShoppingListRepository implements ShoppingListRepository {
   }
 
   void _emitAllLists() {
-    final List<ShoppingList> nonDeleted =
-        _lists.where((ShoppingList l) => l.deletedAt == null).toList()
-          ..sort((ShoppingList a, ShoppingList b) => b.updatedAt.compareTo(a.updatedAt));
+    final List<ShoppingList> nonDeleted = _lists
+        .where((ShoppingList l) => l.deletedAt == null)
+        .toList()
+      ..sort(
+        (ShoppingList a, ShoppingList b) => b.updatedAt.compareTo(a.updatedAt),
+      );
     _allListsController.add(nonDeleted);
   }
 
   void _emitActiveLists() {
     final List<ShoppingList> active = _lists
-        .where((ShoppingList l) =>
-            l.deletedAt == null && l.status == ShoppingListStatus.active)
+        .where(
+          (ShoppingList l) =>
+              l.deletedAt == null && l.status == ShoppingListStatus.active,
+        )
         .toList()
-      ..sort((ShoppingList a, ShoppingList b) => b.updatedAt.compareTo(a.updatedAt));
+      ..sort(
+        (ShoppingList a, ShoppingList b) => b.updatedAt.compareTo(a.updatedAt),
+      );
     _activeListsController.add(active);
   }
 
@@ -349,8 +425,10 @@ class FakeShoppingListRepository implements ShoppingListRepository {
       return;
     }
     final List<ShoppingListItem> items = _items
-        .where((ShoppingListItem i) =>
-            i.shoppingListId == shoppingListId && i.deletedAt == null)
+        .where(
+          (ShoppingListItem i) =>
+              i.shoppingListId == shoppingListId && i.deletedAt == null,
+        )
         .toList(growable: false);
     controller.add(items);
   }

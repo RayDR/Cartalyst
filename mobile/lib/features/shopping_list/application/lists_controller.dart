@@ -30,13 +30,14 @@ class ListsController extends Notifier<ListsState> {
 
   void _subscribe() {
     _subscription?.cancel();
-    _subscription = _repository.watchAllLists().listen((List<ShoppingList> lists) {
+    _subscription =
+        _repository.watchAllLists().listen((List<ShoppingList> lists) {
       state = state.copyWith(lists: lists);
     });
   }
 
   /// Creates a new list with [name]. Returns the new list's id on success, null on failure.
-  Future<String?> createList(String name) async {
+  Future<String?> createList(String name, {String? inventoryId}) async {
     final String trimmed = name.trim();
     if (trimmed.isEmpty) {
       return null;
@@ -45,6 +46,7 @@ class ListsController extends Notifier<ListsState> {
     final DateTime now = DateTime.now();
     final ShoppingList list = ShoppingList(
       id: _uuid.v4(),
+      inventoryId: inventoryId,
       name: trimmed,
       status: ShoppingListStatus.active,
       createdAt: now,
@@ -120,7 +122,6 @@ class ListsController extends Notifier<ListsState> {
       status: deleted.status,
       createdAt: deleted.createdAt,
       updatedAt: now,
-      deletedAt: null,
       syncStatus: 'pending_sync',
       version: deleted.version + 1,
     );
@@ -133,7 +134,18 @@ class ListsController extends Notifier<ListsState> {
     }
   }
 
-  Future<void> linkToInventory(ShoppingList list, String inventoryId) async {
+  Future<void> linkToInventory(ShoppingList list, String inventoryId) {
+    return updateLinkedInventory(list, inventoryId);
+  }
+
+  Future<void> unlinkFromInventory(ShoppingList list) {
+    return updateLinkedInventory(list, null);
+  }
+
+  Future<void> updateLinkedInventory(
+    ShoppingList list,
+    String? inventoryId,
+  ) async {
     final DateTime now = DateTime.now();
     final ShoppingList updated = ShoppingList(
       id: list.id,
@@ -150,7 +162,7 @@ class ListsController extends Notifier<ListsState> {
     try {
       await _repository.saveShoppingList(updated);
     } catch (_) {
-      state = state.copyWith(errorMessage: 'Unable to link list to inventory.');
+      state = state.copyWith(errorMessage: 'Unable to update list inventory.');
     }
   }
 
