@@ -8,7 +8,9 @@ import 'package:cartalyst_mobile/features/inventories/domain/repositories/invent
 import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory_event.dart';
 import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory_item.dart';
 import 'package:cartalyst_mobile/features/products/domain/entities/product.dart';
+import 'package:cartalyst_mobile/features/products/domain/entities/product_alias.dart';
 import 'package:cartalyst_mobile/features/products/domain/repositories/product_repository.dart';
+import 'package:cartalyst_mobile/features/products/domain/services/product_suggestion_service.dart';
 import 'package:cartalyst_mobile/features/shopping_list/application/shopping_list_controller.dart'
     show productRepositoryProvider, uuidProvider;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -23,7 +25,12 @@ class InventoryDetailController
     extends FamilyNotifier<InventoryDetailState, String> {
   late final InventoryRepository _repository;
   late final ProductRepository _productRepository;
+  late final ProductSuggestionService _suggestionService;
   late final Uuid _uuid;
+  List<Product> _products = const <Product>[];
+  List<ProductAlias> _aliases = const <ProductAlias>[];
+  List<ProductUsageStat> _usageStats = const <ProductUsageStat>[];
+  Map<String, String> _customNamesByNormalized = const <String, String>{};
 
   StreamSubscription<List<InventoryItem>>? _itemsSubscription;
   StreamSubscription<List<Product>>? _productsSubscription;
@@ -32,6 +39,7 @@ class InventoryDetailController
   InventoryDetailState build(String arg) {
     _repository = ref.watch(inventoryRepositoryProvider);
     _productRepository = ref.watch(productRepositoryProvider);
+    _suggestionService = const ProductSuggestionService();
     _uuid = ref.watch(uuidProvider);
 
     ref.onDispose(() {
@@ -44,36 +52,57 @@ class InventoryDetailController
 
     _productsSubscription =
         _productRepository.watchActiveProducts().listen((List<Product> prods) {
+      _products = prods;
+      _loadAliases();
       state = state.copyWith(products: prods);
+      _refreshNameSuggestions();
     });
 
     return const InventoryDetailState.initial();
   }
 
   void updateNameInput(String value) {
-    state = state.copyWith(nameInput: value, clearMessage: true);
+    state = state.copyWith(
+      nameInput: value,
+      selectedProductId: _resolveExactMatchedProductId(value),
+      clearMessage: true,
+    );
+    _refreshNameSuggestions();
   }
 
   void updateSelectedProduct(String? productId) {
     state = productId == null
         ? state.copyWith(clearSelectedProduct: true)
         : state.copyWith(selectedProductId: productId);
+    _refreshNameSuggestions();
+  }
+
+  void useNameSuggestion(InventoryNameSuggestion suggestion) {
+    state = state.copyWith(
+      nameInput: suggestion.label,
+      selectedProductId: suggestion.productId,
+      clearMessage: true,
+    );
+    _refreshNameSuggestions();
   }
 
   void updateQuantityInput(String value) {
     state = state.copyWith(quantityInput: value, clearMessage: true);
   }
 
-  void updateUnitCode(String unitCode) {
-    state = state.copyWith(unitCode: unitCode, clearMessage: true);
+  void updateUnitCode(String? unitCode) {
+    state = unitCode == null
+        ? state.copyWith(clearUnitCode: true, clearMessage: true)
+        : state.copyWith(unitCode: unitCode, clearMessage: true);
   }
 
   Future<void> addItem() async {
     final String trimmedName = state.nameInput.trim();
-    final String? productId = state.selectedProductId;
+    final String? productId =
+        state.selectedProductId ?? _resolveExactMatchedProductId(trimmedName);
 
-    if (trimmedName.isEmpty && (productId == null || productId.isEmpty)) {
-      state = state.copyWith(message: 'Provide a name or link a product.');
+    if (trimmedName.isEmpty) {
+      state = state.copyWith(message: 'Item name is required.');
       return;
     }
 
@@ -85,7 +114,7 @@ class InventoryDetailController
       id: _uuid.v4(),
       inventoryId: arg,
       productId: productId,
-      rawName: trimmedName.isEmpty ? null : trimmedName,
+      rawName: productId == null ? trimmedName : null,
       quantityEstimated: quantity,
       unit: unit,
       status: InventoryItemStatus.inStock,
@@ -107,11 +136,14 @@ class InventoryDetailController
 
     await _saveItemAndEvent(item: item, event: event);
 
+    _registerCustomName(item.rawName);
+
     state = state.copyWith(
       nameInput: '',
       clearSelectedProduct: true,
       quantityInput: '',
-      unitCode: 'unit',
+      clearUnitCode: true,
+      nameSuggestions: const <InventoryNameSuggestion>[],
       message: 'Item added.',
     );
   }
@@ -245,6 +277,9 @@ class InventoryDetailController
     final DateTime recentThreshold =
         DateTime.now().subtract(const Duration(days: 7));
 
+    _usageStats = _buildUsageStats(items);
+    _customNamesByNormalized = _buildCustomNameIndex(items);
+
     final List<InventoryItem> inStock = items
         .where((item) => item.status == InventoryItemStatus.inStock)
         .toList(growable: false);
@@ -266,6 +301,194 @@ class InventoryDetailController
       lowItems: low,
       finishedItems: finished,
     );
+    _refreshNameSuggestions();
+  }
+
+  Future<void> _loadAliases() async {
+    final List<String> productIds =
+        _products.map((Product product) => product.id).toList(growable: false);
+    if (productIds.isEmpty) {
+      _aliases = const <ProductAlias>[];
+      return;
+    }
+
+    try {
+      _aliases = await _productRepository.findAliasesForProducts(productIds);
+    } catch (_) {
+      _aliases = const <ProductAlias>[];
+    }
+    _refreshNameSuggestions();
+  }
+
+  List<ProductUsageStat> _buildUsageStats(List<InventoryItem> items) {
+    final Map<String, int> frequencyByProduct = <String, int>{};
+    final Map<String, DateTime?> lastUsedByProduct = <String, DateTime?>{};
+
+    for (final InventoryItem item in items) {
+      final String? productId = item.productId;
+      if (productId == null) {
+        continue;
+      }
+
+      frequencyByProduct[productId] = (frequencyByProduct[productId] ?? 0) + 1;
+      final DateTime candidate = item.lastConfirmedAt ?? item.updatedAt;
+      final DateTime? existing = lastUsedByProduct[productId];
+      if (existing == null || candidate.isAfter(existing)) {
+        lastUsedByProduct[productId] = candidate;
+      }
+    }
+
+    return frequencyByProduct.entries
+        .map(
+          (MapEntry<String, int> entry) => ProductUsageStat(
+            productId: entry.key,
+            frequency: entry.value,
+            lastUsedAt: lastUsedByProduct[entry.key],
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  Map<String, String> _buildCustomNameIndex(List<InventoryItem> items) {
+    final Map<String, String> byNormalized = <String, String>{};
+    for (final InventoryItem item in items) {
+      final String? raw = item.rawName?.trim();
+      if (raw == null || raw.isEmpty) {
+        continue;
+      }
+      final String normalized = _normalize(raw);
+      if (normalized.isNotEmpty) {
+        byNormalized[normalized] = raw;
+      }
+    }
+    return byNormalized;
+  }
+
+  void _registerCustomName(String? rawName) {
+    final String? trimmed = rawName?.trim();
+    if (trimmed == null || trimmed.isEmpty) {
+      return;
+    }
+    final String normalized = _normalize(trimmed);
+    if (normalized.isEmpty) {
+      return;
+    }
+    _customNamesByNormalized = <String, String>{
+      ..._customNamesByNormalized,
+      normalized: trimmed,
+    };
+  }
+
+  void _refreshNameSuggestions() {
+    final String query = state.nameInput.trim();
+    final List<InventoryNameSuggestion> suggestions =
+        <InventoryNameSuggestion>[];
+    final Set<String> seen = <String>{};
+
+    final List<String> customNames = _customNamesByNormalized.values.toList()
+      ..sort();
+    for (final String name in customNames) {
+      final String normalized = _normalize(name);
+      if (query.isNotEmpty && !normalized.contains(_normalize(query))) {
+        continue;
+      }
+      if (seen.add(normalized)) {
+        suggestions.add(
+          InventoryNameSuggestion(label: name, productId: null),
+        );
+      }
+      if (suggestions.length >= 6) {
+        state = state.copyWith(nameSuggestions: suggestions);
+        return;
+      }
+    }
+
+    if (_products.isNotEmpty && query.isNotEmpty) {
+      final List<ProductSuggestion> productSuggestions =
+          _suggestionService.suggest(
+        rawInput: query,
+        availableProducts: _products,
+        aliases: _aliases,
+        usageStats: _usageStats,
+        maxResults: 6,
+      );
+
+      for (final ProductSuggestion suggestion in productSuggestions) {
+        final Product? product = suggestion.suggestedProduct;
+        if (product == null) {
+          continue;
+        }
+        final String normalized = _normalize(product.canonicalName);
+        if (seen.add(normalized)) {
+          suggestions.add(
+            InventoryNameSuggestion(
+              label: product.canonicalName,
+              productId: product.id,
+            ),
+          );
+        }
+        if (suggestions.length >= 6) {
+          break;
+        }
+      }
+    }
+
+    state = state.copyWith(nameSuggestions: suggestions);
+  }
+
+  String? _resolveExactMatchedProductId(String rawName) {
+    final String query = rawName.trim();
+    if (query.isEmpty || _products.isEmpty) {
+      return null;
+    }
+
+    final List<ProductSuggestion> suggested = _suggestionService.suggest(
+      rawInput: query,
+      availableProducts: _products,
+      aliases: _aliases,
+      usageStats: _usageStats,
+      maxResults: 1,
+    );
+
+    if (suggested.isEmpty) {
+      return null;
+    }
+
+    final ProductSuggestion best = suggested.first;
+    if (best.reasonCode != SuggestionReasonCode.exactMatch) {
+      return null;
+    }
+
+    return best.suggestedProduct?.id;
+  }
+
+  String _normalize(String input) {
+    final String lower = input.toLowerCase();
+    return lower
+        .replaceAll('á', 'a')
+        .replaceAll('à', 'a')
+        .replaceAll('ä', 'a')
+        .replaceAll('â', 'a')
+        .replaceAll('é', 'e')
+        .replaceAll('è', 'e')
+        .replaceAll('ë', 'e')
+        .replaceAll('ê', 'e')
+        .replaceAll('í', 'i')
+        .replaceAll('ì', 'i')
+        .replaceAll('ï', 'i')
+        .replaceAll('î', 'i')
+        .replaceAll('ó', 'o')
+        .replaceAll('ò', 'o')
+        .replaceAll('ö', 'o')
+        .replaceAll('ô', 'o')
+        .replaceAll('ú', 'u')
+        .replaceAll('ù', 'u')
+        .replaceAll('ü', 'u')
+        .replaceAll('û', 'u')
+        .replaceAll('ñ', 'n')
+        .replaceAll(RegExp(r'[^a-z0-9\s\.]'), ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
   }
 
   InventoryEvent _buildEvent({
@@ -289,7 +512,10 @@ class InventoryDetailController
     );
   }
 
-  Unit? _safeUnit(String code) {
+  Unit? _safeUnit(String? code) {
+    if (code == null || code.trim().isEmpty) {
+      return null;
+    }
     try {
       return Unit.fromCode(code);
     } catch (_) {

@@ -95,8 +95,8 @@ class _InventoryDetailScreenState extends ConsumerState<InventoryDetailScreen> {
               nameController: _nameController,
               quantityController: _quantityController,
               onNameChanged: controller.updateNameInput,
+              onSuggestionSelected: controller.useNameSuggestion,
               onQuantityChanged: controller.updateQuantityInput,
-              onProductChanged: controller.updateSelectedProduct,
               onUnitChanged: controller.updateUnitCode,
               onAddPressed: controller.addItem,
             ),
@@ -151,8 +151,8 @@ class _AddItemCard extends StatelessWidget {
     required this.nameController,
     required this.quantityController,
     required this.onNameChanged,
+    required this.onSuggestionSelected,
     required this.onQuantityChanged,
-    required this.onProductChanged,
     required this.onUnitChanged,
     required this.onAddPressed,
   });
@@ -161,9 +161,9 @@ class _AddItemCard extends StatelessWidget {
   final TextEditingController nameController;
   final TextEditingController quantityController;
   final ValueChanged<String> onNameChanged;
+  final ValueChanged<InventoryNameSuggestion> onSuggestionSelected;
   final ValueChanged<String> onQuantityChanged;
-  final ValueChanged<String?> onProductChanged;
-  final ValueChanged<String> onUnitChanged;
+  final ValueChanged<String?> onUnitChanged;
   final VoidCallback onAddPressed;
 
   @override
@@ -180,35 +180,48 @@ class _AddItemCard extends StatelessWidget {
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: AppSpacing.sm),
-          DropdownButtonFormField<String>(
-            key: ValueKey('inv-product-${state.selectedProductId ?? 'none'}'),
-            initialValue: state.selectedProductId,
-            decoration: const InputDecoration(
-              labelText: 'Link product (optional)',
-            ),
-            items: <DropdownMenuItem<String>>[
-              const DropdownMenuItem<String>(child: Text('No product linked')),
-              ...state.products.map(
-                (product) => DropdownMenuItem<String>(
-                  value: product.id,
-                  child: Text(product.canonicalName),
-                ),
-              ),
-            ],
-            onChanged: onProductChanged,
-          ),
-          const SizedBox(height: AppSpacing.sm),
           AppTextField(
-            label: 'Custom name (optional)',
-            hint: 'Example: oatmeal jar',
+            label: 'Item name',
+            hint: 'Example: Milk, Arroz, Oatmeal jar',
             prefixIcon: Icons.edit_note,
             controller: nameController,
             onChanged: onNameChanged,
             textInputAction: TextInputAction.next,
           ),
+          if (state.nameSuggestions.isNotEmpty) ...<Widget>[
+            const SizedBox(height: AppSpacing.sm),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: state.nameSuggestions
+                    .map(
+                      (InventoryNameSuggestion suggestion) => Padding(
+                        padding: const EdgeInsets.only(right: AppSpacing.xs),
+                        child: ActionChip(
+                          avatar: Icon(
+                            suggestion.productId == null
+                                ? Icons.history
+                                : Icons.local_offer_outlined,
+                          ),
+                          label: Text(suggestion.label),
+                          onPressed: () => onSuggestionSelected(suggestion),
+                        ),
+                      ),
+                    )
+                    .toList(growable: false),
+              ),
+            ),
+          ],
+          if (state.selectedProductId != null) ...<Widget>[
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'Matched to catalog product.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
           const SizedBox(height: AppSpacing.sm),
           AppTextField(
-            label: 'Estimated quantity',
+            label: 'Quantity (optional)',
             hint: 'Example: 2',
             prefixIcon: Icons.numbers,
             controller: quantityController,
@@ -216,21 +229,22 @@ class _AddItemCard extends StatelessWidget {
             textInputAction: TextInputAction.next,
           ),
           const SizedBox(height: AppSpacing.sm),
-          DropdownButtonFormField<String>(
+          DropdownButtonFormField<String?>(
             key: ValueKey('inv-unit-${state.unitCode}'),
             initialValue: state.unitCode,
-            decoration: const InputDecoration(labelText: 'Unit'),
-            items: units
-                .map(
-                  (String unit) => DropdownMenuItem<String>(
-                    value: unit,
-                    child: Text(unit),
-                  ),
-                )
-                .toList(growable: false),
-            onChanged: (String? value) {
-              if (value != null) onUnitChanged(value);
-            },
+            decoration: const InputDecoration(labelText: 'Unit (optional)'),
+            items: <DropdownMenuItem<String?>>[
+              const DropdownMenuItem<String?>(
+                child: Text('No unit'),
+              ),
+              ...units.map(
+                (String unit) => DropdownMenuItem<String?>(
+                  value: unit,
+                  child: Text(unit),
+                ),
+              ),
+            ],
+            onChanged: onUnitChanged,
           ),
           const SizedBox(height: AppSpacing.sm),
           AppButton(

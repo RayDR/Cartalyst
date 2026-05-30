@@ -38,6 +38,16 @@ void main() {
           version: 1,
         ),
       ],
+      aliases: <ProductAlias>[
+        ProductAlias(
+          id: 'alias-milk-es',
+          productId: 'product-milk',
+          alias: 'leche',
+          languageCode: 'es',
+          createdAt: DateTime(2026),
+          updatedAt: DateTime(2026),
+        ),
+      ],
     );
 
     container = ProviderContainer(
@@ -63,6 +73,66 @@ void main() {
   }
 
   group('InventoryDetailController', () {
+    test('addItem works with only custom name', () async {
+      await waitForProducts();
+
+      final InventoryDetailController controller = container
+          .read(inventoryDetailControllerProvider(_inventoryId).notifier);
+
+      controller.updateNameInput('oatmeal jar');
+      await controller.addItem();
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+
+      final InventoryItem saved = repository.items.last;
+      expect(saved.rawName, 'oatmeal jar');
+      expect(saved.productId, isNull);
+    });
+
+    test('addItem links known product suggestion from typed name', () async {
+      await waitForProducts();
+
+      final InventoryDetailController controller = container
+          .read(inventoryDetailControllerProvider(_inventoryId).notifier);
+
+      controller.updateNameInput('milk');
+      await controller.addItem();
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+
+      final InventoryItem saved = repository.items.last;
+      expect(saved.productId, 'product-milk');
+      expect(saved.rawName, isNull);
+    });
+
+    test('addItem links known product from Spanish alias', () async {
+      await waitForProducts();
+
+      final InventoryDetailController controller = container
+          .read(inventoryDetailControllerProvider(_inventoryId).notifier);
+
+      controller.updateNameInput('leche');
+      await controller.addItem();
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+
+      final InventoryItem saved = repository.items.last;
+      expect(saved.productId, 'product-milk');
+      expect(saved.rawName, isNull);
+    });
+
+    test('addItem allows missing quantity and unit', () async {
+      await waitForProducts();
+
+      final InventoryDetailController controller = container
+          .read(inventoryDetailControllerProvider(_inventoryId).notifier);
+
+      controller.updateNameInput('custom spice');
+      await controller.addItem();
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+
+      final InventoryItem saved = repository.items.last;
+      expect(saved.quantityEstimated, isNull);
+      expect(saved.unit, isNull);
+    });
+
     test('items are displayed grouped by status', () async {
       await waitForProducts();
 
@@ -190,6 +260,8 @@ class FakeInventoryRepository implements InventoryRepository {
   final List<InventoryItem> _items = <InventoryItem>[];
   final List<InventoryEvent> events = <InventoryEvent>[];
 
+  List<InventoryItem> get items => List<InventoryItem>.unmodifiable(_items);
+
   List<String> get deletedItemIds => _items
       .where((InventoryItem item) => item.deletedAt != null)
       .map((InventoryItem item) => item.id)
@@ -274,10 +346,14 @@ class FakeInventoryRepository implements InventoryRepository {
 }
 
 class FakeProductRepository implements ProductRepository {
-  FakeProductRepository({required List<Product> products})
-      : _products = products;
+  FakeProductRepository({
+    required List<Product> products,
+    required List<ProductAlias> aliases,
+  })  : _products = products,
+        _aliases = aliases;
 
   final List<Product> _products;
+  final List<ProductAlias> _aliases;
   final StreamController<List<Product>> _controller =
       StreamController<List<Product>>.broadcast();
 
@@ -289,14 +365,18 @@ class FakeProductRepository implements ProductRepository {
 
   @override
   Future<List<ProductAlias>> findAliasesForProduct(String productId) async {
-    return const <ProductAlias>[];
+    return _aliases
+        .where((ProductAlias alias) => alias.productId == productId)
+        .toList(growable: false);
   }
 
   @override
   Future<List<ProductAlias>> findAliasesForProducts(
     List<String> productIds,
   ) async {
-    return const <ProductAlias>[];
+    return _aliases
+        .where((ProductAlias alias) => productIds.contains(alias.productId))
+        .toList(growable: false);
   }
 
   @override
