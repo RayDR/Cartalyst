@@ -54,6 +54,9 @@ class ShoppingListController extends FamilyNotifier<ShoppingListState, String> {
   StreamSubscription<List<ShoppingListItem>>? _listItemsSubscription;
   StreamSubscription<List<Product>>? _productsSubscription;
   final List<_ShoppingListUndoEntry> _undoStack = <_ShoppingListUndoEntry>[];
+  List<ShoppingListItem> _confirmedItems = const <ShoppingListItem>[];
+  _WorkingDraft? _workingDraft;
+  bool _draftChecked = false;
 
   List<Product> _products = const <Product>[];
   List<ProductAlias> _aliases = const <ProductAlias>[];
@@ -80,6 +83,169 @@ class ShoppingListController extends FamilyNotifier<ShoppingListState, String> {
   void updateQuickAddInput(String value) {
     state = state.copyWith(quickAddInput: value, clearErrorMessage: true);
     _refreshSuggestions();
+  }
+
+  Future<void> syncWithList(ShoppingList list) async {
+    if (_draftChecked) {
+      return;
+    }
+
+    _draftChecked = true;
+    final ShoppingListDraft? persistedDraft =
+        await _shoppingListRepository.readDraft(arg);
+    if (persistedDraft == null) {
+      return;
+    }
+
+    _workingDraft = _WorkingDraft(
+      name: persistedDraft.name,
+      items: _cloneItems(persistedDraft.items),
+      updatedAt: persistedDraft.updatedAt,
+    );
+
+    state = state.copyWith(
+      hasDraft: true,
+      draftPromptPending: true,
+      draftName: persistedDraft.name,
+    );
+  }
+
+  Future<bool> enterEditMode(ShoppingList list) async {
+    if (state.isEditMode) {
+      return true;
+    }
+
+    if (_workingDraft == null) {
+      _workingDraft = _WorkingDraft(
+        name: list.name,
+        items: _cloneItems(_confirmedItems),
+        updatedAt: DateTime.now(),
+      );
+      await _persistDraft();
+    }
+
+    state = state.copyWith(
+      isEditMode: true,
+      hasDraft: true,
+      draftPromptPending: false,
+      draftName: _workingDraft!.name,
+      clearErrorMessage: true,
+    );
+    _applyVisibleItems(_workingDraft!.items);
+    return true;
+  }
+
+  Future<bool> continueDraftEditing(ShoppingList list) {
+    return enterEditMode(list);
+  }
+
+  Future<bool> cancelChanges() async {
+    if (!state.isEditMode || _workingDraft == null) {
+      return false;
+    }
+
+    await _persistDraft();
+    state = state.copyWith(
+      isEditMode: false,
+      hasDraft: true,
+      draftPromptPending: false,
+      draftName: _workingDraft!.name,
+      clearErrorMessage: true,
+    );
+    _applyVisibleItems(_confirmedItems);
+    return true;
+  }
+
+  Future<bool> discardDraft() async {
+    try {
+      await _shoppingListRepository.deleteDraft(arg);
+      _workingDraft = null;
+      state = state.copyWith(
+        isEditMode: false,
+        hasDraft: false,
+        draftPromptPending: false,
+        clearDraftName: true,
+        clearErrorMessage: true,
+      );
+      _applyVisibleItems(_confirmedItems);
+      return true;
+    } catch (_) {
+      state = state.copyWith(errorMessage: 'Unable to discard draft.');
+      return false;
+    }
+  }
+
+  Future<bool> applyDraft(ShoppingList list) async {
+    if (_workingDraft == null) {
+      return false;
+    }
+
+    try {
+      state = state.copyWith(isBusy: true, clearErrorMessage: true);
+
+      final DateTime now = DateTime.now();
+      if (list.name.trim() != _workingDraft!.name.trim()) {
+        final ShoppingList renamed = ShoppingList(
+          id: list.id,
+          inventoryId: list.inventoryId,
+          name: _workingDraft!.name.trim(),
+          status: list.status,
+          createdAt: list.createdAt,
+          updatedAt: now,
+          deletedAt: list.deletedAt,
+          syncStatus: 'pending_sync',
+          version: list.version + 1,
+        );
+        await _shoppingListRepository.saveShoppingList(renamed);
+      }
+
+      final Map<String, ShoppingListItem> draftById =
+          <String, ShoppingListItem>{
+        for (final ShoppingListItem item in _workingDraft!.items) item.id: item,
+      };
+
+      for (final ShoppingListItem draftItem in _workingDraft!.items) {
+        final ShoppingListItem normalized = draftItem.copyWith(
+          shoppingListId: arg,
+          deletedAt: null,
+        );
+        await _shoppingListRepository.saveShoppingListItem(normalized);
+      }
+
+      for (final ShoppingListItem confirmed in _confirmedItems) {
+        if (draftById.containsKey(confirmed.id)) {
+          continue;
+        }
+        final DateTime removedAt = DateTime.now();
+        await _shoppingListRepository.saveShoppingListItem(
+          confirmed.copyWith(
+            deletedAt: removedAt,
+            updatedAt: removedAt,
+            version: confirmed.version + 1,
+            syncStatus: 'pending_sync',
+          ),
+        );
+      }
+
+      await _shoppingListRepository.deleteDraft(arg);
+      _workingDraft = null;
+
+      state = state.copyWith(
+        isBusy: false,
+        isEditMode: false,
+        hasDraft: false,
+        draftPromptPending: false,
+        clearDraftName: true,
+      );
+      _applyVisibleItems(_confirmedItems);
+      return true;
+    } catch (_) {
+      state = state.copyWith(
+        isBusy: false,
+        errorMessage: 'Unable to apply draft changes.',
+      );
+      return false;
+    }
   }
 
   Future<void> addFromQuickAdd({
@@ -143,7 +309,11 @@ class ShoppingListController extends FamilyNotifier<ShoppingListState, String> {
 
     try {
       state = state.copyWith(isBusy: true, clearErrorMessage: true);
-      await _shoppingListRepository.saveShoppingListItem(item);
+      if (state.isEditMode) {
+        await _upsertDraftItem(item);
+      } else {
+        await _shoppingListRepository.saveShoppingListItem(item);
+      }
       state = state.copyWith(
         isBusy: false,
         quickAddInput: '',
@@ -165,6 +335,25 @@ class ShoppingListController extends FamilyNotifier<ShoppingListState, String> {
     final String trimmed = newName.trim();
     if (trimmed.isEmpty) {
       return false;
+    }
+
+    if (state.isEditMode) {
+      _workingDraft ??= _WorkingDraft(
+        name: list.name,
+        items: _cloneItems(_confirmedItems),
+        updatedAt: DateTime.now(),
+      );
+      _workingDraft = _workingDraft!.copyWith(
+        name: trimmed,
+        updatedAt: DateTime.now(),
+      );
+      await _persistDraft();
+      state = state.copyWith(
+        hasDraft: true,
+        draftName: trimmed,
+        clearErrorMessage: true,
+      );
+      return true;
     }
 
     final DateTime now = DateTime.now();
@@ -274,41 +463,14 @@ class ShoppingListController extends FamilyNotifier<ShoppingListState, String> {
     _listItemsSubscription = _shoppingListRepository
         .watchItemsForList(shoppingListId)
         .listen((List<ShoppingListItem> items) {
-      final List<ShoppingListItem> pending = items
-          .where(
-            (ShoppingListItem item) =>
-                item.status == ShoppingListItemStatus.pending,
-          )
+      _confirmedItems = items
+          .where((ShoppingListItem item) => item.deletedAt == null)
           .toList(growable: false);
-      final List<ShoppingListItem> purchased = items
-          .where(
-            (ShoppingListItem item) =>
-                item.status == ShoppingListItemStatus.purchased,
-          )
-          .toList(growable: false);
-      final List<ShoppingListItem> skipped = items
-          .where(
-            (ShoppingListItem item) =>
-                item.status == ShoppingListItemStatus.skipped,
-          )
-          .toList(growable: false);
-
       _usageStats = _buildUsageStats(items);
 
-      final String? focusedItemId = state.focusedItemId;
-      final bool focusedStillExists = focusedItemId != null &&
-          items.any((ShoppingListItem item) => item.id == focusedItemId);
-      final String? nextFocusedItemId = focusedStillExists
-          ? focusedItemId
-          : (pending.isNotEmpty ? pending.first.id : null);
-
-      state = state.copyWith(
-        pendingItems: pending,
-        purchasedItems: purchased,
-        skippedItems: skipped,
-        focusedItemId: nextFocusedItemId,
-        clearFocusedItem: nextFocusedItemId == null,
-      );
+      if (!state.isEditMode) {
+        _applyVisibleItems(_confirmedItems);
+      }
 
       _refreshSuggestions();
     });
@@ -417,6 +579,10 @@ class ShoppingListController extends FamilyNotifier<ShoppingListState, String> {
   }
 
   Future<bool> undoLastAction() async {
+    if (state.isEditMode) {
+      return false;
+    }
+
     if (_undoStack.isEmpty) {
       return false;
     }
@@ -440,6 +606,11 @@ class ShoppingListController extends FamilyNotifier<ShoppingListState, String> {
     ShoppingListItem item, {
     ShoppingListItem? undoItem,
   }) async {
+    if (state.isEditMode) {
+      await _upsertDraftItem(item);
+      return true;
+    }
+
     try {
       state = state.copyWith(isBusy: true, clearErrorMessage: true);
       await _shoppingListRepository.saveShoppingListItem(
@@ -458,6 +629,106 @@ class ShoppingListController extends FamilyNotifier<ShoppingListState, String> {
       return false;
     }
   }
+
+  Future<void> _upsertDraftItem(ShoppingListItem item) async {
+    final _WorkingDraft draft = _workingDraft ??
+        _WorkingDraft(
+          name: state.draftName ?? '',
+          items: _cloneItems(_confirmedItems),
+          updatedAt: DateTime.now(),
+        );
+
+    final List<ShoppingListItem> items = draft.items
+        .map((ShoppingListItem item) => item.copyWith())
+        .toList(growable: true);
+    final int index =
+        items.indexWhere((ShoppingListItem entry) => entry.id == item.id);
+
+    if (item.deletedAt != null) {
+      if (index >= 0) {
+        items.removeAt(index);
+      }
+    } else if (index >= 0) {
+      items[index] = item;
+    } else {
+      items.add(item);
+    }
+
+    _workingDraft = draft.copyWith(items: items, updatedAt: DateTime.now());
+    await _persistDraft();
+
+    state = state.copyWith(
+      hasDraft: true,
+      draftName: _workingDraft!.name,
+      clearErrorMessage: true,
+    );
+    if (state.isEditMode) {
+      _applyVisibleItems(_workingDraft!.items);
+    }
+  }
+
+  Future<void> _persistDraft() {
+    final _WorkingDraft? draft = _workingDraft;
+    if (draft == null) {
+      return Future<void>.value();
+    }
+
+    return _shoppingListRepository.saveDraft(
+      ShoppingListDraft(
+        shoppingListId: arg,
+        name: draft.name,
+        items: _cloneItems(draft.items),
+        updatedAt: draft.updatedAt,
+      ),
+    );
+  }
+
+  void _applyVisibleItems(List<ShoppingListItem> source) {
+    final List<ShoppingListItem> pending = source
+        .where(
+          (ShoppingListItem item) =>
+              item.deletedAt == null &&
+              item.status == ShoppingListItemStatus.pending,
+        )
+        .toList(growable: false);
+    final List<ShoppingListItem> purchased = source
+        .where(
+          (ShoppingListItem item) =>
+              item.deletedAt == null &&
+              item.status == ShoppingListItemStatus.purchased,
+        )
+        .toList(growable: false);
+    final List<ShoppingListItem> skipped = source
+        .where(
+          (ShoppingListItem item) =>
+              item.deletedAt == null &&
+              item.status == ShoppingListItemStatus.skipped,
+        )
+        .toList(growable: false);
+
+    final String? focusedItemId = state.focusedItemId;
+    final bool focusedStillExists = focusedItemId != null &&
+        source.any((ShoppingListItem item) => item.id == focusedItemId);
+    final String? nextFocusedItemId = focusedStillExists
+        ? focusedItemId
+        : (pending.isNotEmpty ? pending.first.id : null);
+
+    state = state.copyWith(
+      pendingItems: pending,
+      purchasedItems: purchased,
+      skippedItems: skipped,
+      focusedItemId: nextFocusedItemId,
+      clearFocusedItem: nextFocusedItemId == null,
+    );
+  }
+
+  List<ShoppingListItem> _cloneItems(List<ShoppingListItem> items) {
+    return items
+        .map(
+          (ShoppingListItem item) => item.copyWith(),
+        )
+        .toList(growable: false);
+  }
 }
 
 class _ShoppingListUndoEntry {
@@ -465,4 +736,28 @@ class _ShoppingListUndoEntry {
 
   final ShoppingListItem? item;
   final ShoppingList? list;
+}
+
+class _WorkingDraft {
+  const _WorkingDraft({
+    required this.name,
+    required this.items,
+    required this.updatedAt,
+  });
+
+  final String name;
+  final List<ShoppingListItem> items;
+  final DateTime updatedAt;
+
+  _WorkingDraft copyWith({
+    String? name,
+    List<ShoppingListItem>? items,
+    DateTime? updatedAt,
+  }) {
+    return _WorkingDraft(
+      name: name ?? this.name,
+      items: items ?? this.items,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
 }

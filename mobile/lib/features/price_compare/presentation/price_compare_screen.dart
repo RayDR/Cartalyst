@@ -22,113 +22,172 @@ class PriceCompareScreen extends ConsumerStatefulWidget {
 }
 
 class _PriceCompareScreenState extends ConsumerState<PriceCompareScreen> {
-  late final TextEditingController _optionOnePriceController;
-  late final TextEditingController _optionOneQuantityController;
-  late final TextEditingController _optionTwoPriceController;
-  late final TextEditingController _optionTwoQuantityController;
-
-  @override
-  void initState() {
-    super.initState();
-    _optionOnePriceController = TextEditingController();
-    _optionOneQuantityController = TextEditingController();
-    _optionTwoPriceController = TextEditingController();
-    _optionTwoQuantityController = TextEditingController();
-  }
+  final Map<String, TextEditingController> _priceControllers =
+      <String, TextEditingController>{};
+  final Map<String, TextEditingController> _quantityControllers =
+      <String, TextEditingController>{};
 
   @override
   void dispose() {
-    _optionOnePriceController.dispose();
-    _optionOneQuantityController.dispose();
-    _optionTwoPriceController.dispose();
-    _optionTwoQuantityController.dispose();
+    for (final TextEditingController controller in _priceControllers.values) {
+      controller.dispose();
+    }
+    for (final TextEditingController controller
+        in _quantityControllers.values) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final PriceCompareState state = ref.watch(priceCompareControllerProvider);
-    final PriceCompareController controller = ref.read(priceCompareControllerProvider.notifier);
-
-    _syncController(_optionOnePriceController, state.optionOnePrice);
-    _syncController(_optionOneQuantityController, state.optionOneQuantity);
-    _syncController(_optionTwoPriceController, state.optionTwoPrice);
-    _syncController(_optionTwoQuantityController, state.optionTwoQuantity);
+    final PriceCompareController controller =
+        ref.read(priceCompareControllerProvider.notifier);
 
     return AppScaffold(
       title: 'Price Compare',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          const SectionHeader(
-            title: 'Unit price insights',
-            subtitle: 'Compare two options and find the best value instantly.',
-          ),
-          const SizedBox(height: AppSpacing.md),
-          _OptionCard(
-            title: 'Option A',
-            products: state.products,
-            selectedProductId: state.optionOneProductId,
-            selectedUnit: state.optionOneUnit,
-            unitOptions: PriceCompareController.unitOptions,
-            priceController: _optionOnePriceController,
-            quantityController: _optionOneQuantityController,
-            onPriceChanged: controller.updateOptionOnePrice,
-            onQuantityChanged: controller.updateOptionOneQuantity,
-            onUnitChanged: controller.updateOptionOneUnit,
-            onProductChanged: controller.updateOptionOneProduct,
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          _OptionCard(
-            title: 'Option B',
-            products: state.products,
-            selectedProductId: state.optionTwoProductId,
-            selectedUnit: state.optionTwoUnit,
-            unitOptions: PriceCompareController.unitOptions,
-            priceController: _optionTwoPriceController,
-            quantityController: _optionTwoQuantityController,
-            onPriceChanged: controller.updateOptionTwoPrice,
-            onQuantityChanged: controller.updateOptionTwoQuantity,
-            onUnitChanged: controller.updateOptionTwoUnit,
-            onProductChanged: controller.updateOptionTwoProduct,
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: AppButton(
-                  label: 'Compare',
-                  onPressed: state.isBusy ? null : controller.compare,
-                  icon: Icons.balance_outlined,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: AppButton(
-                  label: 'Reset',
-                  onPressed: controller.reset,
-                  icon: Icons.refresh,
-                  variant: AppButtonVariant.secondary,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
           Expanded(
-            child: state.comparisonResult == null
-                ? EmptyState(
-                    title: 'No comparison yet',
-                    description:
-                        'Enter price, quantity, and unit for both options to compare unit price.',
-                    icon: Icons.price_check_outlined,
-                    primaryActionLabel: 'Compare now',
-                    onPrimaryActionPressed: controller.compare,
-                  )
-                : _ComparisonResultCard(result: state.comparisonResult!, message: state.message),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      const Expanded(
+                        child: SectionHeader(
+                          title: 'Unit price insights',
+                          subtitle:
+                              'Compare between two and five options, then rank the best value.',
+                        ),
+                      ),
+                      if (state.canAddMoreOptions)
+                        AppButton(
+                          label: 'Add option',
+                          onPressed: controller.addOption,
+                          icon: Icons.add_circle_outline,
+                          variant: AppButtonVariant.secondary,
+                          expanded: false,
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  ...state.options.asMap().entries.map(
+                    (MapEntry<int, PriceCompareOptionDraft> entry) {
+                      final PriceCompareOptionDraft option = entry.value;
+                      final TextEditingController priceController =
+                          _controllerFor(
+                        _priceControllers,
+                        option.id,
+                        option.price,
+                      );
+                      final TextEditingController quantityController =
+                          _controllerFor(
+                        _quantityControllers,
+                        option.id,
+                        option.quantity,
+                      );
+
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                        child: option.showsCompactCard
+                            ? _OptionCompactCard(
+                                option: option,
+                                onEdit: () => controller.editOption(option.id),
+                                onRemove: state.canRemoveOptions
+                                    ? () => controller.removeOption(option.id)
+                                    : null,
+                              )
+                            : _OptionEditorCard(
+                                option: option,
+                                products: state.products,
+                                unitOptions: PriceCompareController.unitOptions,
+                                canRemove: state.canRemoveOptions,
+                                priceController: priceController,
+                                quantityController: quantityController,
+                                onPriceChanged: (String value) => controller
+                                    .updateOptionPrice(option.id, value),
+                                onQuantityChanged: (String value) => controller
+                                    .updateOptionQuantity(option.id, value),
+                                onUnitChanged: (String? value) => controller
+                                    .updateOptionUnit(option.id, value),
+                                onProductChanged: (String? value) => controller
+                                    .updateOptionProduct(option.id, value),
+                                onDoneEditing: option.hasRequiredFields
+                                    ? () => controller.collapseOption(option.id)
+                                    : null,
+                                onRemove: state.canRemoveOptions
+                                    ? () => controller.removeOption(option.id)
+                                    : null,
+                              ),
+                      );
+                    },
+                  ),
+                  if (state.message != null &&
+                      state.comparisonResult == null) ...<Widget>[
+                    AppCard(child: Text(state.message!)),
+                    const SizedBox(height: AppSpacing.sm),
+                  ],
+                  if (state.comparisonResult == null)
+                    EmptyState(
+                      title: 'No comparison yet',
+                      description:
+                          'Fill price, quantity, and unit for at least two options, then compare.',
+                      icon: Icons.price_check_outlined,
+                      primaryActionLabel: 'Compare now',
+                      onPrimaryActionPressed: controller.compare,
+                    )
+                  else
+                    _ComparisonResultCard(result: state.comparisonResult!),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          SafeArea(
+            top: false,
+            child: AppCard(
+              child: Row(
+                children: <Widget>[
+                  Expanded(
+                    child: AppButton(
+                      label: 'Compare',
+                      onPressed: state.isBusy ? null : controller.compare,
+                      icon: Icons.balance_outlined,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: AppButton(
+                      label: 'Reset',
+                      onPressed: controller.reset,
+                      icon: Icons.refresh,
+                      variant: AppButtonVariant.secondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       ),
     );
+  }
+
+  TextEditingController _controllerFor(
+    Map<String, TextEditingController> store,
+    String id,
+    String value,
+  ) {
+    final TextEditingController controller =
+        store.putIfAbsent(id, TextEditingController.new);
+    _syncController(controller, value);
+    return controller;
   }
 
   void _syncController(TextEditingController controller, String value) {
@@ -143,12 +202,10 @@ class _PriceCompareScreenState extends ConsumerState<PriceCompareScreen> {
   }
 }
 
-class _OptionCard extends StatelessWidget {
-  const _OptionCard({
-    required this.title,
+class _OptionEditorCard extends StatelessWidget {
+  const _OptionEditorCard({
+    required this.option,
     required this.products,
-    required this.selectedProductId,
-    required this.selectedUnit,
     required this.unitOptions,
     required this.priceController,
     required this.quantityController,
@@ -156,19 +213,23 @@ class _OptionCard extends StatelessWidget {
     required this.onQuantityChanged,
     required this.onUnitChanged,
     required this.onProductChanged,
+    required this.canRemove,
+    this.onDoneEditing,
+    this.onRemove,
   });
 
-  final String title;
+  final PriceCompareOptionDraft option;
   final List<Product> products;
-  final String? selectedProductId;
-  final String selectedUnit;
   final List<String> unitOptions;
   final TextEditingController priceController;
   final TextEditingController quantityController;
   final ValueChanged<String> onPriceChanged;
   final ValueChanged<String> onQuantityChanged;
-  final ValueChanged<String> onUnitChanged;
+  final ValueChanged<String?> onUnitChanged;
   final ValueChanged<String?> onProductChanged;
+  final bool canRemove;
+  final VoidCallback? onDoneEditing;
+  final VoidCallback? onRemove;
 
   @override
   Widget build(BuildContext context) {
@@ -176,16 +237,33 @@ class _OptionCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Text(title, style: Theme.of(context).textTheme.titleMedium),
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: Text(
+                  option.label,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+              if (canRemove && onRemove != null)
+                IconButton(
+                  onPressed: onRemove,
+                  icon: const Icon(Icons.delete_outline),
+                  tooltip: 'Remove option',
+                ),
+            ],
+          ),
           const SizedBox(height: AppSpacing.sm),
-          DropdownButtonFormField<String>(
-            key: ValueKey('product-$title-${selectedProductId ?? 'none'}'),
-            initialValue: selectedProductId,
+          DropdownButtonFormField<String?>(
+            key: ValueKey('product-${option.id}-${option.productId ?? 'none'}'),
+            initialValue: option.productId,
             decoration: const InputDecoration(labelText: 'Product (optional)'),
-            items: <DropdownMenuItem<String>>[
-              const DropdownMenuItem<String>(child: Text('No product selected')),
+            items: <DropdownMenuItem<String?>>[
+              const DropdownMenuItem<String?>(
+                child: Text('No product selected'),
+              ),
               ...products.map(
-                (Product product) => DropdownMenuItem<String>(
+                (Product product) => DropdownMenuItem<String?>(
                   value: product.id,
                   child: Text(product.canonicalName),
                 ),
@@ -212,24 +290,76 @@ class _OptionCard extends StatelessWidget {
             textInputAction: TextInputAction.next,
           ),
           const SizedBox(height: AppSpacing.sm),
-          DropdownButtonFormField<String>(
-            key: ValueKey<String>('unit-$title-$selectedUnit'),
-            initialValue: selectedUnit,
+          DropdownButtonFormField<String?>(
+            key: ValueKey<String>('unit-${option.id}-${option.unit ?? 'none'}'),
+            initialValue: option.unit,
             decoration: const InputDecoration(labelText: 'Unit'),
-            items: unitOptions
-                .map(
-                  (String unit) => DropdownMenuItem<String>(
-                    value: unit,
-                    child: Text(unit),
-                  ),
-                )
-                .toList(growable: false),
-            onChanged: (String? unit) {
-              if (unit != null) {
-                onUnitChanged(unit);
-              }
-            },
+            items: <DropdownMenuItem<String?>>[
+              const DropdownMenuItem<String?>(
+                child: Text('Select a unit'),
+              ),
+              ...unitOptions.map(
+                (String unit) => DropdownMenuItem<String?>(
+                  value: unit,
+                  child: Text(unit),
+                ),
+              ),
+            ],
+            onChanged: onUnitChanged,
           ),
+          if (option.hasRequiredFields) ...<Widget>[
+            const SizedBox(height: AppSpacing.sm),
+            Align(
+              alignment: Alignment.centerRight,
+              child: AppButton(
+                label: 'Done editing',
+                onPressed: onDoneEditing,
+                icon: Icons.check_circle_outline,
+                expanded: false,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _OptionCompactCard extends StatelessWidget {
+  const _OptionCompactCard({
+    required this.option,
+    required this.onEdit,
+    this.onRemove,
+  });
+
+  final PriceCompareOptionDraft option;
+  final VoidCallback onEdit;
+  final VoidCallback? onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      child: Row(
+        children: <Widget>[
+          Expanded(
+            child: AppListTile(
+              title: option.label,
+              subtitle: option.compactSummary,
+              leading: const Icon(Icons.inventory_2_outlined),
+              onTap: onEdit,
+            ),
+          ),
+          IconButton(
+            onPressed: onEdit,
+            icon: const Icon(Icons.edit_outlined),
+            tooltip: 'Edit option',
+          ),
+          if (onRemove != null)
+            IconButton(
+              onPressed: onRemove,
+              icon: const Icon(Icons.delete_outline),
+              tooltip: 'Remove option',
+            ),
         ],
       ),
     );
@@ -237,36 +367,23 @@ class _OptionCard extends StatelessWidget {
 }
 
 class _ComparisonResultCard extends StatelessWidget {
-  const _ComparisonResultCard({
-    required this.result,
-    required this.message,
-  });
+  const _ComparisonResultCard({required this.result});
 
   final PackageComparisonResult result;
-  final String? message;
 
   @override
   Widget build(BuildContext context) {
     final StatusChipTone tone = switch (result.recommendation) {
-      PackageRecommendation.first || PackageRecommendation.second => StatusChipTone.success,
+      PackageRecommendation.winner => StatusChipTone.success,
       PackageRecommendation.tie => StatusChipTone.warning,
       PackageRecommendation.none => StatusChipTone.danger,
     };
 
     final String status = switch (result.recommendation) {
-      PackageRecommendation.first => 'Best value: Option A',
-      PackageRecommendation.second => 'Best value: Option B',
+      PackageRecommendation.winner => 'Winner: ${result.recommendedLabel}',
       PackageRecommendation.tie => 'Both are equal value',
       PackageRecommendation.none => 'Cannot compare',
     };
-
-    final String firstUnitPrice = result.firstOption.unitPriceResult.unitPrice == null
-        ? 'N/A'
-        : result.firstOption.unitPriceResult.unitPrice!.toStringAsFixed(4);
-
-    final String secondUnitPrice = result.secondOption.unitPriceResult.unitPrice == null
-        ? 'N/A'
-        : result.secondOption.unitPriceResult.unitPrice!.toStringAsFixed(4);
 
     return AppCard(
       child: Column(
@@ -280,21 +397,60 @@ class _ComparisonResultCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
-          AppListTile(
-            title: 'Option A unit price',
-            subtitle: '$firstUnitPrice / ${result.normalizedUnit ?? '-'}',
-            leading: const Icon(Icons.looks_one_outlined),
+          Text(
+            result.explanation,
+            style: Theme.of(context).textTheme.bodyMedium,
           ),
-          const SizedBox(height: AppSpacing.xs),
-          AppListTile(
-            title: 'Option B unit price',
-            subtitle: '$secondUnitPrice / ${result.normalizedUnit ?? '-'}',
-            leading: const Icon(Icons.looks_two_outlined),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            'Comparison table',
+            style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: AppSpacing.sm),
-          Text(
-            message ?? result.explanation,
-            style: Theme.of(context).textTheme.bodyMedium,
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: DataTable(
+              columns: const <DataColumn>[
+                DataColumn(label: Text('Option')),
+                DataColumn(label: Text('Price')),
+                DataColumn(label: Text('Quantity')),
+                DataColumn(label: Text('Unit')),
+                DataColumn(label: Text('Unit price')),
+                DataColumn(label: Text('Rank')),
+              ],
+              rows: result.rankedOptions
+                  .map(
+                    (PackageOptionEvaluation evaluation) => DataRow(
+                      cells: <DataCell>[
+                        DataCell(
+                          Text(evaluation.option.label),
+                        ),
+                        DataCell(
+                          Text(
+                            '\$${evaluation.option.price.toStringAsFixed(2)}',
+                          ),
+                        ),
+                        DataCell(
+                          Text(
+                            evaluation.option.quantity.toStringAsFixed(
+                              evaluation.option.quantity % 1 == 0 ? 0 : 2,
+                            ),
+                          ),
+                        ),
+                        DataCell(Text(evaluation.option.unit)),
+                        DataCell(
+                          Text(
+                            '${evaluation.unitPriceResult.unitPrice?.toStringAsFixed(4) ?? 'N/A'} / ${result.normalizedUnit ?? '-'}',
+                          ),
+                        ),
+                        DataCell(
+                          Text('#${evaluation.rank ?? '-'}'),
+                        ),
+                      ],
+                    ),
+                  )
+                  .toList(growable: false),
+            ),
           ),
         ],
       ),

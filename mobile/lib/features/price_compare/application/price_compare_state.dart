@@ -1,61 +1,105 @@
 import 'package:cartalyst_mobile/features/price_compare/domain/services/package_comparison_service.dart';
 import 'package:cartalyst_mobile/features/products/domain/entities/product.dart';
 
+class PriceCompareOptionDraft {
+  const PriceCompareOptionDraft({
+    required this.id,
+    required this.label,
+    required this.price,
+    required this.quantity,
+    required this.unit,
+    required this.productId,
+    required this.isExpanded,
+  });
+
+  const PriceCompareOptionDraft.initial({
+    required this.id,
+    required this.label,
+    this.isExpanded = true,
+  })  : price = '',
+        quantity = '',
+        unit = null,
+        productId = null;
+
+  final String id;
+  final String label;
+  final String price;
+  final String quantity;
+  final String? unit;
+  final String? productId;
+  final bool isExpanded;
+
+  bool get hasRequiredFields =>
+      price.trim().isNotEmpty &&
+      quantity.trim().isNotEmpty &&
+      unit != null &&
+      unit!.trim().isNotEmpty;
+
+  bool get showsCompactCard => hasRequiredFields && !isExpanded;
+
+  String get compactSummary {
+    final String unitLabel = unit ?? 'No unit';
+    final String priceLabel = price.trim().isEmpty ? 'No price' : '\$$price';
+    final String quantityLabel =
+        quantity.trim().isEmpty ? 'No quantity' : '$quantity $unitLabel';
+    return '$priceLabel • $quantityLabel';
+  }
+
+  PriceCompareOptionDraft copyWith({
+    String? id,
+    String? label,
+    String? price,
+    String? quantity,
+    String? unit,
+    bool clearUnit = false,
+    String? productId,
+    bool clearProductId = false,
+    bool? isExpanded,
+  }) {
+    return PriceCompareOptionDraft(
+      id: id ?? this.id,
+      label: label ?? this.label,
+      price: price ?? this.price,
+      quantity: quantity ?? this.quantity,
+      unit: clearUnit ? null : (unit ?? this.unit),
+      productId: clearProductId ? null : (productId ?? this.productId),
+      isExpanded: isExpanded ?? this.isExpanded,
+    );
+  }
+}
+
 class PriceCompareState {
   const PriceCompareState({
     required this.products,
-    required this.optionOnePrice,
-    required this.optionOneQuantity,
-    required this.optionOneUnit,
-    required this.optionOneProductId,
-    required this.optionTwoPrice,
-    required this.optionTwoQuantity,
-    required this.optionTwoUnit,
-    required this.optionTwoProductId,
+    required this.options,
     required this.comparisonResult,
     required this.isBusy,
     required this.message,
   });
 
   const PriceCompareState.initial()
-    : products = const <Product>[],
-      optionOnePrice = '',
-      optionOneQuantity = '',
-      optionOneUnit = 'piece',
-      optionOneProductId = null,
-      optionTwoPrice = '',
-      optionTwoQuantity = '',
-      optionTwoUnit = 'piece',
-      optionTwoProductId = null,
-      comparisonResult = null,
-      isBusy = false,
-      message = null;
+      : products = const <Product>[],
+        options = const <PriceCompareOptionDraft>[
+          PriceCompareOptionDraft.initial(id: 'option-1', label: 'Option A'),
+          PriceCompareOptionDraft.initial(id: 'option-2', label: 'Option B'),
+        ],
+        comparisonResult = null,
+        isBusy = false,
+        message = null;
 
   final List<Product> products;
-  final String optionOnePrice;
-  final String optionOneQuantity;
-  final String optionOneUnit;
-  final String? optionOneProductId;
-  final String optionTwoPrice;
-  final String optionTwoQuantity;
-  final String optionTwoUnit;
-  final String? optionTwoProductId;
+  final List<PriceCompareOptionDraft> options;
   final PackageComparisonResult? comparisonResult;
   final bool isBusy;
   final String? message;
 
+  bool get canAddMoreOptions => options.length < 5;
+
+  bool get canRemoveOptions => options.length > 2;
+
   PriceCompareState copyWith({
     List<Product>? products,
-    String? optionOnePrice,
-    String? optionOneQuantity,
-    String? optionOneUnit,
-    String? optionOneProductId,
-    bool clearOptionOneProductId = false,
-    String? optionTwoPrice,
-    String? optionTwoQuantity,
-    String? optionTwoUnit,
-    String? optionTwoProductId,
-    bool clearOptionTwoProductId = false,
+    List<PriceCompareOptionDraft>? options,
     PackageComparisonResult? comparisonResult,
     bool clearComparison = false,
     bool? isBusy,
@@ -64,19 +108,9 @@ class PriceCompareState {
   }) {
     return PriceCompareState(
       products: products ?? this.products,
-      optionOnePrice: optionOnePrice ?? this.optionOnePrice,
-      optionOneQuantity: optionOneQuantity ?? this.optionOneQuantity,
-      optionOneUnit: optionOneUnit ?? this.optionOneUnit,
-      optionOneProductId: clearOptionOneProductId
-          ? null
-          : (optionOneProductId ?? this.optionOneProductId),
-      optionTwoPrice: optionTwoPrice ?? this.optionTwoPrice,
-      optionTwoQuantity: optionTwoQuantity ?? this.optionTwoQuantity,
-      optionTwoUnit: optionTwoUnit ?? this.optionTwoUnit,
-      optionTwoProductId: clearOptionTwoProductId
-          ? null
-          : (optionTwoProductId ?? this.optionTwoProductId),
-      comparisonResult: clearComparison ? null : (comparisonResult ?? this.comparisonResult),
+      options: options ?? this.options,
+      comparisonResult:
+          clearComparison ? null : (comparisonResult ?? this.comparisonResult),
       isBusy: isBusy ?? this.isBusy,
       message: clearMessage ? null : (message ?? this.message),
     );

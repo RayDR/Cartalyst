@@ -360,6 +360,7 @@ class FakeShoppingListRepository implements ShoppingListRepository {
 
   final List<ShoppingList> _lists = <ShoppingList>[];
   final List<ShoppingListItem> _items = <ShoppingListItem>[];
+  final Map<String, ShoppingListDraft> _drafts = <String, ShoppingListDraft>{};
 
   void seedList(ShoppingList list) {
     _lists.add(list);
@@ -436,6 +437,28 @@ class FakeShoppingListRepository implements ShoppingListRepository {
     }
     _emitAllLists();
     _emitActiveLists();
+  }
+
+  @override
+  Future<ShoppingListDraft?> readDraft(String shoppingListId) async {
+    return _drafts[shoppingListId];
+  }
+
+  @override
+  Future<void> saveDraft(ShoppingListDraft draft) async {
+    _drafts[draft.shoppingListId] = ShoppingListDraft(
+      shoppingListId: draft.shoppingListId,
+      name: draft.name,
+      items: draft.items
+          .map((ShoppingListItem item) => item.copyWith())
+          .toList(growable: false),
+      updatedAt: draft.updatedAt,
+    );
+  }
+
+  @override
+  Future<void> deleteDraft(String shoppingListId) async {
+    _drafts.remove(shoppingListId);
   }
 
   void _emitAllLists() {

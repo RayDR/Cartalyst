@@ -31,6 +31,7 @@ class ListDetailScreen extends ConsumerStatefulWidget {
 
 class _ListDetailScreenState extends ConsumerState<ListDetailScreen> {
   late final TextEditingController _quickAddController;
+  bool _draftDialogOpen = false;
 
   @override
   void initState() {
@@ -55,6 +56,25 @@ class _ListDetailScreenState extends ConsumerState<ListDetailScreen> {
     final ShoppingListController controller =
         ref.read(shoppingListControllerProvider(widget.listId).notifier);
 
+    if (currentList != null) {
+      controller.syncWithList(currentList);
+    }
+
+    ref.listen<ShoppingListState>(
+      shoppingListControllerProvider(widget.listId),
+      (ShoppingListState? previous, ShoppingListState next) {
+        final ShoppingList? list = _findList(listsState.lists, widget.listId);
+        if (list == null || !next.draftPromptPending || _draftDialogOpen) {
+          return;
+        }
+        _draftDialogOpen = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) async {
+          await _showDraftChoiceDialog(context, controller, list);
+          _draftDialogOpen = false;
+        });
+      },
+    );
+
     if (_quickAddController.text != state.quickAddInput) {
       _quickAddController.value = TextEditingValue(
         text: state.quickAddInput,
@@ -63,15 +83,33 @@ class _ListDetailScreenState extends ConsumerState<ListDetailScreen> {
     }
 
     return AppScaffold(
-      title: currentList?.name ?? 'Shopping List',
+      title: state.isEditMode
+          ? (state.draftName ?? currentList?.name ?? 'Shopping List')
+          : (currentList?.name ?? 'Shopping List'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           if (currentList != null)
+            _EditModeBanner(
+              isEditMode: state.isEditMode,
+              hasDraft: state.hasDraft,
+              onEnterEditMode: () => controller.enterEditMode(currentList),
+              onSaveChanges: () => controller.applyDraft(currentList),
+              onCancelChanges: controller.cancelChanges,
+              onDiscardDraft: controller.discardDraft,
+            ),
+          if (currentList != null)
             _EditableListHeader(
-              list: currentList,
-              onRename: () =>
-                  _showRenameDialog(context, controller, currentList),
+              title: state.isEditMode
+                  ? (state.draftName ?? currentList.name)
+                  : currentList.name,
+              isEditMode: state.isEditMode,
+              onRename: () => _showRenameDialog(
+                context,
+                controller,
+                currentList,
+                isEditMode: state.isEditMode,
+              ),
             ),
           if (currentList != null) _InventoryLinkCard(list: currentList),
           const SectionHeader(
@@ -154,7 +192,11 @@ class _ListDetailScreenState extends ConsumerState<ListDetailScreen> {
           const SizedBox(height: AppSpacing.sm),
           Expanded(
             child: state.hasItems
-                ? _ItemsView(state: state, controller: controller)
+                ? _ItemsView(
+                    state: state,
+                    controller: controller,
+                    isEditMode: state.isEditMode,
+                  )
                 : EmptyState(
                     title: 'This list is empty',
                     description: 'Use Quick Add to build your list in seconds.',
@@ -185,8 +227,9 @@ class _ListDetailScreenState extends ConsumerState<ListDetailScreen> {
   Future<void> _showRenameDialog(
     BuildContext context,
     ShoppingListController controller,
-    ShoppingList list,
-  ) async {
+    ShoppingList list, {
+    required bool isEditMode,
+  }) async {
     final String? newName = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
@@ -200,7 +243,7 @@ class _ListDetailScreenState extends ConsumerState<ListDetailScreen> {
     }
 
     final bool renamed = await controller.renameList(list, newName);
-    if (renamed && context.mounted) {
+    if (renamed && context.mounted && !isEditMode) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Renamed "${list.name}"'),
@@ -212,15 +255,65 @@ class _ListDetailScreenState extends ConsumerState<ListDetailScreen> {
       );
     }
   }
+
+  Future<void> _showDraftChoiceDialog(
+    BuildContext context,
+    ShoppingListController controller,
+    ShoppingList list,
+  ) {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Draft found'),
+          content: const Text(
+            'This list has unsaved draft changes. What do you want to do?',
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () async {
+                await controller.discardDraft();
+                if (context.mounted) {
+                  Navigator.of(context).pop();
+                }
+              },
+              child: const Text('Discard draft'),
+            ),
+            TextButton(
+              onPressed: () async {
+                await controller.applyDraft(list);
+                if (context.mounted) {
+                  Navigator.of(context).pop();
+                }
+              },
+              child: const Text('Apply draft'),
+            ),
+            FilledButton(
+              onPressed: () async {
+                await controller.continueDraftEditing(list);
+                if (context.mounted) {
+                  Navigator.of(context).pop();
+                }
+              },
+              child: const Text('Continue editing'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 }
 
 class _EditableListHeader extends StatelessWidget {
   const _EditableListHeader({
-    required this.list,
+    required this.title,
+    required this.isEditMode,
     required this.onRename,
   });
 
-  final ShoppingList list;
+  final String title;
+  final bool isEditMode;
   final VoidCallback onRename;
 
   @override
@@ -230,9 +323,85 @@ class _EditableListHeader extends StatelessWidget {
       child: AppCard(
         onTap: onRename,
         child: AppListTile(
-          title: list.name,
-          subtitle: 'Tap to rename the shopping list',
+          title: title,
+          subtitle: isEditMode
+              ? 'Editing draft name'
+              : 'Tap to rename the shopping list',
           leading: const Icon(Icons.edit_outlined),
+        ),
+      ),
+    );
+  }
+}
+
+class _EditModeBanner extends StatelessWidget {
+  const _EditModeBanner({
+    required this.isEditMode,
+    required this.hasDraft,
+    required this.onEnterEditMode,
+    required this.onSaveChanges,
+    required this.onCancelChanges,
+    required this.onDiscardDraft,
+  });
+
+  final bool isEditMode;
+  final bool hasDraft;
+  final Future<bool> Function() onEnterEditMode;
+  final Future<bool> Function() onSaveChanges;
+  final Future<bool> Function() onCancelChanges;
+  final Future<bool> Function() onDiscardDraft;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!isEditMode) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+        child: AppCard(
+          child: Row(
+            children: <Widget>[
+              const Icon(Icons.edit_note_outlined),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  hasDraft
+                      ? 'You have unsaved draft changes.'
+                      : 'Enter edit mode to stage changes before applying.',
+                ),
+              ),
+              TextButton(
+                onPressed: onEnterEditMode,
+                child: Text(hasDraft ? 'Resume edit' : 'Edit list'),
+              ),
+              if (hasDraft)
+                TextButton(
+                  onPressed: onDiscardDraft,
+                  child: const Text('Discard'),
+                ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: AppCard(
+        child: Row(
+          children: <Widget>[
+            const Icon(Icons.pending_actions_outlined),
+            const SizedBox(width: AppSpacing.sm),
+            const Expanded(
+              child: Text('Editing draft. Save to apply changes.'),
+            ),
+            TextButton(
+              onPressed: onCancelChanges,
+              child: const Text('Cancel changes'),
+            ),
+            FilledButton(
+              onPressed: onSaveChanges,
+              child: const Text('Save changes'),
+            ),
+          ],
         ),
       ),
     );
@@ -604,10 +773,15 @@ class _InventoryNameDialogState extends State<_InventoryNameDialog> {
 }
 
 class _ItemsView extends StatelessWidget {
-  const _ItemsView({required this.state, required this.controller});
+  const _ItemsView({
+    required this.state,
+    required this.controller,
+    required this.isEditMode,
+  });
 
   final ShoppingListState state;
   final ShoppingListController controller;
+  final bool isEditMode;
 
   @override
   Widget build(BuildContext context) {
@@ -648,7 +822,7 @@ class _ItemsView extends StatelessWidget {
                 confirmDismiss: (_) async => true,
                 onDismissed: (_) async {
                   final bool skipped = await controller.markSkipped(item);
-                  if (skipped && context.mounted) {
+                  if (skipped && context.mounted && !isEditMode) {
                     showUndo(
                       'Marked "${item.rawText}" as skipped',
                       controller.undoLastAction,
@@ -662,7 +836,7 @@ class _ItemsView extends StatelessWidget {
                   statusLabel: 'Pending',
                   onDoubleTap: () async {
                     final bool purchased = await controller.markPurchased(item);
-                    if (purchased && context.mounted) {
+                    if (purchased && context.mounted && !isEditMode) {
                       showUndo(
                         'Marked "${item.rawText}" as purchased',
                         controller.undoLastAction,
@@ -692,7 +866,7 @@ class _ItemsView extends StatelessWidget {
                 isHighlighted: true,
                 onDoubleTap: () async {
                   final bool purchased = await controller.markPurchased(item);
-                  if (purchased && context.mounted) {
+                  if (purchased && context.mounted && !isEditMode) {
                     showUndo(
                       'Marked "${item.rawText}" as purchased',
                       controller.undoLastAction,

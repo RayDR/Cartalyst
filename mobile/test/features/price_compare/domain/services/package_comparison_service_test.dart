@@ -11,24 +11,27 @@ void main() {
       PackageComparisonService(unitPriceService);
 
   group('Price compare services', () {
-    test('piece comparison', () {
-      final PackageComparisonResult result = comparisonService.compare(
-        first: const PackageOptionInput(
-          label: 'Option A',
-          price: 12,
-          quantity: 20,
-          unit: 'piece',
-        ),
-        second: const PackageOptionInput(
-          label: 'Option B',
-          price: 26,
-          quantity: 40,
-          unit: 'piece',
-        ),
+    test('2 options compares and picks winner', () {
+      final PackageComparisonResult result = comparisonService.compareAll(
+        const <PackageOptionInput>[
+          PackageOptionInput(
+            label: 'Option A',
+            price: 12,
+            quantity: 20,
+            unit: 'piece',
+          ),
+          PackageOptionInput(
+            label: 'Option B',
+            price: 26,
+            quantity: 40,
+            unit: 'piece',
+          ),
+        ],
       );
 
       expect(result.isComparable, isTrue);
-      expect(result.recommendation, PackageRecommendation.first);
+      expect(result.recommendation, PackageRecommendation.winner);
+      expect(result.recommendedLabel, 'Option A');
     });
 
     test('oz/lb conversion', () {
@@ -75,20 +78,94 @@ void main() {
       expect(result.convertedQuantity, closeTo(3.785411784, 0.000001));
     });
 
+    test('3 to 5 options rank correctly', () {
+      final PackageComparisonResult result = comparisonService.compareAll(
+        const <PackageOptionInput>[
+          PackageOptionInput(
+            label: 'Option A',
+            price: 12,
+            quantity: 20,
+            unit: 'piece',
+          ),
+          PackageOptionInput(
+            label: 'Option B',
+            price: 18,
+            quantity: 20,
+            unit: 'piece',
+          ),
+          PackageOptionInput(
+            label: 'Option C',
+            price: 8,
+            quantity: 20,
+            unit: 'piece',
+          ),
+          PackageOptionInput(
+            label: 'Option D',
+            price: 25,
+            quantity: 40,
+            unit: 'piece',
+          ),
+          PackageOptionInput(
+            label: 'Option E',
+            price: 40,
+            quantity: 50,
+            unit: 'piece',
+          ),
+        ],
+      );
+
+      expect(result.isComparable, isTrue);
+      expect(result.options.length, 5);
+      expect(result.recommendedLabel, 'Option C');
+      expect(result.rankedOptions.first.option.label, 'Option C');
+      expect(result.rankedOptions.last.option.label, 'Option B');
+    });
+
+    test('invalid option returns non-comparable result', () {
+      final PackageComparisonResult result = comparisonService.compareAll(
+        const <PackageOptionInput>[
+          PackageOptionInput(
+            label: 'Option A',
+            price: double.nan,
+            quantity: 10,
+            unit: 'piece',
+          ),
+          PackageOptionInput(
+            label: 'Option B',
+            price: 8,
+            quantity: 10,
+            unit: 'piece',
+          ),
+        ],
+      );
+
+      expect(result.isComparable, isFalse);
+      expect(result.recommendation, PackageRecommendation.none);
+      expect(result.explanation, contains('Option A'));
+    });
+
     test('incompatible units', () {
-      final PackageComparisonResult result = comparisonService.compare(
-        first: const PackageOptionInput(
-          label: 'Option A',
-          price: 10,
-          quantity: 10,
-          unit: 'piece',
-        ),
-        second: const PackageOptionInput(
-          label: 'Option B',
-          price: 8,
-          quantity: 500,
-          unit: 'ml',
-        ),
+      final PackageComparisonResult result = comparisonService.compareAll(
+        const <PackageOptionInput>[
+          PackageOptionInput(
+            label: 'Option A',
+            price: 10,
+            quantity: 10,
+            unit: 'piece',
+          ),
+          PackageOptionInput(
+            label: 'Option B',
+            price: 8,
+            quantity: 500,
+            unit: 'ml',
+          ),
+          PackageOptionInput(
+            label: 'Option C',
+            price: 15,
+            quantity: 15,
+            unit: 'piece',
+          ),
+        ],
       );
 
       expect(result.isComparable, isFalse);
@@ -96,19 +173,21 @@ void main() {
     });
 
     test('zero quantity', () {
-      final PackageComparisonResult result = comparisonService.compare(
-        first: const PackageOptionInput(
-          label: 'Option A',
-          price: 10,
-          quantity: 0,
-          unit: 'piece',
-        ),
-        second: const PackageOptionInput(
-          label: 'Option B',
-          price: 8,
-          quantity: 10,
-          unit: 'piece',
-        ),
+      final PackageComparisonResult result = comparisonService.compareAll(
+        const <PackageOptionInput>[
+          PackageOptionInput(
+            label: 'Option A',
+            price: 10,
+            quantity: 0,
+            unit: 'piece',
+          ),
+          PackageOptionInput(
+            label: 'Option B',
+            price: 8,
+            quantity: 10,
+            unit: 'piece',
+          ),
+        ],
       );
 
       expect(result.isComparable, isFalse);
@@ -117,61 +196,59 @@ void main() {
     });
 
     test('equal unit price', () {
-      final PackageComparisonResult result = comparisonService.compare(
-        first: const PackageOptionInput(
-          label: 'Option A',
-          price: 10,
-          quantity: 20,
-          unit: 'piece',
-        ),
-        second: const PackageOptionInput(
-          label: 'Option B',
-          price: 20,
-          quantity: 40,
-          unit: 'piece',
-        ),
+      final PackageComparisonResult result = comparisonService.compareAll(
+        const <PackageOptionInput>[
+          PackageOptionInput(
+            label: 'Option A',
+            price: 10,
+            quantity: 20,
+            unit: 'piece',
+          ),
+          PackageOptionInput(
+            label: 'Option B',
+            price: 20,
+            quantity: 40,
+            unit: 'piece',
+          ),
+          PackageOptionInput(
+            label: 'Option C',
+            price: 15,
+            quantity: 20,
+            unit: 'piece',
+          ),
+        ],
       );
 
       expect(result.isComparable, isTrue);
       expect(result.recommendation, PackageRecommendation.tie);
     });
 
-    test('cheaper first option', () {
-      final PackageComparisonResult result = comparisonService.compare(
-        first: const PackageOptionInput(
-          label: 'Option A',
-          price: 12,
-          quantity: 20,
-          unit: 'piece',
-        ),
-        second: const PackageOptionInput(
-          label: 'Option B',
-          price: 30,
-          quantity: 40,
-          unit: 'piece',
-        ),
+    test('winner selection prefers lowest normalized unit price', () {
+      final PackageComparisonResult result = comparisonService.compareAll(
+        const <PackageOptionInput>[
+          PackageOptionInput(
+            label: 'Option A',
+            price: 30,
+            quantity: 20,
+            unit: 'piece',
+          ),
+          PackageOptionInput(
+            label: 'Option B',
+            price: 12,
+            quantity: 20,
+            unit: 'piece',
+          ),
+          PackageOptionInput(
+            label: 'Option C',
+            price: 20,
+            quantity: 25,
+            unit: 'piece',
+          ),
+        ],
       );
 
-      expect(result.recommendation, PackageRecommendation.first);
-    });
-
-    test('cheaper second option', () {
-      final PackageComparisonResult result = comparisonService.compare(
-        first: const PackageOptionInput(
-          label: 'Option A',
-          price: 30,
-          quantity: 20,
-          unit: 'piece',
-        ),
-        second: const PackageOptionInput(
-          label: 'Option B',
-          price: 12,
-          quantity: 20,
-          unit: 'piece',
-        ),
-      );
-
-      expect(result.recommendation, PackageRecommendation.second);
+      expect(result.recommendation, PackageRecommendation.winner);
+      expect(result.recommendedLabel, 'Option B');
     });
   });
 }

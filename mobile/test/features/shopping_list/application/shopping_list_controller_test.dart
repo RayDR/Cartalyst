@@ -130,6 +130,194 @@ void main() {
       expect(shoppingListRepository.lists.first.name, 'Test list');
     });
 
+    test('edit mode stores list and item changes as draft only', () async {
+      final ShoppingListController controller =
+          container.read(shoppingListControllerProvider(testListId).notifier);
+      final ShoppingList list = shoppingListRepository.lists.first;
+
+      final bool entered = await controller.enterEditMode(list);
+      expect(entered, isTrue);
+
+      final bool renamed = await controller.renameList(list, 'Drafted name');
+      expect(renamed, isTrue);
+
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+      controller.updateQuickAddInput('dragonfruit 2');
+      await controller.addCustomItem();
+
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+
+      expect(shoppingListRepository.lists.first.name, 'Test list');
+      expect(shoppingListRepository.itemsForList(testListId), isEmpty);
+
+      final ShoppingListDraft? draft =
+          shoppingListRepository.getDraft(testListId);
+      expect(draft, isNotNull);
+      expect(draft!.name, 'Drafted name');
+
+      await controller.cancelChanges();
+      final ShoppingListState state =
+          container.read(shoppingListControllerProvider(testListId));
+      expect(state.isEditMode, isFalse);
+      expect(state.hasDraft, isTrue);
+    });
+
+    test('applyDraft commits staged changes and clears persisted draft',
+        () async {
+      final ShoppingListController controller =
+          container.read(shoppingListControllerProvider(testListId).notifier);
+      final ShoppingList list = shoppingListRepository.lists.first;
+
+      await controller.enterEditMode(list);
+      await controller.renameList(list, 'Applied name');
+
+      final bool applied = await controller.applyDraft(list);
+      expect(applied, isTrue);
+
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+
+      expect(shoppingListRepository.lists.first.name, 'Applied name');
+      expect(shoppingListRepository.getDraft(testListId), isNull);
+
+      final ShoppingListState state =
+          container.read(shoppingListControllerProvider(testListId));
+      expect(state.isEditMode, isFalse);
+      expect(state.hasDraft, isFalse);
+    });
+
+    test('applyDraft persists added draft items', () async {
+      final ShoppingListController controller =
+          container.read(shoppingListControllerProvider(testListId).notifier);
+      final ShoppingList list = shoppingListRepository.lists.first;
+
+      final ShoppingListItem draftItem = ShoppingListItem(
+        id: 'draft-item-1',
+        shoppingListId: testListId,
+        rawText: 'draft apples',
+        quantity: 2,
+        unit: Unit.fromCode('unit'),
+        status: ShoppingListItemStatus.pending,
+        source: ShoppingListItemSource.manual,
+        priorityScore: 0.2,
+        createdAt: DateTime(2026),
+        updatedAt: DateTime(2026),
+        syncStatus: 'pending_sync',
+        version: 1,
+      );
+
+      await shoppingListRepository.saveDraft(
+        ShoppingListDraft(
+          shoppingListId: testListId,
+          name: list.name,
+          items: <ShoppingListItem>[draftItem],
+          updatedAt: DateTime.now(),
+        ),
+      );
+
+      await controller.syncWithList(list);
+      await controller.continueDraftEditing(list);
+      final bool applied = await controller.applyDraft(list);
+      expect(applied, isTrue);
+
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+
+      expect(shoppingListRepository.itemsForList(testListId).length, 1);
+      expect(
+        shoppingListRepository.itemsForList(testListId).first.rawText,
+        'draft apples',
+      );
+      expect(shoppingListRepository.getDraft(testListId), isNull);
+    });
+
+    test('applyDraft removes items deleted in draft', () async {
+      final ShoppingListController controller =
+          container.read(shoppingListControllerProvider(testListId).notifier);
+      final ShoppingList list = shoppingListRepository.lists.first;
+
+      final ShoppingListItem seededItem = ShoppingListItem(
+        id: 'seed-item-1',
+        shoppingListId: testListId,
+        rawText: 'seeded item',
+        quantity: 1,
+        unit: Unit.fromCode('unit'),
+        status: ShoppingListItemStatus.pending,
+        source: ShoppingListItemSource.manual,
+        priorityScore: 0.3,
+        createdAt: DateTime(2026),
+        updatedAt: DateTime(2026),
+        syncStatus: 'synced',
+        version: 1,
+      );
+      await shoppingListRepository.saveShoppingListItem(seededItem);
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+
+      await controller.enterEditMode(list);
+      final ShoppingListState editingState =
+          container.read(shoppingListControllerProvider(testListId));
+      await controller.softDelete(editingState.pendingItems.first);
+
+      final bool applied = await controller.applyDraft(list);
+      expect(applied, isTrue);
+
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+
+      expect(shoppingListRepository.itemsForList(testListId), isEmpty);
+      expect(shoppingListRepository.getDraft(testListId), isNull);
+    });
+
+    test('discardDraft drops staged changes', () async {
+      final ShoppingListController controller =
+          container.read(shoppingListControllerProvider(testListId).notifier);
+      final ShoppingList list = shoppingListRepository.lists.first;
+
+      await controller.enterEditMode(list);
+      controller.updateQuickAddInput('tomato 3');
+      await controller.addCustomItem();
+
+      final bool discarded = await controller.discardDraft();
+      expect(discarded, isTrue);
+
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+
+      expect(shoppingListRepository.getDraft(testListId), isNull);
+      expect(shoppingListRepository.itemsForList(testListId), isEmpty);
+
+      final ShoppingListState state =
+          container.read(shoppingListControllerProvider(testListId));
+      expect(state.isEditMode, isFalse);
+      expect(state.hasDraft, isFalse);
+    });
+
+    test('syncWithList exposes reopen prompt when draft exists', () async {
+      final ShoppingListController controller =
+          container.read(shoppingListControllerProvider(testListId).notifier);
+      final ShoppingList list = shoppingListRepository.lists.first;
+
+      await controller.enterEditMode(list);
+      await controller.renameList(list, 'Draft stays');
+      await controller.cancelChanges();
+
+      final ProviderContainer reopened = ProviderContainer(
+        overrides: <Override>[
+          shoppingListRepositoryProvider.overrideWithValue(
+            shoppingListRepository,
+          ),
+          productRepositoryProvider.overrideWithValue(productRepository),
+        ],
+      );
+      addTearDown(reopened.dispose);
+
+      final ShoppingListController reopenedController = reopened.read(
+        shoppingListControllerProvider(testListId).notifier,
+      );
+      await reopenedController.syncWithList(shoppingListRepository.lists.first);
+
+      final ShoppingListState reopenedState =
+          reopened.read(shoppingListControllerProvider(testListId));
+      expect(reopenedState.draftPromptPending, isTrue);
+      expect(reopenedState.hasDraft, isTrue);
+    });
+
     test('quick add preserves gal unit for gallon variants', () async {
       final ShoppingListController controller =
           container.read(shoppingListControllerProvider(testListId).notifier);
@@ -348,12 +536,20 @@ class FakeShoppingListRepository implements ShoppingListRepository {
 
   final List<ShoppingList> _lists = <ShoppingList>[];
   final List<ShoppingListItem> _items = <ShoppingListItem>[];
+  final Map<String, ShoppingListDraft> _drafts = <String, ShoppingListDraft>{};
 
   List<ShoppingList> get lists => List<ShoppingList>.unmodifiable(_lists);
 
   List<String> get deletedItemIds => _items
       .where((ShoppingListItem item) => item.deletedAt != null)
       .map((ShoppingListItem item) => item.id)
+      .toList(growable: false);
+
+  ShoppingListDraft? getDraft(String shoppingListId) => _drafts[shoppingListId];
+
+  List<ShoppingListItem> itemsForList(String shoppingListId) => _items
+      .where((ShoppingListItem item) => item.shoppingListId == shoppingListId)
+      .where((ShoppingListItem item) => item.deletedAt == null)
       .toList(growable: false);
 
   void seedList(ShoppingList list) {
@@ -426,6 +622,28 @@ class FakeShoppingListRepository implements ShoppingListRepository {
     }
     _emitAllLists();
     _emitActiveLists();
+  }
+
+  @override
+  Future<ShoppingListDraft?> readDraft(String shoppingListId) async {
+    return _drafts[shoppingListId];
+  }
+
+  @override
+  Future<void> saveDraft(ShoppingListDraft draft) async {
+    _drafts[draft.shoppingListId] = ShoppingListDraft(
+      shoppingListId: draft.shoppingListId,
+      name: draft.name,
+      items: draft.items
+          .map((ShoppingListItem item) => item.copyWith())
+          .toList(growable: false),
+      updatedAt: draft.updatedAt,
+    );
+  }
+
+  @override
+  Future<void> deleteDraft(String shoppingListId) async {
+    _drafts.remove(shoppingListId);
   }
 
   void _emitAllLists() {

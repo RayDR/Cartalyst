@@ -4,6 +4,10 @@ import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping
 class ShoppingListState {
   const ShoppingListState({
     required this.isBusy,
+    required this.isEditMode,
+    required this.hasDraft,
+    required this.draftPromptPending,
+    required this.draftName,
     required this.quickAddInput,
     required this.shoppingModeEnabled,
     required this.purchasedCollapsed,
@@ -16,18 +20,26 @@ class ShoppingListState {
   });
 
   const ShoppingListState.initial()
-    : isBusy = false,
-      quickAddInput = '',
-      shoppingModeEnabled = true,
-      purchasedCollapsed = true,
-      pendingItems = const <ShoppingListItem>[],
-      purchasedItems = const <ShoppingListItem>[],
-      skippedItems = const <ShoppingListItem>[],
-      suggestions = const <ProductSuggestion>[],
-      focusedItemId = null,
-      errorMessage = null;
+      : isBusy = false,
+        isEditMode = false,
+        hasDraft = false,
+        draftPromptPending = false,
+        draftName = null,
+        quickAddInput = '',
+        shoppingModeEnabled = true,
+        purchasedCollapsed = true,
+        pendingItems = const <ShoppingListItem>[],
+        purchasedItems = const <ShoppingListItem>[],
+        skippedItems = const <ShoppingListItem>[],
+        suggestions = const <ProductSuggestion>[],
+        focusedItemId = null,
+        errorMessage = null;
 
   final bool isBusy;
+  final bool isEditMode;
+  final bool hasDraft;
+  final bool draftPromptPending;
+  final String? draftName;
   final String quickAddInput;
   final bool shoppingModeEnabled;
   final bool purchasedCollapsed;
@@ -39,7 +51,9 @@ class ShoppingListState {
   final String? errorMessage;
 
   bool get hasItems =>
-      pendingItems.isNotEmpty || purchasedItems.isNotEmpty || skippedItems.isNotEmpty;
+      pendingItems.isNotEmpty ||
+      purchasedItems.isNotEmpty ||
+      skippedItems.isNotEmpty;
 
   ShoppingListItem? get focusedItem {
     if (focusedItemId == null) {
@@ -67,6 +81,10 @@ class ShoppingListState {
 
   ShoppingListState copyWith({
     bool? isBusy,
+    bool? isEditMode,
+    bool? hasDraft,
+    bool? draftPromptPending,
+    String? draftName,
     String? quickAddInput,
     bool? shoppingModeEnabled,
     bool? purchasedCollapsed,
@@ -76,11 +94,16 @@ class ShoppingListState {
     List<ProductSuggestion>? suggestions,
     String? focusedItemId,
     String? errorMessage,
+    bool clearDraftName = false,
     bool clearErrorMessage = false,
     bool clearFocusedItem = false,
   }) {
     return ShoppingListState(
       isBusy: isBusy ?? this.isBusy,
+      isEditMode: isEditMode ?? this.isEditMode,
+      hasDraft: hasDraft ?? this.hasDraft,
+      draftPromptPending: draftPromptPending ?? this.draftPromptPending,
+      draftName: clearDraftName ? null : (draftName ?? this.draftName),
       quickAddInput: quickAddInput ?? this.quickAddInput,
       shoppingModeEnabled: shoppingModeEnabled ?? this.shoppingModeEnabled,
       purchasedCollapsed: purchasedCollapsed ?? this.purchasedCollapsed,
@@ -88,8 +111,10 @@ class ShoppingListState {
       purchasedItems: purchasedItems ?? this.purchasedItems,
       skippedItems: skippedItems ?? this.skippedItems,
       suggestions: suggestions ?? this.suggestions,
-      focusedItemId: clearFocusedItem ? null : (focusedItemId ?? this.focusedItemId),
-      errorMessage: clearErrorMessage ? null : (errorMessage ?? this.errorMessage),
+      focusedItemId:
+          clearFocusedItem ? null : (focusedItemId ?? this.focusedItemId),
+      errorMessage:
+          clearErrorMessage ? null : (errorMessage ?? this.errorMessage),
     );
   }
 }

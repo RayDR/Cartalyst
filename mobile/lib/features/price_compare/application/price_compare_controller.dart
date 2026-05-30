@@ -12,7 +12,8 @@ import 'package:cartalyst_mobile/features/price_compare/domain/services/unit_pri
 import 'package:cartalyst_mobile/features/products/data/repositories/local_product_repository.dart';
 import 'package:cartalyst_mobile/features/products/domain/entities/product.dart';
 import 'package:cartalyst_mobile/features/products/domain/repositories/product_repository.dart';
-import 'package:cartalyst_mobile/infrastructure/local_db/app_database.dart' show AppDatabase;
+import 'package:cartalyst_mobile/infrastructure/local_db/app_database.dart'
+    show AppDatabase;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
@@ -22,24 +23,33 @@ final priceCompareDatabaseProvider = Provider<AppDatabase>((Ref ref) {
   return database;
 });
 
-final priceCompareProductRepositoryProvider = Provider<ProductRepository>((Ref ref) {
+final priceCompareProductRepositoryProvider =
+    Provider<ProductRepository>((Ref ref) {
   return LocalProductRepository(ref.watch(priceCompareDatabaseProvider));
 });
 
-final priceObservationRepositoryProvider = Provider<PriceObservationRepository>((Ref ref) {
-  return LocalPriceObservationRepository(ref.watch(priceCompareDatabaseProvider));
+final priceObservationRepositoryProvider =
+    Provider<PriceObservationRepository>((Ref ref) {
+  return LocalPriceObservationRepository(
+    ref.watch(priceCompareDatabaseProvider),
+  );
 });
 
-final unitConversionServiceProvider = Provider<UnitConversionService>((Ref ref) {
+final unitConversionServiceProvider =
+    Provider<UnitConversionService>((Ref ref) {
   return const UnitConversionService();
 });
 
-final unitPriceCalculationServiceProvider = Provider<UnitPriceCalculationService>((Ref ref) {
+final unitPriceCalculationServiceProvider =
+    Provider<UnitPriceCalculationService>((Ref ref) {
   return UnitPriceCalculationService(ref.watch(unitConversionServiceProvider));
 });
 
-final packageComparisonServiceProvider = Provider<PackageComparisonService>((Ref ref) {
-  return PackageComparisonService(ref.watch(unitPriceCalculationServiceProvider));
+final packageComparisonServiceProvider =
+    Provider<PackageComparisonService>((Ref ref) {
+  return PackageComparisonService(
+    ref.watch(unitPriceCalculationServiceProvider),
+  );
 });
 
 final priceCompareUuidProvider = Provider<Uuid>((Ref ref) {
@@ -47,7 +57,9 @@ final priceCompareUuidProvider = Provider<Uuid>((Ref ref) {
 });
 
 final priceCompareControllerProvider =
-    NotifierProvider<PriceCompareController, PriceCompareState>(PriceCompareController.new);
+    NotifierProvider<PriceCompareController, PriceCompareState>(
+  PriceCompareController.new,
+);
 
 class PriceCompareController extends Notifier<PriceCompareState> {
   late final ProductRepository _productRepository;
@@ -59,6 +71,8 @@ class PriceCompareController extends Notifier<PriceCompareState> {
   StreamSubscription<List<Product>>? _productsSubscription;
 
   static const List<String> unitOptions = UnitConversionService.supportedUnits;
+  static const int minOptions = 2;
+  static const int maxOptions = 5;
 
   @override
   PriceCompareState build() {
@@ -72,101 +86,221 @@ class PriceCompareController extends Notifier<PriceCompareState> {
       _productsSubscription?.cancel();
     });
 
-    _productsSubscription = _productRepository.watchActiveProducts().listen((List<Product> products) {
+    _productsSubscription = _productRepository
+        .watchActiveProducts()
+        .listen((List<Product> products) {
       state = state.copyWith(products: products);
     });
 
     return const PriceCompareState.initial();
   }
 
-  void updateOptionOnePrice(String value) {
-    state = state.copyWith(optionOnePrice: value, clearMessage: true);
+  void addOption() {
+    if (!state.canAddMoreOptions) {
+      return;
+    }
+
+    final List<PriceCompareOptionDraft> nextOptions = state.options
+        .map(
+          (PriceCompareOptionDraft option) => option.copyWith(
+            isExpanded: option.hasRequiredFields ? false : option.isExpanded,
+          ),
+        )
+        .toList(growable: true)
+      ..add(
+        PriceCompareOptionDraft.initial(
+          id: _uuid.v4(),
+          label: _labelForIndex(state.options.length),
+        ),
+      );
+
+    state = state.copyWith(
+      options: nextOptions,
+      clearComparison: true,
+      clearMessage: true,
+    );
   }
 
-  void updateOptionOneQuantity(String value) {
-    state = state.copyWith(optionOneQuantity: value, clearMessage: true);
+  void removeOption(String optionId) {
+    if (!state.canRemoveOptions) {
+      return;
+    }
+
+    final List<PriceCompareOptionDraft> nextOptions = state.options
+        .where((PriceCompareOptionDraft option) => option.id != optionId)
+        .toList(growable: false);
+
+    state = state.copyWith(
+      options: _renumberOptions(nextOptions),
+      clearComparison: true,
+      clearMessage: true,
+    );
   }
 
-  void updateOptionOneUnit(String unit) {
-    state = state.copyWith(optionOneUnit: unit, clearMessage: true);
+  void editOption(String optionId) {
+    state = state.copyWith(
+      options: state.options
+          .map(
+            (PriceCompareOptionDraft option) => option.copyWith(
+              isExpanded: option.id == optionId,
+            ),
+          )
+          .toList(growable: false),
+      clearMessage: true,
+    );
   }
 
-  void updateOptionOneProduct(String? productId) {
-    state = productId == null
-        ? state.copyWith(clearOptionOneProductId: true)
-        : state.copyWith(optionOneProductId: productId);
+  void collapseOption(String optionId) {
+    state = state.copyWith(
+      options: state.options
+          .map(
+            (PriceCompareOptionDraft option) =>
+                option.id == optionId && option.hasRequiredFields
+                    ? option.copyWith(isExpanded: false)
+                    : option,
+          )
+          .toList(growable: false),
+      clearMessage: true,
+    );
   }
 
-  void updateOptionTwoPrice(String value) {
-    state = state.copyWith(optionTwoPrice: value, clearMessage: true);
+  void updateOptionPrice(String optionId, String value) {
+    _updateOption(
+      optionId,
+      (PriceCompareOptionDraft option) => option.copyWith(price: value),
+    );
   }
 
-  void updateOptionTwoQuantity(String value) {
-    state = state.copyWith(optionTwoQuantity: value, clearMessage: true);
+  void updateOptionQuantity(String optionId, String value) {
+    _updateOption(
+      optionId,
+      (PriceCompareOptionDraft option) => option.copyWith(quantity: value),
+    );
   }
 
-  void updateOptionTwoUnit(String unit) {
-    state = state.copyWith(optionTwoUnit: unit, clearMessage: true);
+  void updateOptionUnit(String optionId, String? unit) {
+    _updateOption(
+      optionId,
+      (PriceCompareOptionDraft option) => unit == null
+          ? option.copyWith(clearUnit: true)
+          : option.copyWith(unit: unit),
+    );
   }
 
-  void updateOptionTwoProduct(String? productId) {
-    state = productId == null
-        ? state.copyWith(clearOptionTwoProductId: true)
-        : state.copyWith(optionTwoProductId: productId);
+  void updateOptionProduct(String optionId, String? productId) {
+    _updateOption(
+      optionId,
+      (PriceCompareOptionDraft option) => productId == null
+          ? option.copyWith(clearProductId: true)
+          : option.copyWith(productId: productId),
+    );
   }
 
   Future<void> compare() async {
-    final double parsedOptionOnePrice = double.tryParse(state.optionOnePrice.trim()) ?? double.nan;
-    final double parsedOptionOneQuantity =
-        double.tryParse(state.optionOneQuantity.trim()) ?? double.nan;
+    if (state.options.length < minOptions) {
+      state = state.copyWith(
+        clearComparison: true,
+        message: 'Add at least two options to compare.',
+      );
+      return;
+    }
 
-    final double parsedOptionTwoPrice = double.tryParse(state.optionTwoPrice.trim()) ?? double.nan;
-    final double parsedOptionTwoQuantity =
-        double.tryParse(state.optionTwoQuantity.trim()) ?? double.nan;
+    final PriceCompareOptionDraft? missingRequired =
+        state.options.cast<PriceCompareOptionDraft?>().firstWhere(
+              (PriceCompareOptionDraft? option) =>
+                  option != null && !option.hasRequiredFields,
+              orElse: () => null,
+            );
 
-    final PackageOptionInput first = PackageOptionInput(
-      label: 'Option A',
-      price: parsedOptionOnePrice,
-      quantity: parsedOptionOneQuantity,
-      unit: state.optionOneUnit,
-      productId: state.optionOneProductId,
-    );
+    if (missingRequired != null) {
+      state = state.copyWith(
+        clearComparison: true,
+        message:
+            '${missingRequired.label} needs price, quantity, and unit before comparing.',
+        options: state.options
+            .map(
+              (PriceCompareOptionDraft option) => option.copyWith(
+                isExpanded: option.id == missingRequired.id,
+              ),
+            )
+            .toList(growable: false),
+      );
+      return;
+    }
 
-    final PackageOptionInput second = PackageOptionInput(
-      label: 'Option B',
-      price: parsedOptionTwoPrice,
-      quantity: parsedOptionTwoQuantity,
-      unit: state.optionTwoUnit,
-      productId: state.optionTwoProductId,
-    );
+    final List<PackageOptionInput> inputs = state.options
+        .map(
+          (PriceCompareOptionDraft option) => PackageOptionInput(
+            label: option.label,
+            price: double.tryParse(option.price.trim()) ?? double.nan,
+            quantity: double.tryParse(option.quantity.trim()) ?? double.nan,
+            unit: option.unit ?? '',
+            productId: option.productId,
+          ),
+        )
+        .toList(growable: false);
 
-    final PackageComparisonResult result = _comparisonService.compare(
-      first: first,
-      second: second,
-    );
+    final PackageComparisonResult result =
+        _comparisonService.compareAll(inputs);
 
     state = state.copyWith(
       comparisonResult: result,
       message: result.explanation,
+      options: state.options
+          .map(
+            (PriceCompareOptionDraft option) => option.copyWith(
+              isExpanded: option.hasRequiredFields ? false : option.isExpanded,
+            ),
+          )
+          .toList(growable: false),
     );
 
-    await _saveObservationIfPossible(first);
-    await _saveObservationIfPossible(second);
+    for (final PackageOptionInput option in inputs) {
+      await _saveObservationIfPossible(option);
+    }
   }
 
   void reset() {
     state = state.copyWith(
-      optionOnePrice: '',
-      optionOneQuantity: '',
-      optionOneUnit: 'piece',
-      clearOptionOneProductId: true,
-      optionTwoPrice: '',
-      optionTwoQuantity: '',
-      optionTwoUnit: 'piece',
-      clearOptionTwoProductId: true,
+      options: const <PriceCompareOptionDraft>[
+        PriceCompareOptionDraft.initial(id: 'option-1', label: 'Option A'),
+        PriceCompareOptionDraft.initial(id: 'option-2', label: 'Option B'),
+      ],
       clearComparison: true,
       clearMessage: true,
     );
+  }
+
+  void _updateOption(
+    String optionId,
+    PriceCompareOptionDraft Function(PriceCompareOptionDraft option) transform,
+  ) {
+    state = state.copyWith(
+      options: state.options
+          .map(
+            (PriceCompareOptionDraft option) => option.id == optionId
+                ? transform(option).copyWith(isExpanded: true)
+                : option,
+          )
+          .toList(growable: false),
+      clearComparison: true,
+      clearMessage: true,
+    );
+  }
+
+  List<PriceCompareOptionDraft> _renumberOptions(
+    List<PriceCompareOptionDraft> options,
+  ) {
+    return options
+        .asMap()
+        .entries
+        .map((MapEntry<int, PriceCompareOptionDraft> entry) {
+      return entry.value.copyWith(label: _labelForIndex(entry.key));
+    }).toList(growable: false);
+  }
+
+  String _labelForIndex(int index) {
+    return 'Option ${String.fromCharCode(65 + index)}';
   }
 
   Future<void> _saveObservationIfPossible(PackageOptionInput option) async {
@@ -175,9 +309,12 @@ class PriceCompareController extends Notifier<PriceCompareState> {
       return;
     }
 
-    final UnitPriceCalculationResult unitPrice = ref
-        .read(unitPriceCalculationServiceProvider)
-        .calculate(totalPrice: option.price, quantity: option.quantity, unit: option.unit);
+    final UnitPriceCalculationResult unitPrice =
+        ref.read(unitPriceCalculationServiceProvider).calculate(
+              totalPrice: option.price,
+              quantity: option.quantity,
+              unit: option.unit,
+            );
 
     if (!unitPrice.isValid || unitPrice.unitPrice == null) {
       return;
@@ -188,7 +325,9 @@ class PriceCompareController extends Notifier<PriceCompareState> {
       unit: option.unit,
     );
 
-    if (!persistence.isValid || persistence.quantity == null || persistence.unitCode == null) {
+    if (!persistence.isValid ||
+        persistence.quantity == null ||
+        persistence.unitCode == null) {
       return;
     }
 
@@ -210,7 +349,9 @@ class PriceCompareController extends Notifier<PriceCompareState> {
     try {
       await _priceObservationRepository.addObservation(observation);
     } catch (_) {
-      state = state.copyWith(message: 'Comparison done, but saving observation failed.');
+      state = state.copyWith(
+        message: 'Comparison done, but saving observation failed.',
+      );
     }
   }
 
@@ -308,9 +449,9 @@ class _PersistenceQuantity {
   }) : isValid = true;
 
   const _PersistenceQuantity.invalid()
-    : isValid = false,
-      quantity = null,
-      unitCode = null;
+      : isValid = false,
+        quantity = null,
+        unitCode = null;
 
   final bool isValid;
   final double? quantity;

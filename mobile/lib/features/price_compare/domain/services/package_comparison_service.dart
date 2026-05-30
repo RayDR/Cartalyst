@@ -1,8 +1,8 @@
+import 'package:cartalyst_mobile/features/price_compare/domain/services/unit_conversion_service.dart';
 import 'package:cartalyst_mobile/features/price_compare/domain/services/unit_price_calculation_service.dart';
 
 enum PackageRecommendation {
-  first,
-  second,
+  winner,
   tie,
   none,
 }
@@ -27,10 +27,12 @@ class PackageOptionEvaluation {
   const PackageOptionEvaluation({
     required this.option,
     required this.unitPriceResult,
+    this.rank,
   });
 
   final PackageOptionInput option;
   final UnitPriceCalculationResult unitPriceResult;
+  final int? rank;
 }
 
 class PackageComparisonResult {
@@ -38,8 +40,7 @@ class PackageComparisonResult {
     required this.isComparable,
     required this.recommendation,
     required this.explanation,
-    required this.firstOption,
-    required this.secondOption,
+    required this.options,
     this.recommendedLabel,
     this.normalizedUnit,
   });
@@ -47,10 +48,25 @@ class PackageComparisonResult {
   final bool isComparable;
   final PackageRecommendation recommendation;
   final String explanation;
-  final PackageOptionEvaluation firstOption;
-  final PackageOptionEvaluation secondOption;
+  final List<PackageOptionEvaluation> options;
   final String? recommendedLabel;
   final String? normalizedUnit;
+
+  List<PackageOptionEvaluation> get rankedOptions {
+    final List<PackageOptionEvaluation> ranked = options
+        .where((PackageOptionEvaluation evaluation) => evaluation.rank != null)
+        .toList(growable: false);
+    final List<PackageOptionEvaluation> sorted =
+        List<PackageOptionEvaluation>.from(ranked);
+    sorted.sort((PackageOptionEvaluation a, PackageOptionEvaluation b) {
+      final int rankCompare = (a.rank ?? 999).compareTo(b.rank ?? 999);
+      if (rankCompare != 0) {
+        return rankCompare;
+      }
+      return a.option.label.compareTo(b.option.label);
+    });
+    return sorted;
+  }
 }
 
 class PackageComparisonService {
@@ -62,90 +78,131 @@ class PackageComparisonService {
     required PackageOptionInput first,
     required PackageOptionInput second,
   }) {
-    final UnitPriceCalculationResult firstResult = _unitPriceService.calculate(
-      totalPrice: first.price,
-      quantity: first.quantity,
-      unit: first.unit,
-    );
+    return compareAll(<PackageOptionInput>[first, second]);
+  }
 
-    final UnitPriceCalculationResult secondResult = _unitPriceService.calculate(
-      totalPrice: second.price,
-      quantity: second.quantity,
-      unit: second.unit,
-    );
-
-    final PackageOptionEvaluation firstEvaluation = PackageOptionEvaluation(
-      option: first,
-      unitPriceResult: firstResult,
-    );
-
-    final PackageOptionEvaluation secondEvaluation = PackageOptionEvaluation(
-      option: second,
-      unitPriceResult: secondResult,
-    );
-
-    if (!firstResult.isValid || !secondResult.isValid) {
-      final String reason = !firstResult.isValid
-          ? '${first.label}: ${firstResult.reason}'
-          : '${second.label}: ${secondResult.reason}';
-
-      return PackageComparisonResult(
+  PackageComparisonResult compareAll(List<PackageOptionInput> options) {
+    if (options.length < 2) {
+      return const PackageComparisonResult(
         isComparable: false,
         recommendation: PackageRecommendation.none,
-        explanation: reason,
-        firstOption: firstEvaluation,
-        secondOption: secondEvaluation,
+        explanation: 'Add at least two options to compare.',
+        options: <PackageOptionEvaluation>[],
       );
     }
 
-    if (firstResult.family != secondResult.family) {
+    final List<PackageOptionEvaluation> evaluations = options
+        .map(
+          (PackageOptionInput option) => PackageOptionEvaluation(
+            option: option,
+            unitPriceResult: _unitPriceService.calculate(
+              totalPrice: option.price,
+              quantity: option.quantity,
+              unit: option.unit,
+            ),
+          ),
+        )
+        .toList(growable: false);
+
+    final PackageOptionEvaluation? invalidEvaluation =
+        evaluations.cast<PackageOptionEvaluation?>().firstWhere(
+              (PackageOptionEvaluation? evaluation) =>
+                  evaluation != null && !evaluation.unitPriceResult.isValid,
+              orElse: () => null,
+            );
+
+    if (invalidEvaluation != null) {
       return PackageComparisonResult(
         isComparable: false,
         recommendation: PackageRecommendation.none,
-        explanation: 'The selected units are incompatible and cannot be compared.',
-        firstOption: firstEvaluation,
-        secondOption: secondEvaluation,
+        explanation:
+            '${invalidEvaluation.option.label}: ${invalidEvaluation.unitPriceResult.reason}',
+        options: evaluations,
       );
     }
 
-    final double firstUnitPrice = firstResult.unitPrice!;
-    final double secondUnitPrice = secondResult.unitPrice!;
-    final double delta = (firstUnitPrice - secondUnitPrice).abs();
+    final UnitFamily? referenceFamily =
+        evaluations.first.unitPriceResult.family;
+    final bool hasIncompatibleUnits = evaluations.any(
+      (PackageOptionEvaluation evaluation) =>
+          evaluation.unitPriceResult.family != referenceFamily,
+    );
 
-    if (delta <= 0.000001) {
+    if (hasIncompatibleUnits) {
+      return PackageComparisonResult(
+        isComparable: false,
+        recommendation: PackageRecommendation.none,
+        explanation:
+            'The selected units are incompatible and cannot be compared.',
+        options: evaluations,
+      );
+    }
+
+    final List<PackageOptionEvaluation> ranked =
+        List<PackageOptionEvaluation>.from(evaluations)
+          ..sort((PackageOptionEvaluation a, PackageOptionEvaluation b) {
+            return a.unitPriceResult.unitPrice!
+                .compareTo(b.unitPriceResult.unitPrice!);
+          });
+
+    int currentRank = 1;
+    double? previousPrice;
+    final Map<String, int> ranksByLabel = <String, int>{};
+    for (int index = 0; index < ranked.length; index++) {
+      final PackageOptionEvaluation evaluation = ranked[index];
+      final double price = evaluation.unitPriceResult.unitPrice!;
+      if (previousPrice != null && (price - previousPrice).abs() > 0.000001) {
+        currentRank += 1;
+      }
+      ranksByLabel[evaluation.option.label] = currentRank;
+      previousPrice = price;
+    }
+
+    final List<PackageOptionEvaluation> withRanks = evaluations
+        .map(
+          (PackageOptionEvaluation evaluation) => PackageOptionEvaluation(
+            option: evaluation.option,
+            unitPriceResult: evaluation.unitPriceResult,
+            rank: ranksByLabel[evaluation.option.label],
+          ),
+        )
+        .toList(growable: false);
+
+    final double winningPrice = ranked.first.unitPriceResult.unitPrice!;
+    final List<PackageOptionEvaluation> leaders = ranked
+        .where(
+          (PackageOptionEvaluation evaluation) =>
+              (evaluation.unitPriceResult.unitPrice! - winningPrice).abs() <=
+              0.000001,
+        )
+        .toList(growable: false);
+    final String normalizedUnit =
+        ranked.first.unitPriceResult.normalizedUnit ?? '-';
+
+    if (leaders.length > 1) {
+      final String labels = leaders
+          .map((PackageOptionEvaluation evaluation) => evaluation.option.label)
+          .join(', ');
       return PackageComparisonResult(
         isComparable: true,
         recommendation: PackageRecommendation.tie,
         explanation:
-            'Both options have the same unit price (${firstUnitPrice.toStringAsFixed(4)} per ${firstResult.normalizedUnit}).',
-        firstOption: firstEvaluation,
-        secondOption: secondEvaluation,
-        normalizedUnit: firstResult.normalizedUnit,
+            '$labels are tied at ${winningPrice.toStringAsFixed(4)} per $normalizedUnit.',
+        options: withRanks,
+        normalizedUnit: normalizedUnit,
       );
     }
 
-    if (firstUnitPrice < secondUnitPrice) {
-      return PackageComparisonResult(
-        isComparable: true,
-        recommendation: PackageRecommendation.first,
-        explanation:
-            '${first.label} is the better value at ${firstUnitPrice.toStringAsFixed(4)} per ${firstResult.normalizedUnit} versus ${secondUnitPrice.toStringAsFixed(4)}.',
-        firstOption: firstEvaluation,
-        secondOption: secondEvaluation,
-        recommendedLabel: first.label,
-        normalizedUnit: firstResult.normalizedUnit,
-      );
-    }
-
+    final PackageOptionEvaluation winner = ranked.first;
+    final PackageOptionEvaluation runnerUp = ranked[1];
     return PackageComparisonResult(
       isComparable: true,
-      recommendation: PackageRecommendation.second,
+      recommendation: PackageRecommendation.winner,
       explanation:
-          '${second.label} is the better value at ${secondUnitPrice.toStringAsFixed(4)} per ${secondResult.normalizedUnit} versus ${firstUnitPrice.toStringAsFixed(4)}.',
-      firstOption: firstEvaluation,
-      secondOption: secondEvaluation,
-      recommendedLabel: second.label,
-      normalizedUnit: firstResult.normalizedUnit,
+          '${winner.option.label} wins at ${winner.unitPriceResult.unitPrice!.toStringAsFixed(4)} per $normalizedUnit. Next best is ${runnerUp.option.label} at ${runnerUp.unitPriceResult.unitPrice!.toStringAsFixed(4)}.',
+      options: withRanks,
+      recommendedLabel: winner.option.label,
+      normalizedUnit: normalizedUnit,
     );
   }
 }

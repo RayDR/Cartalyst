@@ -46,7 +46,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase({QueryExecutor? executor}) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => buildMigrationStrategy(this);
@@ -57,7 +57,8 @@ class AppDatabase extends _$AppDatabase {
     }
 
     await transaction(() async {
-      for (final TableInfo<Table, Object?> table in allTables.toList().reversed) {
+      for (final TableInfo<Table, Object?> table
+          in allTables.toList().reversed) {
         await delete(table).go();
       }
       await seedCommonProductsAndAliases();
