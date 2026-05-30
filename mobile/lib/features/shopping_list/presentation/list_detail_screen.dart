@@ -4,7 +4,6 @@ import 'package:cartalyst_mobile/core/domain/value_objects/unit.dart';
 import 'package:cartalyst_mobile/core/widgets/app_button.dart';
 import 'package:cartalyst_mobile/core/widgets/app_card.dart';
 import 'package:cartalyst_mobile/core/widgets/app_list_tile.dart';
-import 'package:cartalyst_mobile/core/widgets/app_scaffold.dart';
 import 'package:cartalyst_mobile/core/widgets/app_text_field.dart';
 import 'package:cartalyst_mobile/core/widgets/empty_state.dart';
 import 'package:cartalyst_mobile/core/widgets/keyboard_aware_scroll_view.dart';
@@ -51,11 +50,15 @@ class _ListDetailScreenState extends ConsumerState<ListDetailScreen> {
     final ListsState listsState = ref.watch(listsControllerProvider);
     final ShoppingList? currentList =
         _findList(listsState.lists, widget.listId);
+    final List<Inventory> inventories =
+        ref.watch(inventoriesControllerProvider).inventories;
 
     final ShoppingListState state =
         ref.watch(shoppingListControllerProvider(widget.listId));
     final ShoppingListController controller =
         ref.read(shoppingListControllerProvider(widget.listId).notifier);
+    final ListsController listsController =
+        ref.read(listsControllerProvider.notifier);
 
     if (currentList != null) {
       controller.syncWithList(currentList);
@@ -83,144 +86,263 @@ class _ListDetailScreenState extends ConsumerState<ListDetailScreen> {
       );
     }
 
-    return AppScaffold(
-      title: state.isEditMode
-          ? (state.draftName ?? currentList?.name ?? 'Shopping List')
-          : (currentList?.name ?? 'Shopping List'),
-      child: KeyboardAwareScrollView(
-        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            if (currentList != null)
-              _EditModeBanner(
-                isEditMode: state.isEditMode,
-                hasDraft: state.hasDraft,
-                onEnterEditMode: () => controller.enterEditMode(currentList),
-                onSaveChanges: () => controller.applyDraft(currentList),
-                onCancelChanges: controller.cancelChanges,
-                onDiscardDraft: controller.discardDraft,
-              ),
-            if (currentList != null)
-              _EditableListHeader(
-                title: state.isEditMode
-                    ? (state.draftName ?? currentList.name)
-                    : currentList.name,
-                isEditMode: state.isEditMode,
-                onRename: () => _showRenameDialog(
-                  context,
-                  controller,
-                  currentList,
-                  isEditMode: state.isEditMode,
+    final String listTitle = state.isEditMode
+        ? (state.draftName ?? currentList?.name ?? 'Shopping List')
+        : (currentList?.name ?? 'Shopping List');
+
+    return Scaffold(
+      appBar: AppBar(
+        title: currentList == null
+            ? Text(listTitle)
+            : InkWell(
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+                onTap: () => _showRenameDialog(context, currentList),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: AppSpacing.xxs,
+                    horizontal: AppSpacing.xs,
+                  ),
+                  child: Text(listTitle),
                 ),
               ),
-            if (currentList != null) _InventoryLinkCard(list: currentList),
-            const SectionHeader(
-              title: 'Quick product add',
-              subtitle: 'Type once, pick a suggestion, and keep moving.',
-            ),
-            const SizedBox(height: AppSpacing.md),
-            AppTextField(
-              label: 'Product',
-              hint: 'Try: 2 milk, huevos 18, paper towels 12 pack',
-              prefixIcon: Icons.search,
-              controller: _quickAddController,
-              onChanged: controller.updateQuickAddInput,
-              textInputAction: TextInputAction.done,
-            ),
-            if (state.suggestions.isNotEmpty) ...<Widget>[
-              const SizedBox(height: AppSpacing.sm),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: state.suggestions
-                      .map(
-                        (suggestion) => Padding(
-                          padding: const EdgeInsets.only(right: AppSpacing.xs),
-                          child: ActionChip(
-                            avatar: const Icon(Icons.local_offer_outlined),
-                            label: Text(
-                              suggestion.suggestedProduct!.canonicalName,
-                            ),
-                            onPressed: () => controller.addFromQuickAdd(
-                              selectedSuggestion: suggestion,
-                            ),
-                          ),
-                        ),
-                      )
-                      .toList(growable: false),
-                ),
+        actions: <Widget>[
+          if (currentList != null)
+            PopupMenuButton<_ListOverflowAction>(
+              tooltip: 'More actions',
+              icon: const Icon(Icons.more_vert),
+              onSelected: (_ListOverflowAction action) => _handleOverflowAction(
+                context,
+                action,
+                list: currentList,
+                listsController: listsController,
+                linkedInventoryId: currentList.inventoryId,
               ),
-            ],
-            const SizedBox(height: AppSpacing.sm),
-            Row(
-              children: <Widget>[
-                Expanded(
-                  child: AppButton(
-                    label: 'Add best match',
-                    onPressed: state.isBusy ? null : controller.addFromQuickAdd,
-                    icon: Icons.playlist_add_check_circle_outlined,
+              itemBuilder: (BuildContext context) =>
+                  <PopupMenuEntry<_ListOverflowAction>>[
+                const PopupMenuItem<_ListOverflowAction>(
+                  value: _ListOverflowAction.rename,
+                  child: ListTile(
+                    leading: Icon(Icons.edit_outlined),
+                    title: Text('Rename list'),
                   ),
                 ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: AppButton(
-                    label: 'Add custom',
-                    onPressed: state.isBusy ? null : controller.addCustomItem,
-                    icon: Icons.edit_note_outlined,
-                    variant: AppButtonVariant.secondary,
+                const PopupMenuItem<_ListOverflowAction>(
+                  value: _ListOverflowAction.link,
+                  child: ListTile(
+                    leading: Icon(Icons.link_outlined),
+                    title: Text('Link inventories'),
+                  ),
+                ),
+                PopupMenuItem<_ListOverflowAction>(
+                  value: _ListOverflowAction.manageLink,
+                  enabled: currentList.inventoryId != null,
+                  child: const ListTile(
+                    leading: Icon(Icons.tune_outlined),
+                    title: Text('Manage linked inventories'),
+                  ),
+                ),
+                const PopupMenuDivider(),
+                const PopupMenuItem<_ListOverflowAction>(
+                  value: _ListOverflowAction.archive,
+                  child: ListTile(
+                    leading: Icon(Icons.archive_outlined),
+                    title: Text('Archive list'),
+                  ),
+                ),
+                const PopupMenuItem<_ListOverflowAction>(
+                  value: _ListOverflowAction.delete,
+                  child: ListTile(
+                    leading: Icon(Icons.delete_outline),
+                    title: Text('Delete list'),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: AppSpacing.md),
-            SwitchListTile.adaptive(
-              title: const Text('One-handed shopping mode'),
-              subtitle: const Text(
-                'Shows large bottom actions for the selected item.',
-              ),
-              value: state.shoppingModeEnabled,
-              onChanged: controller.setShoppingModeEnabled,
-            ),
-            if (state.errorMessage != null) ...<Widget>[
-              const SizedBox(height: AppSpacing.xs),
-              AppCard(
-                child: Row(
+        ],
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: KeyboardAwareScrollView(
+            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                if (currentList != null)
+                  _ListMetaRow(
+                    list: currentList,
+                    linkedInventoryName: _findInventoryName(
+                      inventories,
+                      currentList.inventoryId,
+                    ),
+                    hasDraft: state.hasDraft,
+                    isEditMode: state.isEditMode,
+                    onManageLink: () => _showInventoryPicker(
+                      context,
+                      list: currentList,
+                      selectedInventoryId: currentList.inventoryId,
+                      allowUnlink: currentList.inventoryId != null,
+                    ),
+                  ),
+                const SectionHeader(
+                  title: 'Quick product add',
+                  subtitle: 'Type once, pick a suggestion, and keep moving.',
+                ),
+                const SizedBox(height: AppSpacing.md),
+                AppTextField(
+                  label: 'Product',
+                  hint: 'Try: 2 milk, huevos 18, paper towels 12 pack',
+                  prefixIcon: Icons.search,
+                  controller: _quickAddController,
+                  onChanged: controller.updateQuickAddInput,
+                  textInputAction: TextInputAction.done,
+                ),
+                if (state.suggestions.isNotEmpty) ...<Widget>[
+                  const SizedBox(height: AppSpacing.sm),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: state.suggestions
+                          .map(
+                            (suggestion) => Padding(
+                              padding: const EdgeInsets.only(
+                                right: AppSpacing.xs,
+                              ),
+                              child: ActionChip(
+                                avatar: const Icon(Icons.local_offer_outlined),
+                                label: Text(
+                                  suggestion.suggestedProduct!.canonicalName,
+                                ),
+                                onPressed: () => controller.addFromQuickAdd(
+                                  selectedSuggestion: suggestion,
+                                ),
+                              ),
+                            ),
+                          )
+                          .toList(growable: false),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: AppSpacing.sm),
+                Row(
                   children: <Widget>[
-                    const Icon(Icons.error_outline),
-                    const SizedBox(width: AppSpacing.xs),
-                    Expanded(child: Text(state.errorMessage!)),
+                    Expanded(
+                      child: AppButton(
+                        label: 'Add best match',
+                        onPressed:
+                            state.isBusy ? null : controller.addFromQuickAdd,
+                        icon: Icons.playlist_add_check_circle_outlined,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: AppButton(
+                        label: 'Add custom',
+                        onPressed:
+                            state.isBusy ? null : controller.addCustomItem,
+                        icon: Icons.edit_note_outlined,
+                        variant: AppButtonVariant.secondary,
+                      ),
+                    ),
                   ],
                 ),
-              ),
-            ],
-            const SizedBox(height: AppSpacing.sm),
-            if (state.hasItems)
-              _ItemsView(
-                state: state,
-                controller: controller,
-                isEditMode: state.isEditMode,
-              )
-            else
-              EmptyState(
-                title: 'This list is empty',
-                description: 'Use Quick Add to build your list in seconds.',
-                icon: Icons.shopping_cart_outlined,
-                primaryActionLabel: 'Add custom item',
-                onPrimaryActionPressed: controller.addCustomItem,
-              ),
-            if (state.shoppingModeEnabled &&
-                state.focusedItem != null) ...<Widget>[
-              const SizedBox(height: AppSpacing.sm),
-              _ShoppingModeBar(
-                item: state.focusedItem!,
-                controller: controller,
-              ),
-            ],
-          ],
+                const SizedBox(height: AppSpacing.md),
+                SwitchListTile.adaptive(
+                  title: const Text('One-handed shopping mode'),
+                  subtitle: const Text(
+                    'Shows large bottom actions for the selected item.',
+                  ),
+                  value: state.shoppingModeEnabled,
+                  onChanged: controller.setShoppingModeEnabled,
+                ),
+                if (state.errorMessage != null) ...<Widget>[
+                  const SizedBox(height: AppSpacing.xs),
+                  AppCard(
+                    child: Row(
+                      children: <Widget>[
+                        const Icon(Icons.error_outline),
+                        const SizedBox(width: AppSpacing.xs),
+                        Expanded(child: Text(state.errorMessage!)),
+                      ],
+                    ),
+                  ),
+                ],
+                const SizedBox(height: AppSpacing.sm),
+                if (state.hasItems)
+                  _ItemsView(
+                    state: state,
+                    controller: controller,
+                    isEditMode: state.isEditMode,
+                  )
+                else
+                  EmptyState(
+                    title: 'This list is empty',
+                    description: 'Use Quick Add to build your list in seconds.',
+                    icon: Icons.shopping_cart_outlined,
+                    primaryActionLabel: 'Add custom item',
+                    onPrimaryActionPressed: controller.addCustomItem,
+                  ),
+                if (state.shoppingModeEnabled &&
+                    state.focusedItem != null) ...<Widget>[
+                  const SizedBox(height: AppSpacing.sm),
+                  _ShoppingModeBar(
+                    item: state.focusedItem!,
+                    controller: controller,
+                  ),
+                ],
+              ],
+            ),
+          ),
         ),
       ),
     );
+  }
+
+  Future<void> _handleOverflowAction(
+    BuildContext context,
+    _ListOverflowAction action, {
+    required ShoppingList list,
+    required ListsController listsController,
+    required String? linkedInventoryId,
+  }) async {
+    switch (action) {
+      case _ListOverflowAction.rename:
+        await _showRenameDialog(context, list);
+        break;
+      case _ListOverflowAction.link:
+        await _showInventoryPicker(
+          context,
+          list: list,
+          selectedInventoryId: linkedInventoryId,
+          allowUnlink: false,
+        );
+        break;
+      case _ListOverflowAction.manageLink:
+        await _showInventoryPicker(
+          context,
+          list: list,
+          selectedInventoryId: linkedInventoryId,
+          allowUnlink: true,
+        );
+        break;
+      case _ListOverflowAction.archive:
+        final bool archived = await listsController.archiveList(list);
+        if (archived && context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Archived "${list.name}"'),
+              action: SnackBarAction(
+                label: 'Undo',
+                onPressed: listsController.undoLastAction,
+              ),
+            ),
+          );
+        }
+        break;
+      case _ListOverflowAction.delete:
+        await _confirmDelete(context, list, listsController);
+        break;
+    }
   }
 
   ShoppingList? _findList(List<ShoppingList> lists, String id) {
@@ -234,10 +356,8 @@ class _ListDetailScreenState extends ConsumerState<ListDetailScreen> {
 
   Future<void> _showRenameDialog(
     BuildContext context,
-    ShoppingListController controller,
-    ShoppingList list, {
-    required bool isEditMode,
-  }) async {
+    ShoppingList list,
+  ) async {
     final String? newName = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
@@ -250,8 +370,10 @@ class _ListDetailScreenState extends ConsumerState<ListDetailScreen> {
       return;
     }
 
+    final ListsController controller =
+        ref.read(listsControllerProvider.notifier);
     final bool renamed = await controller.renameList(list, newName);
-    if (renamed && context.mounted && !isEditMode) {
+    if (renamed && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Renamed "${list.name}"'),
@@ -262,6 +384,93 @@ class _ListDetailScreenState extends ConsumerState<ListDetailScreen> {
         ),
       );
     }
+  }
+
+  Future<void> _showInventoryPicker(
+    BuildContext context, {
+    required ShoppingList list,
+    required String? selectedInventoryId,
+    required bool allowUnlink,
+  }) async {
+    final _InventorySelectionResult? picked =
+        await showModalBottomSheet<_InventorySelectionResult>(
+      context: context,
+      showDragHandle: true,
+      useSafeArea: true,
+      isScrollControlled: true,
+      builder: (BuildContext context) => _InventoryPickerSheet(
+        selectedInventoryId: selectedInventoryId,
+        allowUnlink: allowUnlink,
+      ),
+    );
+
+    if (picked == null) {
+      return;
+    }
+
+    final ListsController controller =
+        ref.read(listsControllerProvider.notifier);
+    if (picked.inventoryId == null) {
+      await controller.unlinkFromInventory(list);
+      return;
+    }
+
+    await controller.linkToInventory(list, picked.inventoryId!);
+  }
+
+  Future<void> _confirmDelete(
+    BuildContext context,
+    ShoppingList list,
+    ListsController listsController,
+  ) async {
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: const Text('Delete list?'),
+        content: Text('Delete "${list.name}"? You can undo this.'),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) {
+      return;
+    }
+
+    final bool deleted = await listsController.deleteList(list);
+    if (!deleted || !context.mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('"${list.name}" deleted'),
+        action: SnackBarAction(
+          label: 'Undo',
+          onPressed: listsController.undoLastAction,
+        ),
+      ),
+    );
+  }
+
+  String? _findInventoryName(List<Inventory> inventories, String? inventoryId) {
+    if (inventoryId == null) {
+      return null;
+    }
+    for (final Inventory inventory in inventories) {
+      if (inventory.id == inventoryId) {
+        return inventory.name;
+      }
+    }
+    return null;
   }
 
   Future<void> _showDraftChoiceDialog(
@@ -313,104 +522,62 @@ class _ListDetailScreenState extends ConsumerState<ListDetailScreen> {
   }
 }
 
-class _EditableListHeader extends StatelessWidget {
-  const _EditableListHeader({
-    required this.title,
-    required this.isEditMode,
-    required this.onRename,
-  });
-
-  final String title;
-  final bool isEditMode;
-  final VoidCallback onRename;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: AppCard(
-        onTap: onRename,
-        child: AppListTile(
-          title: title,
-          subtitle: isEditMode
-              ? 'Editing draft name'
-              : 'Tap to rename the shopping list',
-          leading: const Icon(Icons.edit_outlined),
-        ),
-      ),
-    );
-  }
+enum _ListOverflowAction {
+  rename,
+  link,
+  manageLink,
+  archive,
+  delete,
 }
 
-class _EditModeBanner extends StatelessWidget {
-  const _EditModeBanner({
-    required this.isEditMode,
+class _ListMetaRow extends StatelessWidget {
+  const _ListMetaRow({
+    required this.list,
+    required this.linkedInventoryName,
     required this.hasDraft,
-    required this.onEnterEditMode,
-    required this.onSaveChanges,
-    required this.onCancelChanges,
-    required this.onDiscardDraft,
+    required this.isEditMode,
+    required this.onManageLink,
   });
 
-  final bool isEditMode;
+  final ShoppingList list;
+  final String? linkedInventoryName;
   final bool hasDraft;
-  final Future<bool> Function() onEnterEditMode;
-  final Future<bool> Function() onSaveChanges;
-  final Future<bool> Function() onCancelChanges;
-  final Future<bool> Function() onDiscardDraft;
+  final bool isEditMode;
+  final VoidCallback onManageLink;
 
   @override
   Widget build(BuildContext context) {
-    if (!isEditMode) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-        child: AppCard(
-          child: Row(
-            children: <Widget>[
-              const Icon(Icons.edit_note_outlined),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Text(
-                  hasDraft
-                      ? 'You have unsaved draft changes.'
-                      : 'Enter edit mode to stage changes before applying.',
-                ),
-              ),
-              TextButton(
-                onPressed: onEnterEditMode,
-                child: Text(hasDraft ? 'Resume edit' : 'Edit list'),
-              ),
-              if (hasDraft)
-                TextButton(
-                  onPressed: onDiscardDraft,
-                  child: const Text('Discard'),
-                ),
-            ],
-          ),
-        ),
-      );
-    }
+    final bool isLinked = list.inventoryId != null;
+    final String linkedLabel = linkedInventoryName ?? 'Linked inventory';
 
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: AppCard(
-        child: Row(
-          children: <Widget>[
-            const Icon(Icons.pending_actions_outlined),
-            const SizedBox(width: AppSpacing.sm),
-            const Expanded(
-              child: Text('Editing draft. Save to apply changes.'),
+      child: Wrap(
+        spacing: AppSpacing.xs,
+        runSpacing: AppSpacing.xs,
+        children: <Widget>[
+          if (isLinked)
+            ActionChip(
+              avatar: const Icon(Icons.inventory_2_outlined),
+              label: Text('Linked to $linkedLabel'),
+              onPressed: onManageLink,
+            )
+          else
+            ActionChip(
+              avatar: const Icon(Icons.link_outlined),
+              label: const Text('No inventory linked'),
+              onPressed: onManageLink,
             ),
-            TextButton(
-              onPressed: onCancelChanges,
-              child: const Text('Cancel changes'),
+          if (hasDraft)
+            Chip(
+              avatar: Icon(
+                isEditMode ? Icons.edit_note_outlined : Icons.info_outline,
+              ),
+              label: Text(
+                isEditMode ? 'Draft editing enabled' : 'Unsaved draft changes',
+              ),
             ),
-            FilledButton(
-              onPressed: onSaveChanges,
-              child: const Text('Save changes'),
-            ),
-          ],
-        ),
+        ],
       ),
     );
   }
@@ -487,128 +654,6 @@ class _RenameListSheetState extends State<_RenameListSheet> {
       return;
     }
     Navigator.of(context).pop(name);
-  }
-}
-
-class _InventoryLinkCard extends ConsumerWidget {
-  const _InventoryLinkCard({required this.list});
-
-  final ShoppingList list;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final List<Inventory> inventories =
-        ref.watch(inventoriesControllerProvider).inventories;
-    final Inventory? linkedInventory = list.inventoryId == null
-        ? null
-        : _findInventory(inventories, list.inventoryId!);
-    final bool hasLinkedInventory = list.inventoryId != null;
-    final String title = hasLinkedInventory
-        ? linkedInventory?.name ?? 'Linked inventory'
-        : 'No inventory linked yet';
-    final String description = hasLinkedInventory
-        ? 'You can change or remove this link later.'
-        : 'Link this list to an inventory to keep shopping decisions grounded in what you already have.';
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: AppCard(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Row(
-              children: <Widget>[
-                Icon(
-                  hasLinkedInventory
-                      ? Icons.inventory_2_outlined
-                      : Icons.link_outlined,
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        title,
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: AppSpacing.xxs),
-                      Text(description),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Wrap(
-              spacing: AppSpacing.xs,
-              runSpacing: AppSpacing.xs,
-              children: <Widget>[
-                TextButton(
-                  onPressed: () => _showInventoryPicker(
-                    context,
-                    ref,
-                    selectedInventoryId: list.inventoryId,
-                    allowUnlink: hasLinkedInventory,
-                  ),
-                  child: Text(
-                    hasLinkedInventory ? 'Change link' : 'Link inventory',
-                  ),
-                ),
-                if (hasLinkedInventory)
-                  TextButton(
-                    onPressed: () => ref
-                        .read(listsControllerProvider.notifier)
-                        .unlinkFromInventory(list),
-                    child: const Text('Remove link'),
-                  ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _showInventoryPicker(
-    BuildContext context,
-    WidgetRef ref, {
-    required String? selectedInventoryId,
-    required bool allowUnlink,
-  }) async {
-    final _InventorySelectionResult? picked =
-        await showModalBottomSheet<_InventorySelectionResult>(
-      context: context,
-      showDragHandle: true,
-      useSafeArea: true,
-      isScrollControlled: true,
-      builder: (BuildContext context) => _InventoryPickerSheet(
-        selectedInventoryId: selectedInventoryId,
-        allowUnlink: allowUnlink,
-      ),
-    );
-
-    if (picked == null) {
-      return;
-    }
-
-    final ListsController controller =
-        ref.read(listsControllerProvider.notifier);
-    if (picked.inventoryId == null) {
-      await controller.unlinkFromInventory(list);
-      return;
-    }
-
-    await controller.linkToInventory(list, picked.inventoryId!);
-  }
-
-  Inventory? _findInventory(List<Inventory> inventories, String id) {
-    for (final Inventory inventory in inventories) {
-      if (inventory.id == id) {
-        return inventory;
-      }
-    }
-    return null;
   }
 }
 

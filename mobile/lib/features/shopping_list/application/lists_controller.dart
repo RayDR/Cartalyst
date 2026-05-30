@@ -137,6 +137,36 @@ class ListsController extends Notifier<ListsState> {
     }
   }
 
+  Future<bool> archiveList(ShoppingList list) async {
+    final DateTime now = DateTime.now();
+    final ShoppingList archived = ShoppingList(
+      id: list.id,
+      inventoryId: list.inventoryId,
+      name: list.name,
+      status: ShoppingListStatus.archived,
+      createdAt: list.createdAt,
+      updatedAt: now,
+      deletedAt: list.deletedAt,
+      syncStatus: 'pending_sync',
+      version: list.version + 1,
+    );
+
+    try {
+      await _repository.saveShoppingList(archived);
+      _pushUndo(
+        _ListUndoEntry(
+          label: 'Archive list',
+          undo: () => _repository.saveShoppingList(list),
+        ),
+      );
+      state = state.copyWith(clearLastDeleted: true, clearErrorMessage: true);
+      return true;
+    } catch (_) {
+      state = state.copyWith(errorMessage: 'Unable to archive list.');
+      return false;
+    }
+  }
+
   /// Undoes the most recent soft delete. No-op if nothing to restore.
   Future<bool> restoreLastDeleted() {
     return undoLastAction();
