@@ -33,16 +33,26 @@ Cartalyst solves this with fast local interactions and practical grocery intelli
 ## Target Outcomes
 
 - Users can create and manage multiple shopping lists.
+- Users can choose between simple and organized shopping list workflows.
 - Users can compare up to 5 options by unit price confidently.
 - Users can create and manage multiple inventories, including an inventory they may name "Pantry".
+- Users can maintain inventory categories and route purchased items through configurable routing modes.
 - Users can safely edit lists with draft and undo support.
 - Users can trust the app even without connectivity.
 
 ## V1.1 Scope
 
 - Multiple shopping lists
+- Two shopping list types:
+	- Simple list
+	- Organized list
 - Multiple inventories
+- Categorized inventories with user-editable category assignments
 - Optional shopping list to inventory linking
+- Routing modes:
+	- `none`
+	- `inventory_categories`
+	- `category_as_inventory`
 - Pantry is no longer a fixed app section and is represented as user-defined inventory naming
 - Home focused on creating lists and showing recently modified lists
 - Bottom navigation: Home, Lists, Inventories, Compare, Settings
@@ -60,12 +70,18 @@ Cartalyst solves this with fast local interactions and practical grocery intelli
 - Geofencing
 - Push notifications
 - Retailer integrations
+- Multi-user collaboration
+- Automatic online price lookup
 
 ## Domain Language
 
 - Inventory is the primary concept.
 - Pantry is not a fixed app concept anymore.
 - A pantry is simply an inventory named "Pantry" if the user creates it.
+- Shopping list type defines behavior:
+	- Simple list keeps legacy item entry and completion behavior.
+	- Organized list groups items by categories and enables category-aware routing.
+- Uncategorized is a first-class fallback category for items that cannot be classified.
 
 ## V1.1 Delivery Phases
 
@@ -85,6 +101,9 @@ Cartalyst solves this with fast local interactions and practical grocery intelli
 
 - `shopping_lists` supports many concurrent lists and optional inventory references
 - `inventories` is fully user-defined without fixed semantic coupling
+- Shopping lists carry type and routing mode metadata (`simple` or `organized`; `none`, `inventory_categories`, `category_as_inventory`)
+- Inventories support category collections and item-level category assignment
+- Category assignment history is persisted to support future category suggestions
 - Draft records are persisted for full-list edit sessions
 - Compare output shifts to ranked multi-option result shape with normalized unit pricing
 
@@ -115,6 +134,11 @@ Cartalyst solves this with fast local interactions and practical grocery intelli
 - Provide fast feedback on every key action.
 - Keep destructive or status-changing actions reversible where practical.
 - Keep primary actions visible and reachable above bottom navigation constraints.
+- Keep main screens minimal and action-focused.
+- Avoid large embedded forms on main screens.
+- Prefer plus buttons, bottom sheets, dialogs, or dedicated screens for create/edit workflows.
+- Avoid nested scroll containers.
+- Ensure full-page forms are keyboard-safe and scroll as a single surface.
 
 ## Release Intent For First Deliverable
 

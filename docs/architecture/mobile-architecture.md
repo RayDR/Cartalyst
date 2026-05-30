@@ -29,9 +29,15 @@ Define a production-quality mobile architecture that supports fast iteration in 
 ## V1.1 Product-Driven Constraints
 
 - Multiple shopping lists are first-class and independently editable.
+- Shopping lists support two behavior types: simple and organized.
 - Multiple inventories are first-class and user-defined.
+- Inventories support user-defined categories.
 - Pantry is modeled as an inventory name, not a dedicated hardcoded domain concept.
 - Shopping lists can optionally link to an inventory.
+- Purchased-item routing supports three modes:
+  - `none`
+  - `inventory_categories`
+  - `category_as_inventory`
 - Home is simplified to list creation and recently modified lists.
 - Bottom navigation structure is: Home, Lists, Inventories, Compare, Settings.
 - Price comparison supports up to 5 options in a single comparison flow.
@@ -44,6 +50,7 @@ Define a production-quality mobile architecture that supports fast iteration in 
   - Route topology aligned to Home, Lists, Inventories, Compare, Settings
 2. Structured Relationships
   - Optional list-to-inventory linking through nullable references and repository contracts
+  - Category-aware routing contracts for organized lists and categorized inventories
 3. Safe Editing
   - Draft persistence and explicit apply/discard transitions in application/domain flows
   - Reversible interaction pathways for list review actions
@@ -55,6 +62,10 @@ Define a production-quality mobile architecture that supports fast iteration in 
 - `shopping_lists` remains the list aggregate root and supports many active lists
 - `inventories` replaces fixed pantry assumptions with user-defined inventory records
 - `shopping_lists.inventory_id` remains optional, enforcing link flexibility at domain boundaries
+- Shopping lists include type and routing metadata to select simple or organized behavior
+- Inventories include category entities and item-category references
+- Uncategorized is a mandatory fallback path for items without a valid category match
+- Category assignment persistence is required to support future suggestion reuse
 - Draft state for full-list editing is persisted in the data layer and mapped to domain/application models
 - Price comparison result model supports ranked outputs across 2-5 options, including tie handling and normalized unit price reporting
 
@@ -95,6 +106,8 @@ Guidelines:
 - For list editing, keep draft state isolated from committed state and expose explicit commit or discard transitions.
 - For undo support, controllers should emit reversible actions where applicable.
 - For comparison workflows, keep validation and ranking logic in pure Dart services, not widgets.
+- For organized lists, keep category-routing decision logic in application/domain services, not widgets.
+- Persist category choices in data/application boundaries so future suggestions can reuse user decisions.
 
 ## Routing
 
@@ -134,3 +147,7 @@ Design goals:
 - Friendly and polished UI
 - Fast visual feedback
 - One-handed accessibility for core actions
+- Minimal main screens with content-first density
+- Create/edit flows launched from lightweight entry points (plus buttons, sheets, dialogs, dedicated screens)
+- Avoid nested scroll containers across feature screens
+- Keep full-page forms keyboard-safe and scrollable as a single surface

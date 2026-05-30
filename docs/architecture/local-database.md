@@ -49,6 +49,8 @@ Stores user shopping lists and lifecycle state.
 
 Key fields:
 - `id` UUID string
+- `listType` (`simple` or `organized`)
+- `routingMode` (`none`, `inventory_categories`, `category_as_inventory`)
 - `inventoryId` nullable
 - `name`
 - `status`
@@ -66,6 +68,7 @@ Key fields:
 - `rawText`
 - `quantity` nullable
 - `unit` nullable
+- `categoryId` nullable (required in organized workflows; falls back to Uncategorized)
 - `status`
 - `source`
 - `priorityScore`
@@ -83,6 +86,19 @@ Key fields:
 - `createdAt`, `updatedAt`, `deletedAt`
 - `syncStatus`, `version`
 
+### inventory_categories
+
+Stores categories owned by each inventory.
+
+Key fields:
+- `id` UUID string
+- `inventoryId`
+- `name`
+- `sortOrder`
+- `isDefaultUncategorized` (exactly one per inventory)
+- `createdAt`, `updatedAt`, `deletedAt`
+- `syncStatus`, `version`
+
 ### inventory_items
 
 Stores item snapshots inside inventories.
@@ -94,6 +110,7 @@ Key fields:
 - `rawName` nullable
 - `quantityEstimated` nullable
 - `unit` nullable
+- `categoryId` nullable (resolved to inventory Uncategorized when unknown)
 - `status`
 - `confidenceScore`
 - `lastConfirmedAt` nullable
@@ -148,7 +165,20 @@ Key fields:
 - `shopping_lists`
 - `shopping_list_items`
 - `inventories`
+- `inventory_categories`
 - `inventory_items`
+
+## Categorization and Routing
+
+- Simple lists use routing mode `none` and do not require category routing.
+- Organized lists group items by category and support routing modes:
+	- `inventory_categories`: one list routes to one inventory using that inventory's categories.
+	- `category_as_inventory`: each list category maps to a target inventory.
+- Items that cannot be categorized must route to `Uncategorized`.
+
+## Category Memory for Suggestions
+
+To support future suggestions from user behavior, category decisions should be persisted (for example, product/category assignment history per inventory context).
 
 ## Seed Data
 

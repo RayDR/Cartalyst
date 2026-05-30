@@ -58,9 +58,17 @@ Cartalyst should feel:
 ## V1.1 Scope
 
 - Multiple shopping lists
+- Two shopping list types:
+	- Simple list
+	- Organized list
 - Multiple inventories
+- Inventories with categories
 - Pantry is no longer a fixed app section; pantry is an inventory name users may create
 - Optional list-to-inventory linking
+- Routing modes for purchased items:
+	- `none` (simple list)
+	- `inventory_categories` (single inventory with category routing)
+	- `category_as_inventory` (category maps directly to inventory)
 - Home is clean and list-focused
 - Bottom navigation: Home, Lists, Inventories, Compare, Settings
 - Quick product add and suggestions
@@ -87,10 +95,46 @@ Cartalyst should feel:
 ## V1.1 Data Model Impact
 
 - `shopping_lists` remains first-class and supports many concurrent lists
+- `shopping_lists` supports list type (`simple` or `organized`) and routing mode (`none`, `inventory_categories`, `category_as_inventory`)
 - `inventories` is first-class and user-defined; no hardcoded pantry section behavior
+- `inventories` supports user-defined categories (for example: Fruits, Vegetables, Beef, Chicken, Fish, Seafood, Cleaning, Baby, Uncategorized)
 - `shopping_lists.inventory_id` is optional to support standalone or inventory-linked lists
+- Uncategorized handling is required for items that cannot be mapped to a known category
+- Category choices made by users should be remembered for future suggestions
 - Draft editing for list detail is persisted locally in a dedicated draft record structure
 - Price compare supports multi-option input and ranked normalized results (2-5 options)
+
+## Shopping List Types
+
+- Simple list
+	- Preserves current legacy behavior
+	- No category routing
+	- Users add and check items normally
+- Organized list
+	- Groups items by categories
+	- Categories can route purchased items into inventories
+
+## Routing Modes
+
+- `none`
+	- Used by simple lists
+- `inventory_categories`
+	- One shopping list routes purchased items to one inventory
+	- Items are grouped by that inventory's categories
+	- Example: Groceries list -> Pantry inventory -> Fruits/Vegetables/Meat
+- `category_as_inventory`
+	- Each shopping list category maps to an inventory
+	- Example categories: Pantry, Fridge, Baby, Cleaning
+	- Purchased items are routed to the inventory represented by the category
+
+## UX Principles
+
+- Keep screens minimal
+- Do not place large forms directly on main screens
+- Use plus buttons, bottom sheets, dialogs, or separate screens for create/edit flows
+- Main list and inventory screens should prioritize content and quick actions
+- Avoid nested scroll containers
+- Full pages with forms must be keyboard-safe and scroll as a whole
 
 ## V1.1 Out Of Scope
 
@@ -101,6 +145,8 @@ Cartalyst should feel:
 - Geofencing
 - Push notifications
 - Retailer integrations
+- Multi-user collaboration
+- Automatic online price lookup
 
 ## Future Scope
 
