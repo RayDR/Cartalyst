@@ -2,7 +2,8 @@ import 'package:cartalyst_mobile/features/home/presentation/home_screen.dart';
 import 'package:cartalyst_mobile/features/pantry/presentation/pantry_screen.dart';
 import 'package:cartalyst_mobile/features/price_compare/presentation/price_compare_screen.dart';
 import 'package:cartalyst_mobile/features/settings/presentation/settings_screen.dart';
-import 'package:cartalyst_mobile/features/shopping_list/presentation/shopping_list_screen.dart';
+import 'package:cartalyst_mobile/features/shopping_list/presentation/list_detail_screen.dart';
+import 'package:cartalyst_mobile/features/shopping_list/presentation/lists_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -34,10 +35,19 @@ final GoRouter appRouter = GoRouter(
         StatefulShellBranch(
           routes: <RouteBase>[
             GoRoute(
-              path: '/shopping-list',
+              path: '/lists',
               builder: (BuildContext context, GoRouterState state) {
-                return const ShoppingListScreen();
+                return const ListsScreen();
               },
+              routes: <RouteBase>[
+                GoRoute(
+                  path: ':id',
+                  builder: (BuildContext context, GoRouterState state) {
+                    final String listId = state.pathParameters['id']!;
+                    return ListDetailScreen(listId: listId);
+                  },
+                ),
+              ],
             ),
           ],
         ),
@@ -99,12 +109,12 @@ class AppNavigationShell extends StatelessWidget {
           NavigationDestination(
             icon: Icon(Icons.shopping_cart_outlined),
             selectedIcon: Icon(Icons.shopping_cart),
-            label: 'Shopping',
+            label: 'Lists',
           ),
           NavigationDestination(
             icon: Icon(Icons.kitchen_outlined),
             selectedIcon: Icon(Icons.kitchen),
-            label: 'Inventory',
+            label: 'Inventories',
           ),
           NavigationDestination(
             icon: Icon(Icons.balance_outlined),

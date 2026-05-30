@@ -17,6 +17,8 @@ void main() {
   late FakeProductRepository productRepository;
   late ProviderContainer container;
 
+  const String testListId = 'test-list-id';
+
   setUp(() {
     shoppingListRepository = FakeShoppingListRepository();
     productRepository = FakeProductRepository(
@@ -44,6 +46,17 @@ void main() {
       ],
     );
 
+    // Pre-seed a list so the controller has items to work with.
+    shoppingListRepository.seedList(ShoppingList(
+      id: testListId,
+      name: 'Test list',
+      status: ShoppingListStatus.active,
+      createdAt: DateTime(2026),
+      updatedAt: DateTime(2026),
+      syncStatus: 'local_only',
+      version: 1,
+    ));
+
     container = ProviderContainer(
       overrides: <Override>[
         shoppingListRepositoryProvider.overrideWithValue(shoppingListRepository),
@@ -56,41 +69,32 @@ void main() {
     addTearDown(productRepository.dispose);
   });
 
-  Future<void> waitForActiveList() async {
-    for (int i = 0; i < 30; i++) {
-      final ShoppingListState state = container.read(shoppingListControllerProvider);
-      if (state.activeList != null) {
-        return;
-      }
-      await Future<void>.delayed(const Duration(milliseconds: 10));
-    }
-    fail('Active list was not created automatically.');
-  }
-
   group('ShoppingListController', () {
     test('adding matched product', () async {
-      await waitForActiveList();
-
-      final ShoppingListController controller = container.read(shoppingListControllerProvider.notifier);
+      // Give the products stream time to deliver before matching.
+      final ShoppingListController controller =
+          container.read(shoppingListControllerProvider(testListId).notifier);
+      await Future<void>.delayed(const Duration(milliseconds: 30));
       controller.updateQuickAddInput('milk');
       await controller.addFromQuickAdd();
       await Future<void>.delayed(const Duration(milliseconds: 10));
 
-      final ShoppingListState state = container.read(shoppingListControllerProvider);
+      final ShoppingListState state =
+          container.read(shoppingListControllerProvider(testListId));
       expect(state.pendingItems.length, 1);
       expect(state.pendingItems.first.productId, 'p-milk');
       expect(state.pendingItems.first.source, ShoppingListItemSource.suggestion);
     });
 
     test('adding custom item', () async {
-      await waitForActiveList();
-
-      final ShoppingListController controller = container.read(shoppingListControllerProvider.notifier);
+      final ShoppingListController controller =
+          container.read(shoppingListControllerProvider(testListId).notifier);
       controller.updateQuickAddInput('dragonfruit 2');
       await controller.addCustomItem();
       await Future<void>.delayed(const Duration(milliseconds: 10));
 
-      final ShoppingListState state = container.read(shoppingListControllerProvider);
+      final ShoppingListState state =
+          container.read(shoppingListControllerProvider(testListId));
       expect(state.pendingItems.length, 1);
       expect(state.pendingItems.first.productId, isNull);
       expect(state.pendingItems.first.rawText, 'dragonfruit');
@@ -99,15 +103,15 @@ void main() {
     });
 
     test('quick add preserves gal unit for gallon variants', () async {
-      await waitForActiveList();
-
-      final ShoppingListController controller = container.read(shoppingListControllerProvider.notifier);
+      final ShoppingListController controller =
+          container.read(shoppingListControllerProvider(testListId).notifier);
 
       controller.updateQuickAddInput('1 gallon milk');
       await controller.addFromQuickAdd();
       await Future<void>.delayed(const Duration(milliseconds: 10));
 
-      ShoppingListState state = container.read(shoppingListControllerProvider);
+      ShoppingListState state =
+          container.read(shoppingListControllerProvider(testListId));
       expect(state.pendingItems.length, 1);
       expect(state.pendingItems.first.unit?.code, 'gal');
       expect(state.pendingItems.first.quantity, 1);
@@ -116,7 +120,7 @@ void main() {
       await controller.addFromQuickAdd();
       await Future<void>.delayed(const Duration(milliseconds: 10));
 
-      state = container.read(shoppingListControllerProvider);
+      state = container.read(shoppingListControllerProvider(testListId));
       expect(state.pendingItems.length, 2);
       expect(state.pendingItems[1].unit?.code, 'gal');
       expect(state.pendingItems[1].quantity, 1);
@@ -125,84 +129,84 @@ void main() {
       await controller.addFromQuickAdd();
       await Future<void>.delayed(const Duration(milliseconds: 10));
 
-      state = container.read(shoppingListControllerProvider);
+      state = container.read(shoppingListControllerProvider(testListId));
       expect(state.pendingItems.length, 3);
       expect(state.pendingItems[2].unit?.code, 'gal');
       expect(state.pendingItems[2].quantity, 2);
     });
 
     test('purchased status transition', () async {
-      await waitForActiveList();
-
-      final ShoppingListController controller = container.read(shoppingListControllerProvider.notifier);
+      final ShoppingListController controller =
+          container.read(shoppingListControllerProvider(testListId).notifier);
       controller.updateQuickAddInput('milk');
       await controller.addFromQuickAdd();
       await Future<void>.delayed(const Duration(milliseconds: 10));
 
-      ShoppingListState state = container.read(shoppingListControllerProvider);
+      ShoppingListState state =
+          container.read(shoppingListControllerProvider(testListId));
       await controller.markPurchased(state.pendingItems.first);
       await Future<void>.delayed(const Duration(milliseconds: 10));
 
-      state = container.read(shoppingListControllerProvider);
+      state = container.read(shoppingListControllerProvider(testListId));
       expect(state.pendingItems, isEmpty);
       expect(state.purchasedItems.length, 1);
       expect(state.purchasedItems.first.status, ShoppingListItemStatus.purchased);
     });
 
     test('skipped status transition', () async {
-      await waitForActiveList();
-
-      final ShoppingListController controller = container.read(shoppingListControllerProvider.notifier);
+      final ShoppingListController controller =
+          container.read(shoppingListControllerProvider(testListId).notifier);
       controller.updateQuickAddInput('milk');
       await controller.addFromQuickAdd();
       await Future<void>.delayed(const Duration(milliseconds: 10));
 
-      ShoppingListState state = container.read(shoppingListControllerProvider);
+      ShoppingListState state =
+          container.read(shoppingListControllerProvider(testListId));
       await controller.markSkipped(state.pendingItems.first);
       await Future<void>.delayed(const Duration(milliseconds: 10));
 
-      state = container.read(shoppingListControllerProvider);
+      state = container.read(shoppingListControllerProvider(testListId));
       expect(state.pendingItems, isEmpty);
       expect(state.skippedItems.length, 1);
       expect(state.skippedItems.first.status, ShoppingListItemStatus.skipped);
     });
 
     test('restore to pending', () async {
-      await waitForActiveList();
-
-      final ShoppingListController controller = container.read(shoppingListControllerProvider.notifier);
+      final ShoppingListController controller =
+          container.read(shoppingListControllerProvider(testListId).notifier);
       controller.updateQuickAddInput('milk');
       await controller.addFromQuickAdd();
       await Future<void>.delayed(const Duration(milliseconds: 10));
 
-      ShoppingListState state = container.read(shoppingListControllerProvider);
+      ShoppingListState state =
+          container.read(shoppingListControllerProvider(testListId));
       await controller.markSkipped(state.pendingItems.first);
       await Future<void>.delayed(const Duration(milliseconds: 10));
 
-      state = container.read(shoppingListControllerProvider);
+      state = container.read(shoppingListControllerProvider(testListId));
       await controller.restorePending(state.skippedItems.first);
       await Future<void>.delayed(const Duration(milliseconds: 10));
 
-      state = container.read(shoppingListControllerProvider);
+      state = container.read(shoppingListControllerProvider(testListId));
       expect(state.skippedItems, isEmpty);
       expect(state.pendingItems.length, 1);
       expect(state.pendingItems.first.status, ShoppingListItemStatus.pending);
     });
 
     test('soft delete', () async {
-      await waitForActiveList();
-
-      final ShoppingListController controller = container.read(shoppingListControllerProvider.notifier);
+      final ShoppingListController controller =
+          container.read(shoppingListControllerProvider(testListId).notifier);
       controller.updateQuickAddInput('milk');
       await controller.addFromQuickAdd();
       await Future<void>.delayed(const Duration(milliseconds: 10));
 
-      ShoppingListState state = container.read(shoppingListControllerProvider);
+      ShoppingListState state =
+          container.read(shoppingListControllerProvider(testListId));
       final String itemId = state.pendingItems.first.id;
       await controller.softDelete(state.pendingItems.first);
       await Future<void>.delayed(const Duration(milliseconds: 10));
 
-      state = container.read(shoppingListControllerProvider);
+      state = container.read(shoppingListControllerProvider(testListId));
       expect(state.pendingItems, isEmpty);
       expect(shoppingListRepository.deletedItemIds.contains(itemId), isTrue);
     });
@@ -210,6 +214,9 @@ void main() {
 }
 
 class FakeShoppingListRepository implements ShoppingListRepository {
+  final StreamController<List<ShoppingList>> _allListsController =
+      StreamController<List<ShoppingList>>.broadcast();
+
   final StreamController<List<ShoppingList>> _activeListsController =
       StreamController<List<ShoppingList>>.broadcast();
 
@@ -224,9 +231,19 @@ class FakeShoppingListRepository implements ShoppingListRepository {
       .map((ShoppingListItem item) => item.id)
       .toList(growable: false);
 
+  void seedList(ShoppingList list) {
+    _lists.add(list);
+  }
+
+  @override
+  Stream<List<ShoppingList>> watchAllLists() {
+    Future<void>.microtask(_emitAllLists);
+    return _allListsController.stream;
+  }
+
   @override
   Stream<List<ShoppingList>> watchActiveLists() {
-    Future<void>.microtask(_emitLists);
+    Future<void>.microtask(_emitActiveLists);
     return _activeListsController.stream;
   }
 
@@ -249,7 +266,8 @@ class FakeShoppingListRepository implements ShoppingListRepository {
     } else {
       _lists.add(shoppingList);
     }
-    _emitLists();
+    _emitAllLists();
+    _emitActiveLists();
   }
 
   @override
@@ -263,7 +281,34 @@ class FakeShoppingListRepository implements ShoppingListRepository {
     _emitItemsForList(item.shoppingListId);
   }
 
-  void _emitLists() {
+  @override
+  Future<void> deleteShoppingList(String id) async {
+    final int index = _lists.indexWhere((ShoppingList l) => l.id == id);
+    if (index >= 0) {
+      _lists[index] = ShoppingList(
+        id: _lists[index].id,
+        inventoryId: _lists[index].inventoryId,
+        name: _lists[index].name,
+        status: _lists[index].status,
+        createdAt: _lists[index].createdAt,
+        updatedAt: DateTime.now(),
+        deletedAt: DateTime.now(),
+        syncStatus: 'pending_sync',
+        version: _lists[index].version + 1,
+      );
+    }
+    _emitAllLists();
+    _emitActiveLists();
+  }
+
+  void _emitAllLists() {
+    final List<ShoppingList> nonDeleted = _lists
+        .where((ShoppingList l) => l.deletedAt == null)
+        .toList(growable: false);
+    _allListsController.add(nonDeleted);
+  }
+
+  void _emitActiveLists() {
     final List<ShoppingList> active = _lists
         .where(
           (ShoppingList list) =>
@@ -281,16 +326,17 @@ class FakeShoppingListRepository implements ShoppingListRepository {
     }
 
     final List<ShoppingListItem> items = _items
-      .where(
-        (ShoppingListItem item) =>
-          item.shoppingListId == shoppingListId && item.deletedAt == null,
-      )
+        .where(
+          (ShoppingListItem item) =>
+              item.shoppingListId == shoppingListId && item.deletedAt == null,
+        )
         .toList(growable: false);
 
     controller.add(items);
   }
 
   Future<void> dispose() async {
+    await _allListsController.close();
     await _activeListsController.close();
     for (final StreamController<List<ShoppingListItem>> controller in _itemsControllers.values) {
       await controller.close();

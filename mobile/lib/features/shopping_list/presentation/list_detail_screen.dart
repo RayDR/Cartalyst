@@ -9,20 +9,25 @@ import 'package:cartalyst_mobile/core/widgets/app_text_field.dart';
 import 'package:cartalyst_mobile/core/widgets/empty_state.dart';
 import 'package:cartalyst_mobile/core/widgets/section_header.dart';
 import 'package:cartalyst_mobile/core/widgets/status_chip.dart';
+import 'package:cartalyst_mobile/features/shopping_list/application/lists_controller.dart';
+import 'package:cartalyst_mobile/features/shopping_list/application/lists_state.dart';
 import 'package:cartalyst_mobile/features/shopping_list/application/shopping_list_controller.dart';
 import 'package:cartalyst_mobile/features/shopping_list/application/shopping_list_state.dart';
+import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list.dart';
 import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class ShoppingListScreen extends ConsumerStatefulWidget {
-  const ShoppingListScreen({super.key});
+class ListDetailScreen extends ConsumerStatefulWidget {
+  const ListDetailScreen({required this.listId, super.key});
+
+  final String listId;
 
   @override
-  ConsumerState<ShoppingListScreen> createState() => _ShoppingListScreenState();
+  ConsumerState<ListDetailScreen> createState() => _ListDetailScreenState();
 }
 
-class _ShoppingListScreenState extends ConsumerState<ShoppingListScreen> {
+class _ListDetailScreenState extends ConsumerState<ListDetailScreen> {
   late final TextEditingController _quickAddController;
 
   @override
@@ -39,8 +44,13 @@ class _ShoppingListScreenState extends ConsumerState<ShoppingListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final ShoppingListState state = ref.watch(shoppingListControllerProvider);
-    final ShoppingListController controller = ref.read(shoppingListControllerProvider.notifier);
+    final ListsState listsState = ref.watch(listsControllerProvider);
+    final ShoppingList? currentList = _findList(listsState.lists, widget.listId);
+
+    final ShoppingListState state =
+        ref.watch(shoppingListControllerProvider(widget.listId));
+    final ShoppingListController controller =
+        ref.read(shoppingListControllerProvider(widget.listId).notifier);
 
     if (_quickAddController.text != state.quickAddInput) {
       _quickAddController.value = TextEditingValue(
@@ -50,10 +60,12 @@ class _ShoppingListScreenState extends ConsumerState<ShoppingListScreen> {
     }
 
     return AppScaffold(
-      title: 'Shopping List',
+      title: currentList?.name ?? 'Shopping List',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
+          if (currentList != null && currentList.inventoryId == null)
+            _InventoryLinkSuggestion(list: currentList),
           const SectionHeader(
             title: 'Quick product add',
             subtitle: 'Type once, pick a suggestion, and keep moving.',
@@ -79,7 +91,8 @@ class _ShoppingListScreenState extends ConsumerState<ShoppingListScreen> {
                         child: ActionChip(
                           avatar: const Icon(Icons.local_offer_outlined),
                           label: Text(suggestion.suggestedProduct!.canonicalName),
-                          onPressed: () => controller.addFromQuickAdd(selectedSuggestion: suggestion),
+                          onPressed: () =>
+                              controller.addFromQuickAdd(selectedSuggestion: suggestion),
                         ),
                       ),
                     )
@@ -132,7 +145,7 @@ class _ShoppingListScreenState extends ConsumerState<ShoppingListScreen> {
             child: state.hasItems
                 ? _ItemsView(state: state, controller: controller)
                 : EmptyState(
-                    title: 'Your list is empty',
+                    title: 'This list is empty',
                     description: 'Use Quick Add to build your list in seconds.',
                     icon: Icons.shopping_cart_outlined,
                     primaryActionLabel: 'Add custom item',
@@ -144,6 +157,41 @@ class _ShoppingListScreenState extends ConsumerState<ShoppingListScreen> {
             _ShoppingModeBar(item: state.focusedItem!, controller: controller),
           ],
         ],
+      ),
+    );
+  }
+
+  ShoppingList? _findList(List<ShoppingList> lists, String id) {
+    for (final ShoppingList list in lists) {
+      if (list.id == id) {
+        return list;
+      }
+    }
+    return null;
+  }
+}
+
+class _InventoryLinkSuggestion extends StatelessWidget {
+  const _InventoryLinkSuggestion({required this.list});
+
+  final ShoppingList list;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: AppCard(
+        child: Row(
+          children: <Widget>[
+            const Icon(Icons.link_outlined),
+            const SizedBox(width: AppSpacing.sm),
+            const Expanded(
+              child: Text(
+                'Link this list to an inventory to track stock as you shop.',
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -334,7 +382,9 @@ class _ItemCard extends StatelessWidget {
   String _subtitleFromItem(ShoppingListItem item) {
     final String quantityText = item.quantity == null
         ? 'Qty not set'
-        : (item.quantity! % 1 == 0 ? item.quantity!.toInt().toString() : item.quantity!.toString());
+        : (item.quantity! % 1 == 0
+            ? item.quantity!.toInt().toString()
+            : item.quantity!.toString());
     final String unitText = item.unit?.code ?? 'unit';
     return '$quantityText $unitText';
   }

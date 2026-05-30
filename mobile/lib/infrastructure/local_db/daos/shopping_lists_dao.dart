@@ -22,6 +22,25 @@ class ShoppingListsDao extends DatabaseAccessor<AppDatabase>
     return into(shoppingListItems).insertOnConflictUpdate(item);
   }
 
+  Stream<List<ShoppingList>> watchAllLists() {
+    return (select(shoppingLists)
+          ..where((tbl) => tbl.deletedAt.isNull())
+          ..orderBy(<OrderingTerm Function($ShoppingListsTable)>[
+            (tbl) => OrderingTerm.desc(tbl.updatedAt),
+          ]))
+        .watch();
+  }
+
+  Future<void> softDeleteShoppingList(String id) async {
+    final DateTime now = DateTime.now();
+    await (update(shoppingLists)..where((tbl) => tbl.id.equals(id))).write(
+      ShoppingListsCompanion(
+        deletedAt: Value(now),
+        updatedAt: Value(now),
+      ),
+    );
+  }
+
   Stream<List<ShoppingListItem>> watchItemsForList(String shoppingListId) {
     final query = select(shoppingListItems)
       ..where((tbl) => tbl.shoppingListId.equals(shoppingListId) & tbl.deletedAt.isNull())

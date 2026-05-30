@@ -1,5 +1,4 @@
 import 'package:cartalyst_mobile/features/products/domain/services/product_suggestion_service.dart';
-import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list.dart';
 import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list_item.dart';
 
 class ShoppingListState {
@@ -8,7 +7,6 @@ class ShoppingListState {
     required this.quickAddInput,
     required this.shoppingModeEnabled,
     required this.purchasedCollapsed,
-    required this.activeList,
     required this.pendingItems,
     required this.purchasedItems,
     required this.skippedItems,
@@ -22,7 +20,6 @@ class ShoppingListState {
       quickAddInput = '',
       shoppingModeEnabled = true,
       purchasedCollapsed = true,
-      activeList = null,
       pendingItems = const <ShoppingListItem>[],
       purchasedItems = const <ShoppingListItem>[],
       skippedItems = const <ShoppingListItem>[],
@@ -34,7 +31,6 @@ class ShoppingListState {
   final String quickAddInput;
   final bool shoppingModeEnabled;
   final bool purchasedCollapsed;
-  final ShoppingList? activeList;
   final List<ShoppingListItem> pendingItems;
   final List<ShoppingListItem> purchasedItems;
   final List<ShoppingListItem> skippedItems;
@@ -74,7 +70,6 @@ class ShoppingListState {
     String? quickAddInput,
     bool? shoppingModeEnabled,
     bool? purchasedCollapsed,
-    ShoppingList? activeList,
     List<ShoppingListItem>? pendingItems,
     List<ShoppingListItem>? purchasedItems,
     List<ShoppingListItem>? skippedItems,
@@ -83,14 +78,12 @@ class ShoppingListState {
     String? errorMessage,
     bool clearErrorMessage = false,
     bool clearFocusedItem = false,
-    bool clearActiveList = false,
   }) {
     return ShoppingListState(
       isBusy: isBusy ?? this.isBusy,
       quickAddInput: quickAddInput ?? this.quickAddInput,
       shoppingModeEnabled: shoppingModeEnabled ?? this.shoppingModeEnabled,
       purchasedCollapsed: purchasedCollapsed ?? this.purchasedCollapsed,
-      activeList: clearActiveList ? null : (activeList ?? this.activeList),
       pendingItems: pendingItems ?? this.pendingItems,
       purchasedItems: purchasedItems ?? this.purchasedItems,
       skippedItems: skippedItems ?? this.skippedItems,

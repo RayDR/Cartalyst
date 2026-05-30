@@ -8,7 +8,6 @@ import 'package:cartalyst_mobile/features/products/domain/repositories/product_r
 import 'package:cartalyst_mobile/features/products/domain/services/product_suggestion_service.dart';
 import 'package:cartalyst_mobile/features/shopping_list/application/shopping_list_state.dart';
 import 'package:cartalyst_mobile/features/shopping_list/data/repositories/local_shopping_list_repository.dart';
-import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list.dart';
 import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list_item.dart';
 import 'package:cartalyst_mobile/features/shopping_list/domain/repositories/shopping_list_repository.dart';
 import 'package:cartalyst_mobile/infrastructure/local_db/app_database.dart' show AppDatabase;
@@ -38,15 +37,16 @@ final uuidProvider = Provider<Uuid>((Ref ref) {
 });
 
 final shoppingListControllerProvider =
-    NotifierProvider<ShoppingListController, ShoppingListState>(ShoppingListController.new);
+    NotifierProviderFamily<ShoppingListController, ShoppingListState, String>(
+  ShoppingListController.new,
+);
 
-class ShoppingListController extends Notifier<ShoppingListState> {
+class ShoppingListController extends FamilyNotifier<ShoppingListState, String> {
   late final ShoppingListRepository _shoppingListRepository;
   late final ProductRepository _productRepository;
   late final ProductSuggestionService _suggestionService;
   late final Uuid _uuid;
 
-  StreamSubscription<List<ShoppingList>>? _activeListSubscription;
   StreamSubscription<List<ShoppingListItem>>? _listItemsSubscription;
   StreamSubscription<List<Product>>? _productsSubscription;
 
@@ -54,22 +54,19 @@ class ShoppingListController extends Notifier<ShoppingListState> {
   List<ProductAlias> _aliases = const <ProductAlias>[];
   List<ProductUsageStat> _usageStats = const <ProductUsageStat>[];
 
-  bool _isCreatingList = false;
-
   @override
-  ShoppingListState build() {
+  ShoppingListState build(String arg) {
     _shoppingListRepository = ref.watch(shoppingListRepositoryProvider);
     _productRepository = ref.watch(productRepositoryProvider);
     _suggestionService = ref.watch(productSuggestionServiceProvider);
     _uuid = ref.watch(uuidProvider);
 
     ref.onDispose(() {
-      _activeListSubscription?.cancel();
       _listItemsSubscription?.cancel();
       _productsSubscription?.cancel();
     });
 
-    _subscribeActiveList();
+    _subscribeListItems(arg);
     _subscribeProducts();
 
     return const ShoppingListState.initial();
@@ -84,11 +81,6 @@ class ShoppingListController extends Notifier<ShoppingListState> {
     ProductSuggestion? selectedSuggestion,
     bool forceCustom = false,
   }) async {
-    final ShoppingList? activeList = state.activeList;
-    if (activeList == null) {
-      return;
-    }
-
     final String trimmedInput = state.quickAddInput.trim();
     if (trimmedInput.isEmpty) {
       return;
@@ -116,7 +108,7 @@ class ShoppingListController extends Notifier<ShoppingListState> {
 
     final ShoppingListItem item = ShoppingListItem(
       id: _uuid.v4(),
-      shoppingListId: activeList.id,
+      shoppingListId: arg,
       productId: matchedProduct?.id,
       rawText: matchedProduct?.canonicalName ?? normalizedRawText,
       quantity: baseSuggestion.parsedQuantity ?? fallbackSuggestion.parsedQuantity,
@@ -210,25 +202,6 @@ class ShoppingListController extends Notifier<ShoppingListState> {
     state = state.copyWith(focusedItemId: itemId);
   }
 
-  void _subscribeActiveList() {
-    _activeListSubscription?.cancel();
-    _activeListSubscription = _shoppingListRepository.watchActiveLists().listen((List<ShoppingList> lists) {
-      if (lists.isEmpty) {
-        _createActiveListIfMissing();
-        return;
-      }
-
-      final ShoppingList activeList = lists.first;
-      final bool activeListChanged = state.activeList?.id != activeList.id;
-
-      state = state.copyWith(activeList: activeList, clearErrorMessage: true);
-
-      if (activeListChanged) {
-        _subscribeListItems(activeList.id);
-      }
-    });
-  }
-
   void _subscribeProducts() {
     _productsSubscription?.cancel();
     _productsSubscription = _productRepository.watchActiveProducts().listen((List<Product> products) {
@@ -285,30 +258,6 @@ class ShoppingListController extends Notifier<ShoppingListState> {
       _aliases = await _productRepository.findAliasesForProducts(productIds);
     } catch (_) {
       _aliases = const <ProductAlias>[];
-    }
-  }
-
-  Future<void> _createActiveListIfMissing() async {
-    if (_isCreatingList) {
-      return;
-    }
-    _isCreatingList = true;
-
-    final DateTime now = DateTime.now();
-    final ShoppingList list = ShoppingList(
-      id: _uuid.v4(),
-      name: 'My Shopping List',
-      status: ShoppingListStatus.active,
-      createdAt: now,
-      updatedAt: now,
-      syncStatus: 'pending_sync',
-      version: 1,
-    );
-
-    try {
-      await _shoppingListRepository.saveShoppingList(list);
-    } finally {
-      _isCreatingList = false;
     }
   }
 

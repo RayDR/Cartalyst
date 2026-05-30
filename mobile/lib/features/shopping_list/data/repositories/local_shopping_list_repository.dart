@@ -24,6 +24,13 @@ class LocalShoppingListRepository implements ShoppingListRepository {
   }
 
   @override
+  Stream<List<domain.ShoppingList>> watchAllLists() {
+    return _database.shoppingListsDao.watchAllLists().map(
+          (rows) => rows.map(toDomainShoppingList).toList(growable: false),
+        );
+  }
+
+  @override
   Future<void> saveShoppingList(domain.ShoppingList shoppingList) {
     return _database.shoppingListsDao
         .upsertShoppingList(toShoppingListCompanion(shoppingList));
@@ -34,5 +41,10 @@ class LocalShoppingListRepository implements ShoppingListRepository {
     return _database.shoppingListsDao.upsertListItem(
       toShoppingListItemCompanion(item),
     );
+  }
+
+  @override
+  Future<void> deleteShoppingList(String id) {
+    return _database.shoppingListsDao.softDeleteShoppingList(id);
   }
 }
