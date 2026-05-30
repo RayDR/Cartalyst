@@ -107,7 +107,7 @@ class HomeDashboardController extends Notifier<HomeDashboardState> {
 
   void _subscribePantry() {
     _pantrySubscription?.cancel();
-    _pantrySubscription = _pantryRepository.watchPantryItems().listen((
+    _pantrySubscription = _pantryRepository.watchInventoryItems().listen((
       List<PantryItem> items,
     ) {
       final List<PantryItem> low = items

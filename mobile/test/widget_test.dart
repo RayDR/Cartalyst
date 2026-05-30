@@ -20,7 +20,7 @@ void main() {
 
     expect(find.text('Cartalyst Home'), findsOneWidget);
     expect(find.text('Shopping'), findsOneWidget);
-    expect(find.text('Pantry'), findsOneWidget);
+    expect(find.text('Inventory'), findsOneWidget);
     expect(find.text('Compare'), findsOneWidget);
     expect(find.text('Settings'), findsOneWidget);
   });

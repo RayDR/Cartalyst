@@ -104,7 +104,7 @@ class AppNavigationShell extends StatelessWidget {
           NavigationDestination(
             icon: Icon(Icons.kitchen_outlined),
             selectedIcon: Icon(Icons.kitchen),
-            label: 'Pantry',
+            label: 'Inventory',
           ),
           NavigationDestination(
             icon: Icon(Icons.balance_outlined),

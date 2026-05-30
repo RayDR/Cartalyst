@@ -1,17 +1,32 @@
 import 'package:cartalyst_mobile/core/domain/value_objects/unit.dart';
-import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory_event.dart' as domain;
-import 'package:cartalyst_mobile/features/pantry/domain/entities/pantry_item.dart' as domain;
+import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory.dart';
+import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory_event.dart';
+import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory_item.dart';
 import 'package:cartalyst_mobile/infrastructure/local_db/app_database.dart' as local_db;
 import 'package:drift/drift.dart';
 
-domain.PantryItem toDomainPantryItem(local_db.PantryItem row) {
-  return domain.PantryItem(
+Inventory toDomainInventory(local_db.Inventory row) {
+  return Inventory(
     id: row.id,
+    name: row.name,
+    description: row.description,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+    deletedAt: row.deletedAt,
+    syncStatus: row.syncStatus,
+    version: row.version,
+  );
+}
+
+InventoryItem toDomainInventoryItem(local_db.InventoryItem row) {
+  return InventoryItem(
+    id: row.id,
+    inventoryId: row.inventoryId,
     productId: row.productId,
     rawName: row.rawName,
     quantityEstimated: row.quantityEstimated,
     unit: row.unit == null ? null : Unit.fromCode(row.unit!),
-    status: _pantryStatusFromDb(row.status),
+    status: _inventoryItemStatusFromDb(row.status),
     confidenceScore: row.confidenceScore,
     lastConfirmedAt: row.lastConfirmedAt,
     createdAt: row.createdAt,
@@ -22,11 +37,13 @@ domain.PantryItem toDomainPantryItem(local_db.PantryItem row) {
   );
 }
 
-domain.InventoryEvent toDomainInventoryEvent(local_db.InventoryEvent row) {
-  return domain.InventoryEvent(
+InventoryEvent toDomainInventoryEvent(local_db.InventoryEvent row) {
+  return InventoryEvent(
     id: row.id,
+    inventoryId: row.inventoryId,
     productId: row.productId,
-    pantryItemId: row.pantryItemId,
+    inventoryItemId: row.inventoryItemId,
+    pantryItemId: row.inventoryItemId,
     eventType: _inventoryEventTypeFromDb(row.eventType),
     quantity: row.quantity,
     unit: row.unit == null ? null : Unit.fromCode(row.unit!),
@@ -36,14 +53,28 @@ domain.InventoryEvent toDomainInventoryEvent(local_db.InventoryEvent row) {
   );
 }
 
-local_db.PantryItemsCompanion toPantryItemCompanion(domain.PantryItem entity) {
-  return local_db.PantryItemsCompanion(
+local_db.InventoriesCompanion toInventoryCompanion(Inventory entity) {
+  return local_db.InventoriesCompanion(
     id: Value(entity.id),
+    name: Value(entity.name),
+    description: Value(entity.description),
+    createdAt: Value(entity.createdAt),
+    updatedAt: Value(entity.updatedAt),
+    deletedAt: Value(entity.deletedAt),
+    syncStatus: Value(entity.syncStatus),
+    version: Value(entity.version),
+  );
+}
+
+local_db.InventoryItemsCompanion toInventoryItemCompanion(InventoryItem entity) {
+  return local_db.InventoryItemsCompanion(
+    id: Value(entity.id),
+    inventoryId: Value(entity.inventoryId),
     productId: Value(entity.productId),
     rawName: Value(entity.rawName),
     quantityEstimated: Value(entity.quantityEstimated),
     unit: Value(entity.unit?.code),
-    status: Value(_pantryStatusToDb(entity.status)),
+    status: Value(_inventoryItemStatusToDb(entity.status)),
     confidenceScore: Value(entity.confidenceScore),
     lastConfirmedAt: Value(entity.lastConfirmedAt),
     createdAt: Value(entity.createdAt),
@@ -55,12 +86,13 @@ local_db.PantryItemsCompanion toPantryItemCompanion(domain.PantryItem entity) {
 }
 
 local_db.InventoryEventsCompanion toInventoryEventCompanion(
-  domain.InventoryEvent entity,
+  InventoryEvent entity,
 ) {
   return local_db.InventoryEventsCompanion(
     id: Value(entity.id),
+    inventoryId: Value(entity.inventoryId),
     productId: Value(entity.productId),
-    pantryItemId: Value(entity.pantryItemId),
+    inventoryItemId: Value(entity.inventoryItemId ?? entity.pantryItemId),
     eventType: Value(_inventoryEventTypeToDb(entity.eventType)),
     quantity: Value(entity.quantity),
     unit: Value(entity.unit?.code),
@@ -70,59 +102,66 @@ local_db.InventoryEventsCompanion toInventoryEventCompanion(
   );
 }
 
-domain.PantryItemStatus _pantryStatusFromDb(String raw) {
+InventoryItemStatus _inventoryItemStatusFromDb(String raw) {
   return switch (raw) {
-    'unknown' => domain.PantryItemStatus.unknown,
-    'in_stock' => domain.PantryItemStatus.inStock,
-    'low' => domain.PantryItemStatus.low,
-    'out' => domain.PantryItemStatus.out,
-    _ => domain.PantryItemStatus.unknown,
+    'unknown' => InventoryItemStatus.unknown,
+    'in_stock' => InventoryItemStatus.inStock,
+    'low' => InventoryItemStatus.low,
+    'out' => InventoryItemStatus.out,
+    _ => InventoryItemStatus.unknown,
   };
 }
 
-String _pantryStatusToDb(domain.PantryItemStatus status) {
+String _inventoryItemStatusToDb(InventoryItemStatus status) {
   return switch (status) {
-    domain.PantryItemStatus.unknown => 'unknown',
-    domain.PantryItemStatus.inStock => 'in_stock',
-    domain.PantryItemStatus.low => 'low',
-    domain.PantryItemStatus.out => 'out',
+    InventoryItemStatus.unknown => 'unknown',
+    InventoryItemStatus.inStock => 'in_stock',
+    InventoryItemStatus.low => 'low',
+    InventoryItemStatus.out => 'out',
   };
 }
 
-domain.InventoryEventType _inventoryEventTypeFromDb(String raw) {
+// Backwards-compatible aliases to keep existing feature code compiling during migration.
+InventoryItem toDomainPantryItem(local_db.InventoryItem row) =>
+    toDomainInventoryItem(row);
+
+local_db.InventoryItemsCompanion toPantryItemCompanion(InventoryItem entity) =>
+    toInventoryItemCompanion(entity);
+
+InventoryEventType _inventoryEventTypeFromDb(String raw) {
   return switch (raw) {
-    'add' || 'purchase' => domain.InventoryEventType.purchase,
-    'consume' => domain.InventoryEventType.consume,
-    'adjust' => domain.InventoryEventType.adjust,
-    'confirm' || 'finish' => domain.InventoryEventType.finish,
-    'discard' => domain.InventoryEventType.discard,
-    _ => domain.InventoryEventType.adjust,
+    'add' || 'purchase' => InventoryEventType.purchase,
+    'consume' => InventoryEventType.consume,
+    'adjust' => InventoryEventType.adjust,
+    'confirm' || 'finish' => InventoryEventType.finish,
+    'discard' => InventoryEventType.discard,
+    _ => InventoryEventType.adjust,
   };
 }
 
-String _inventoryEventTypeToDb(domain.InventoryEventType type) {
+String _inventoryEventTypeToDb(InventoryEventType type) {
   return switch (type) {
-    domain.InventoryEventType.purchase => 'purchase',
-    domain.InventoryEventType.consume => 'consume',
-    domain.InventoryEventType.adjust => 'adjust',
-    domain.InventoryEventType.finish => 'finish',
-    domain.InventoryEventType.discard => 'discard',
+    InventoryEventType.purchase => 'purchase',
+    InventoryEventType.consume => 'consume',
+    InventoryEventType.adjust => 'adjust',
+    InventoryEventType.finish => 'finish',
+    InventoryEventType.discard => 'discard',
   };
 }
 
-domain.InventoryEventSource _inventoryEventSourceFromDb(String raw) {
+InventoryEventSource _inventoryEventSourceFromDb(String raw) {
   return switch (raw) {
-    'manual' => domain.InventoryEventSource.manual,
-    'receipt' => domain.InventoryEventSource.receipt,
-    'system' => domain.InventoryEventSource.system,
-    _ => domain.InventoryEventSource.manual,
+    'manual' => InventoryEventSource.manual,
+    'receipt' => InventoryEventSource.receipt,
+    'system' => InventoryEventSource.system,
+    _ => InventoryEventSource.manual,
   };
 }
 
-String _inventoryEventSourceToDb(domain.InventoryEventSource source) {
+String _inventoryEventSourceToDb(InventoryEventSource source) {
   return switch (source) {
-    domain.InventoryEventSource.manual => 'manual',
-    domain.InventoryEventSource.receipt => 'receipt',
-    domain.InventoryEventSource.system => 'system',
+    InventoryEventSource.manual => 'manual',
+    InventoryEventSource.receipt => 'receipt',
+    InventoryEventSource.system => 'system',
   };
 }

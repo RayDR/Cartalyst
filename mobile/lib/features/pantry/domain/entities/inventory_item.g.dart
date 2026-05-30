@@ -1,21 +1,22 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'pantry_item.dart';
+part of 'inventory_item.dart';
 
 // **************************************************************************
 // JsonSerializableGenerator
 // **************************************************************************
 
-_$PantryItemImpl _$$PantryItemImplFromJson(Map<String, dynamic> json) =>
-    _$PantryItemImpl(
+_$InventoryItemImpl _$$InventoryItemImplFromJson(Map<String, dynamic> json) =>
+    _$InventoryItemImpl(
       id: json['id'] as String,
+      inventoryId: json['inventoryId'] as String,
       productId: json['productId'] as String?,
       rawName: json['rawName'] as String?,
       quantityEstimated: (json['quantityEstimated'] as num?)?.toDouble(),
       unit: json['unit'] == null
           ? null
           : Unit.fromJson(json['unit'] as Map<String, dynamic>),
-      status: $enumDecode(_$PantryItemStatusEnumMap, json['status']),
+      status: $enumDecode(_$InventoryItemStatusEnumMap, json['status']),
       confidenceScore: (json['confidenceScore'] as num).toDouble(),
       lastConfirmedAt: json['lastConfirmedAt'] == null
           ? null
@@ -29,14 +30,15 @@ _$PantryItemImpl _$$PantryItemImplFromJson(Map<String, dynamic> json) =>
       version: (json['version'] as num).toInt(),
     );
 
-Map<String, dynamic> _$$PantryItemImplToJson(_$PantryItemImpl instance) =>
+Map<String, dynamic> _$$InventoryItemImplToJson(_$InventoryItemImpl instance) =>
     <String, dynamic>{
       'id': instance.id,
+      'inventoryId': instance.inventoryId,
       'productId': instance.productId,
       'rawName': instance.rawName,
       'quantityEstimated': instance.quantityEstimated,
       'unit': instance.unit,
-      'status': _$PantryItemStatusEnumMap[instance.status]!,
+      'status': _$InventoryItemStatusEnumMap[instance.status]!,
       'confidenceScore': instance.confidenceScore,
       'lastConfirmedAt': instance.lastConfirmedAt?.toIso8601String(),
       'createdAt': instance.createdAt.toIso8601String(),
@@ -46,9 +48,9 @@ Map<String, dynamic> _$$PantryItemImplToJson(_$PantryItemImpl instance) =>
       'version': instance.version,
     };
 
-const _$PantryItemStatusEnumMap = {
-  PantryItemStatus.unknown: 'unknown',
-  PantryItemStatus.inStock: 'inStock',
-  PantryItemStatus.low: 'low',
-  PantryItemStatus.out: 'out',
+const _$InventoryItemStatusEnumMap = {
+  InventoryItemStatus.unknown: 'unknown',
+  InventoryItemStatus.inStock: 'inStock',
+  InventoryItemStatus.low: 'low',
+  InventoryItemStatus.out: 'out',
 };

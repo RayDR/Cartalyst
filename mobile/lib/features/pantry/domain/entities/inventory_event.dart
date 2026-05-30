@@ -23,7 +23,9 @@ class InventoryEvent with _$InventoryEvent {
   const factory InventoryEvent({
     required String id,
     String? productId,
-    String? pantryItemId,
+    String? inventoryId,
+    String? inventoryItemId,
+    @Deprecated('Use inventoryItemId') String? pantryItemId,
     required InventoryEventType eventType,
     double? quantity,
     Unit? unit,

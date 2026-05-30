@@ -3,7 +3,7 @@
 // ignore_for_file: type=lint
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
-part of 'pantry_item.dart';
+part of 'inventory_item.dart';
 
 // **************************************************************************
 // FreezedGenerator
@@ -14,18 +14,19 @@ T _$identity<T>(T value) => value;
 final _privateConstructorUsedError = UnsupportedError(
     'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models');
 
-PantryItem _$PantryItemFromJson(Map<String, dynamic> json) {
-  return _PantryItem.fromJson(json);
+InventoryItem _$InventoryItemFromJson(Map<String, dynamic> json) {
+  return _InventoryItem.fromJson(json);
 }
 
 /// @nodoc
-mixin _$PantryItem {
+mixin _$InventoryItem {
   String get id => throw _privateConstructorUsedError;
+  String get inventoryId => throw _privateConstructorUsedError;
   String? get productId => throw _privateConstructorUsedError;
   String? get rawName => throw _privateConstructorUsedError;
   double? get quantityEstimated => throw _privateConstructorUsedError;
   Unit? get unit => throw _privateConstructorUsedError;
-  PantryItemStatus get status => throw _privateConstructorUsedError;
+  InventoryItemStatus get status => throw _privateConstructorUsedError;
   double get confidenceScore => throw _privateConstructorUsedError;
   DateTime? get lastConfirmedAt => throw _privateConstructorUsedError;
   DateTime get createdAt => throw _privateConstructorUsedError;
@@ -34,29 +35,30 @@ mixin _$PantryItem {
   String get syncStatus => throw _privateConstructorUsedError;
   int get version => throw _privateConstructorUsedError;
 
-  /// Serializes this PantryItem to a JSON map.
+  /// Serializes this InventoryItem to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
 
-  /// Create a copy of PantryItem
+  /// Create a copy of InventoryItem
   /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
-  $PantryItemCopyWith<PantryItem> get copyWith =>
+  $InventoryItemCopyWith<InventoryItem> get copyWith =>
       throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-abstract class $PantryItemCopyWith<$Res> {
-  factory $PantryItemCopyWith(
-          PantryItem value, $Res Function(PantryItem) then) =
-      _$PantryItemCopyWithImpl<$Res, PantryItem>;
+abstract class $InventoryItemCopyWith<$Res> {
+  factory $InventoryItemCopyWith(
+          InventoryItem value, $Res Function(InventoryItem) then) =
+      _$InventoryItemCopyWithImpl<$Res, InventoryItem>;
   @useResult
   $Res call(
       {String id,
+      String inventoryId,
       String? productId,
       String? rawName,
       double? quantityEstimated,
       Unit? unit,
-      PantryItemStatus status,
+      InventoryItemStatus status,
       double confidenceScore,
       DateTime? lastConfirmedAt,
       DateTime createdAt,
@@ -69,21 +71,22 @@ abstract class $PantryItemCopyWith<$Res> {
 }
 
 /// @nodoc
-class _$PantryItemCopyWithImpl<$Res, $Val extends PantryItem>
-    implements $PantryItemCopyWith<$Res> {
-  _$PantryItemCopyWithImpl(this._value, this._then);
+class _$InventoryItemCopyWithImpl<$Res, $Val extends InventoryItem>
+    implements $InventoryItemCopyWith<$Res> {
+  _$InventoryItemCopyWithImpl(this._value, this._then);
 
   // ignore: unused_field
   final $Val _value;
   // ignore: unused_field
   final $Res Function($Val) _then;
 
-  /// Create a copy of PantryItem
+  /// Create a copy of InventoryItem
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
     Object? id = null,
+    Object? inventoryId = null,
     Object? productId = freezed,
     Object? rawName = freezed,
     Object? quantityEstimated = freezed,
@@ -101,6 +104,10 @@ class _$PantryItemCopyWithImpl<$Res, $Val extends PantryItem>
       id: null == id
           ? _value.id
           : id // ignore: cast_nullable_to_non_nullable
+              as String,
+      inventoryId: null == inventoryId
+          ? _value.inventoryId
+          : inventoryId // ignore: cast_nullable_to_non_nullable
               as String,
       productId: freezed == productId
           ? _value.productId
@@ -121,7 +128,7 @@ class _$PantryItemCopyWithImpl<$Res, $Val extends PantryItem>
       status: null == status
           ? _value.status
           : status // ignore: cast_nullable_to_non_nullable
-              as PantryItemStatus,
+              as InventoryItemStatus,
       confidenceScore: null == confidenceScore
           ? _value.confidenceScore
           : confidenceScore // ignore: cast_nullable_to_non_nullable
@@ -153,7 +160,7 @@ class _$PantryItemCopyWithImpl<$Res, $Val extends PantryItem>
     ) as $Val);
   }
 
-  /// Create a copy of PantryItem
+  /// Create a copy of InventoryItem
   /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
@@ -169,20 +176,21 @@ class _$PantryItemCopyWithImpl<$Res, $Val extends PantryItem>
 }
 
 /// @nodoc
-abstract class _$$PantryItemImplCopyWith<$Res>
-    implements $PantryItemCopyWith<$Res> {
-  factory _$$PantryItemImplCopyWith(
-          _$PantryItemImpl value, $Res Function(_$PantryItemImpl) then) =
-      __$$PantryItemImplCopyWithImpl<$Res>;
+abstract class _$$InventoryItemImplCopyWith<$Res>
+    implements $InventoryItemCopyWith<$Res> {
+  factory _$$InventoryItemImplCopyWith(
+          _$InventoryItemImpl value, $Res Function(_$InventoryItemImpl) then) =
+      __$$InventoryItemImplCopyWithImpl<$Res>;
   @override
   @useResult
   $Res call(
       {String id,
+      String inventoryId,
       String? productId,
       String? rawName,
       double? quantityEstimated,
       Unit? unit,
-      PantryItemStatus status,
+      InventoryItemStatus status,
       double confidenceScore,
       DateTime? lastConfirmedAt,
       DateTime createdAt,
@@ -196,19 +204,20 @@ abstract class _$$PantryItemImplCopyWith<$Res>
 }
 
 /// @nodoc
-class __$$PantryItemImplCopyWithImpl<$Res>
-    extends _$PantryItemCopyWithImpl<$Res, _$PantryItemImpl>
-    implements _$$PantryItemImplCopyWith<$Res> {
-  __$$PantryItemImplCopyWithImpl(
-      _$PantryItemImpl _value, $Res Function(_$PantryItemImpl) _then)
+class __$$InventoryItemImplCopyWithImpl<$Res>
+    extends _$InventoryItemCopyWithImpl<$Res, _$InventoryItemImpl>
+    implements _$$InventoryItemImplCopyWith<$Res> {
+  __$$InventoryItemImplCopyWithImpl(
+      _$InventoryItemImpl _value, $Res Function(_$InventoryItemImpl) _then)
       : super(_value, _then);
 
-  /// Create a copy of PantryItem
+  /// Create a copy of InventoryItem
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
     Object? id = null,
+    Object? inventoryId = null,
     Object? productId = freezed,
     Object? rawName = freezed,
     Object? quantityEstimated = freezed,
@@ -222,10 +231,14 @@ class __$$PantryItemImplCopyWithImpl<$Res>
     Object? syncStatus = null,
     Object? version = null,
   }) {
-    return _then(_$PantryItemImpl(
+    return _then(_$InventoryItemImpl(
       id: null == id
           ? _value.id
           : id // ignore: cast_nullable_to_non_nullable
+              as String,
+      inventoryId: null == inventoryId
+          ? _value.inventoryId
+          : inventoryId // ignore: cast_nullable_to_non_nullable
               as String,
       productId: freezed == productId
           ? _value.productId
@@ -246,7 +259,7 @@ class __$$PantryItemImplCopyWithImpl<$Res>
       status: null == status
           ? _value.status
           : status // ignore: cast_nullable_to_non_nullable
-              as PantryItemStatus,
+              as InventoryItemStatus,
       confidenceScore: null == confidenceScore
           ? _value.confidenceScore
           : confidenceScore // ignore: cast_nullable_to_non_nullable
@@ -281,9 +294,10 @@ class __$$PantryItemImplCopyWithImpl<$Res>
 
 /// @nodoc
 @JsonSerializable()
-class _$PantryItemImpl implements _PantryItem {
-  const _$PantryItemImpl(
+class _$InventoryItemImpl implements _InventoryItem {
+  const _$InventoryItemImpl(
       {required this.id,
+      required this.inventoryId,
       this.productId,
       this.rawName,
       this.quantityEstimated,
@@ -297,11 +311,13 @@ class _$PantryItemImpl implements _PantryItem {
       required this.syncStatus,
       required this.version});
 
-  factory _$PantryItemImpl.fromJson(Map<String, dynamic> json) =>
-      _$$PantryItemImplFromJson(json);
+  factory _$InventoryItemImpl.fromJson(Map<String, dynamic> json) =>
+      _$$InventoryItemImplFromJson(json);
 
   @override
   final String id;
+  @override
+  final String inventoryId;
   @override
   final String? productId;
   @override
@@ -311,7 +327,7 @@ class _$PantryItemImpl implements _PantryItem {
   @override
   final Unit? unit;
   @override
-  final PantryItemStatus status;
+  final InventoryItemStatus status;
   @override
   final double confidenceScore;
   @override
@@ -329,15 +345,17 @@ class _$PantryItemImpl implements _PantryItem {
 
   @override
   String toString() {
-    return 'PantryItem(id: $id, productId: $productId, rawName: $rawName, quantityEstimated: $quantityEstimated, unit: $unit, status: $status, confidenceScore: $confidenceScore, lastConfirmedAt: $lastConfirmedAt, createdAt: $createdAt, updatedAt: $updatedAt, deletedAt: $deletedAt, syncStatus: $syncStatus, version: $version)';
+    return 'InventoryItem(id: $id, inventoryId: $inventoryId, productId: $productId, rawName: $rawName, quantityEstimated: $quantityEstimated, unit: $unit, status: $status, confidenceScore: $confidenceScore, lastConfirmedAt: $lastConfirmedAt, createdAt: $createdAt, updatedAt: $updatedAt, deletedAt: $deletedAt, syncStatus: $syncStatus, version: $version)';
   }
 
   @override
   bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$PantryItemImpl &&
+            other is _$InventoryItemImpl &&
             (identical(other.id, id) || other.id == id) &&
+            (identical(other.inventoryId, inventoryId) ||
+                other.inventoryId == inventoryId) &&
             (identical(other.productId, productId) ||
                 other.productId == productId) &&
             (identical(other.rawName, rawName) || other.rawName == rawName) &&
@@ -365,6 +383,7 @@ class _$PantryItemImpl implements _PantryItem {
   int get hashCode => Object.hash(
       runtimeType,
       id,
+      inventoryId,
       productId,
       rawName,
       quantityEstimated,
@@ -378,43 +397,46 @@ class _$PantryItemImpl implements _PantryItem {
       syncStatus,
       version);
 
-  /// Create a copy of PantryItem
+  /// Create a copy of InventoryItem
   /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
-  _$$PantryItemImplCopyWith<_$PantryItemImpl> get copyWith =>
-      __$$PantryItemImplCopyWithImpl<_$PantryItemImpl>(this, _$identity);
+  _$$InventoryItemImplCopyWith<_$InventoryItemImpl> get copyWith =>
+      __$$InventoryItemImplCopyWithImpl<_$InventoryItemImpl>(this, _$identity);
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$PantryItemImplToJson(
+    return _$$InventoryItemImplToJson(
       this,
     );
   }
 }
 
-abstract class _PantryItem implements PantryItem {
-  const factory _PantryItem(
+abstract class _InventoryItem implements InventoryItem {
+  const factory _InventoryItem(
       {required final String id,
+      required final String inventoryId,
       final String? productId,
       final String? rawName,
       final double? quantityEstimated,
       final Unit? unit,
-      required final PantryItemStatus status,
+      required final InventoryItemStatus status,
       required final double confidenceScore,
       final DateTime? lastConfirmedAt,
       required final DateTime createdAt,
       required final DateTime updatedAt,
       final DateTime? deletedAt,
       required final String syncStatus,
-      required final int version}) = _$PantryItemImpl;
+      required final int version}) = _$InventoryItemImpl;
 
-  factory _PantryItem.fromJson(Map<String, dynamic> json) =
-      _$PantryItemImpl.fromJson;
+  factory _InventoryItem.fromJson(Map<String, dynamic> json) =
+      _$InventoryItemImpl.fromJson;
 
   @override
   String get id;
+  @override
+  String get inventoryId;
   @override
   String? get productId;
   @override
@@ -424,7 +446,7 @@ abstract class _PantryItem implements PantryItem {
   @override
   Unit? get unit;
   @override
-  PantryItemStatus get status;
+  InventoryItemStatus get status;
   @override
   double get confidenceScore;
   @override
@@ -440,10 +462,10 @@ abstract class _PantryItem implements PantryItem {
   @override
   int get version;
 
-  /// Create a copy of PantryItem
+  /// Create a copy of InventoryItem
   /// with the given fields replaced by the non-null parameter values.
   @override
   @JsonKey(includeFromJson: false, includeToJson: false)
-  _$$PantryItemImplCopyWith<_$PantryItemImpl> get copyWith =>
+  _$$InventoryItemImplCopyWith<_$InventoryItemImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }

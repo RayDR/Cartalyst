@@ -1,17 +1,16 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'shopping_list.dart';
+part of 'inventory.dart';
 
 // **************************************************************************
 // JsonSerializableGenerator
 // **************************************************************************
 
-_$ShoppingListImpl _$$ShoppingListImplFromJson(Map<String, dynamic> json) =>
-    _$ShoppingListImpl(
+_$InventoryImpl _$$InventoryImplFromJson(Map<String, dynamic> json) =>
+    _$InventoryImpl(
       id: json['id'] as String,
-      inventoryId: json['inventoryId'] as String?,
       name: json['name'] as String,
-      status: $enumDecode(_$ShoppingListStatusEnumMap, json['status']),
+      description: json['description'] as String?,
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
       deletedAt: json['deletedAt'] == null
@@ -21,21 +20,14 @@ _$ShoppingListImpl _$$ShoppingListImplFromJson(Map<String, dynamic> json) =>
       version: (json['version'] as num).toInt(),
     );
 
-Map<String, dynamic> _$$ShoppingListImplToJson(_$ShoppingListImpl instance) =>
+Map<String, dynamic> _$$InventoryImplToJson(_$InventoryImpl instance) =>
     <String, dynamic>{
       'id': instance.id,
-      'inventoryId': instance.inventoryId,
       'name': instance.name,
-      'status': _$ShoppingListStatusEnumMap[instance.status]!,
+      'description': instance.description,
       'createdAt': instance.createdAt.toIso8601String(),
       'updatedAt': instance.updatedAt.toIso8601String(),
       'deletedAt': instance.deletedAt?.toIso8601String(),
       'syncStatus': instance.syncStatus,
       'version': instance.version,
     };
-
-const _$ShoppingListStatusEnumMap = {
-  ShoppingListStatus.active: 'active',
-  ShoppingListStatus.completed: 'completed',
-  ShoppingListStatus.archived: 'archived',
-};

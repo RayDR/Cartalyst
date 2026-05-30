@@ -1,7 +1,9 @@
 part of '../app_database.dart';
 
-class PantryItems extends Table {
+class InventoryItems extends Table {
   TextColumn get id => text()();
+
+  TextColumn get inventoryId => text().references(Inventories, #id)();
 
   TextColumn get productId => text().nullable().references(Products, #id)();
 
@@ -12,9 +14,9 @@ class PantryItems extends Table {
   TextColumn get unit => text().nullable().withLength(min: 1, max: 32)();
 
   TextColumn get status =>
-    text().customConstraint(
-      "NOT NULL DEFAULT 'unknown' CHECK (status IN ('unknown', 'in_stock', 'low', 'out'))",
-        )();
+      text().customConstraint(
+        "NOT NULL DEFAULT 'unknown' CHECK (status IN ('unknown', 'in_stock', 'low', 'out'))",
+      )();
 
   RealColumn get confidenceScore => real().withDefault(const Constant(0.5))();
 
@@ -27,9 +29,9 @@ class PantryItems extends Table {
   DateTimeColumn get deletedAt => dateTime().nullable()();
 
   TextColumn get syncStatus =>
-    text().customConstraint(
-      "NOT NULL DEFAULT 'local_only' CHECK (sync_status IN ('local_only', 'pending_sync', 'synced', 'sync_error'))",
-        )();
+      text().customConstraint(
+        "NOT NULL DEFAULT 'local_only' CHECK (sync_status IN ('local_only', 'pending_sync', 'synced', 'sync_error'))",
+      )();
 
   IntColumn get version => integer().withDefault(const Constant(1))();
 

@@ -50,9 +50,12 @@ void main() {
             await database!.select(database!.shoppingLists).get();
         final List<Product> products =
             await database!.select(database!.products).get();
+        final List<Inventory> inventories =
+          await database!.select(database!.inventories).get();
 
         expect(lists, isEmpty);
         expect(products.length, 15);
+        expect(inventories.length, 1);
       } on ArgumentError catch (error) {
         if (_isMissingSqlite(error)) {
           return;
@@ -118,6 +121,72 @@ void main() {
         if (dbFile.existsSync()) {
           dbFile.deleteSync();
         }
+      }
+    });
+
+    test('creates inventory records', () async {
+      try {
+        final DateTime now = DateTime.now();
+        await database!.into(database!.inventories).insert(
+              InventoriesCompanion.insert(
+                id: const Uuid().v4(),
+                name: 'Despensa',
+                description: const drift.Value('Household inventory'),
+                createdAt: drift.Value(now),
+                updatedAt: drift.Value(now),
+                syncStatus: const drift.Value('pending_sync'),
+                version: const drift.Value(1),
+              ),
+            );
+
+        final List<Inventory> inventories =
+            await database!.select(database!.inventories).get();
+        expect(inventories.any((Inventory inventory) => inventory.name == 'Despensa'), isTrue);
+      } on ArgumentError catch (error) {
+        if (_isMissingSqlite(error)) {
+          return;
+        }
+        rethrow;
+      }
+    });
+
+    test('persists shopping list inventory linkage', () async {
+      try {
+        final DateTime now = DateTime.now();
+        final String inventoryId = const Uuid().v4();
+        final String listId = const Uuid().v4();
+
+        await database!.into(database!.inventories).insert(
+              InventoriesCompanion.insert(
+                id: inventoryId,
+                name: 'Pantry',
+                createdAt: drift.Value(now),
+                updatedAt: drift.Value(now),
+                syncStatus: const drift.Value('pending_sync'),
+                version: const drift.Value(1),
+              ),
+            );
+
+        await database!.into(database!.shoppingLists).insert(
+              ShoppingListsCompanion.insert(
+                id: listId,
+                inventoryId: drift.Value(inventoryId),
+                name: 'Weekly list',
+                createdAt: drift.Value(now),
+                updatedAt: drift.Value(now),
+              ),
+            );
+
+        final ShoppingList list = await (database!.select(database!.shoppingLists)
+              ..where((tbl) => tbl.id.equals(listId)))
+            .getSingle();
+
+        expect(list.inventoryId, inventoryId);
+      } on ArgumentError catch (error) {
+        if (_isMissingSqlite(error)) {
+          return;
+        }
+        rethrow;
       }
     });
   });

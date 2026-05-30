@@ -113,7 +113,7 @@ class HomeScreen extends ConsumerWidget {
             child: state.runningLowItems.isEmpty
                 ? const AppListTile(
                     title: 'No low-stock items',
-                    subtitle: 'Great job keeping pantry levels healthy.',
+                    subtitle: 'Great job keeping inventory levels healthy.',
                     leading: Icon(Icons.thumb_up_alt_outlined),
                   )
                 : Column(
@@ -122,7 +122,7 @@ class HomeScreen extends ConsumerWidget {
                           (PantryItem item) => Padding(
                             padding: const EdgeInsets.only(bottom: AppSpacing.xs),
                             child: AppListTile(
-                              title: item.rawName ?? item.productId ?? 'Pantry item',
+                              title: item.rawName ?? item.productId ?? 'Inventory item',
                               subtitle: item.quantityEstimated == null
                                   ? 'Low stock'
                                   : 'Estimated ${item.quantityEstimated} ${item.unit?.code ?? ''}'.trim(),
@@ -154,15 +154,15 @@ class HomeScreen extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.md),
           const SectionHeader(
-            title: 'Recently updated pantry items',
-            subtitle: 'Latest pantry changes from your device.',
+            title: 'Recently updated inventory items',
+            subtitle: 'Latest inventory changes from your device.',
           ),
           const SizedBox(height: AppSpacing.sm),
           AppCard(
             child: state.recentlyUpdatedPantryItems.isEmpty
                 ? const AppListTile(
-                    title: 'No pantry updates yet',
-                    subtitle: 'Pantry changes will appear here as you update items.',
+                    title: 'No inventory updates yet',
+                    subtitle: 'Inventory changes will appear here as you update items.',
                     leading: Icon(Icons.history),
                   )
                 : Column(
@@ -171,7 +171,7 @@ class HomeScreen extends ConsumerWidget {
                           (PantryItem item) => Padding(
                             padding: const EdgeInsets.only(bottom: AppSpacing.xs),
                             child: AppListTile(
-                              title: item.rawName ?? item.productId ?? 'Pantry item',
+                              title: item.rawName ?? item.productId ?? 'Inventory item',
                               subtitle: 'Updated ${_formatTimestamp(item.updatedAt)}',
                               leading: const Icon(Icons.inventory_2_outlined),
                             ),

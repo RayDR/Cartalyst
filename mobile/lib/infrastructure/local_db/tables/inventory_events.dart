@@ -3,9 +3,11 @@ part of '../app_database.dart';
 class InventoryEvents extends Table {
   TextColumn get id => text()();
 
+  TextColumn get inventoryId => text().nullable().references(Inventories, #id)();
+
   TextColumn get productId => text().nullable().references(Products, #id)();
 
-  TextColumn get pantryItemId => text().nullable().references(PantryItems, #id)();
+  TextColumn get inventoryItemId => text().nullable().references(InventoryItems, #id)();
 
   TextColumn get eventType =>
     text().customConstraint(

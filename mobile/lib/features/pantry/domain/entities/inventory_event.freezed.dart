@@ -22,6 +22,9 @@ InventoryEvent _$InventoryEventFromJson(Map<String, dynamic> json) {
 mixin _$InventoryEvent {
   String get id => throw _privateConstructorUsedError;
   String? get productId => throw _privateConstructorUsedError;
+  String? get inventoryId => throw _privateConstructorUsedError;
+  String? get inventoryItemId => throw _privateConstructorUsedError;
+  @Deprecated('Use inventoryItemId')
   String? get pantryItemId => throw _privateConstructorUsedError;
   InventoryEventType get eventType => throw _privateConstructorUsedError;
   double? get quantity => throw _privateConstructorUsedError;
@@ -49,7 +52,9 @@ abstract class $InventoryEventCopyWith<$Res> {
   $Res call(
       {String id,
       String? productId,
-      String? pantryItemId,
+      String? inventoryId,
+      String? inventoryItemId,
+      @Deprecated('Use inventoryItemId') String? pantryItemId,
       InventoryEventType eventType,
       double? quantity,
       Unit? unit,
@@ -77,6 +82,8 @@ class _$InventoryEventCopyWithImpl<$Res, $Val extends InventoryEvent>
   $Res call({
     Object? id = null,
     Object? productId = freezed,
+    Object? inventoryId = freezed,
+    Object? inventoryItemId = freezed,
     Object? pantryItemId = freezed,
     Object? eventType = null,
     Object? quantity = freezed,
@@ -93,6 +100,14 @@ class _$InventoryEventCopyWithImpl<$Res, $Val extends InventoryEvent>
       productId: freezed == productId
           ? _value.productId
           : productId // ignore: cast_nullable_to_non_nullable
+              as String?,
+      inventoryId: freezed == inventoryId
+          ? _value.inventoryId
+          : inventoryId // ignore: cast_nullable_to_non_nullable
+              as String?,
+      inventoryItemId: freezed == inventoryItemId
+          ? _value.inventoryItemId
+          : inventoryItemId // ignore: cast_nullable_to_non_nullable
               as String?,
       pantryItemId: freezed == pantryItemId
           ? _value.pantryItemId
@@ -151,7 +166,9 @@ abstract class _$$InventoryEventImplCopyWith<$Res>
   $Res call(
       {String id,
       String? productId,
-      String? pantryItemId,
+      String? inventoryId,
+      String? inventoryItemId,
+      @Deprecated('Use inventoryItemId') String? pantryItemId,
       InventoryEventType eventType,
       double? quantity,
       Unit? unit,
@@ -178,6 +195,8 @@ class __$$InventoryEventImplCopyWithImpl<$Res>
   $Res call({
     Object? id = null,
     Object? productId = freezed,
+    Object? inventoryId = freezed,
+    Object? inventoryItemId = freezed,
     Object? pantryItemId = freezed,
     Object? eventType = null,
     Object? quantity = freezed,
@@ -194,6 +213,14 @@ class __$$InventoryEventImplCopyWithImpl<$Res>
       productId: freezed == productId
           ? _value.productId
           : productId // ignore: cast_nullable_to_non_nullable
+              as String?,
+      inventoryId: freezed == inventoryId
+          ? _value.inventoryId
+          : inventoryId // ignore: cast_nullable_to_non_nullable
+              as String?,
+      inventoryItemId: freezed == inventoryItemId
+          ? _value.inventoryItemId
+          : inventoryItemId // ignore: cast_nullable_to_non_nullable
               as String?,
       pantryItemId: freezed == pantryItemId
           ? _value.pantryItemId
@@ -233,7 +260,9 @@ class _$InventoryEventImpl implements _InventoryEvent {
   const _$InventoryEventImpl(
       {required this.id,
       this.productId,
-      this.pantryItemId,
+      this.inventoryId,
+      this.inventoryItemId,
+      @Deprecated('Use inventoryItemId') this.pantryItemId,
       required this.eventType,
       this.quantity,
       this.unit,
@@ -249,6 +278,11 @@ class _$InventoryEventImpl implements _InventoryEvent {
   @override
   final String? productId;
   @override
+  final String? inventoryId;
+  @override
+  final String? inventoryItemId;
+  @override
+  @Deprecated('Use inventoryItemId')
   final String? pantryItemId;
   @override
   final InventoryEventType eventType;
@@ -265,7 +299,7 @@ class _$InventoryEventImpl implements _InventoryEvent {
 
   @override
   String toString() {
-    return 'InventoryEvent(id: $id, productId: $productId, pantryItemId: $pantryItemId, eventType: $eventType, quantity: $quantity, unit: $unit, source: $source, occurredAt: $occurredAt, createdAt: $createdAt)';
+    return 'InventoryEvent(id: $id, productId: $productId, inventoryId: $inventoryId, inventoryItemId: $inventoryItemId, pantryItemId: $pantryItemId, eventType: $eventType, quantity: $quantity, unit: $unit, source: $source, occurredAt: $occurredAt, createdAt: $createdAt)';
   }
 
   @override
@@ -276,6 +310,10 @@ class _$InventoryEventImpl implements _InventoryEvent {
             (identical(other.id, id) || other.id == id) &&
             (identical(other.productId, productId) ||
                 other.productId == productId) &&
+            (identical(other.inventoryId, inventoryId) ||
+                other.inventoryId == inventoryId) &&
+            (identical(other.inventoryItemId, inventoryItemId) ||
+                other.inventoryItemId == inventoryItemId) &&
             (identical(other.pantryItemId, pantryItemId) ||
                 other.pantryItemId == pantryItemId) &&
             (identical(other.eventType, eventType) ||
@@ -292,8 +330,19 @@ class _$InventoryEventImpl implements _InventoryEvent {
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, id, productId, pantryItemId,
-      eventType, quantity, unit, source, occurredAt, createdAt);
+  int get hashCode => Object.hash(
+      runtimeType,
+      id,
+      productId,
+      inventoryId,
+      inventoryItemId,
+      pantryItemId,
+      eventType,
+      quantity,
+      unit,
+      source,
+      occurredAt,
+      createdAt);
 
   /// Create a copy of InventoryEvent
   /// with the given fields replaced by the non-null parameter values.
@@ -316,7 +365,9 @@ abstract class _InventoryEvent implements InventoryEvent {
   const factory _InventoryEvent(
       {required final String id,
       final String? productId,
-      final String? pantryItemId,
+      final String? inventoryId,
+      final String? inventoryItemId,
+      @Deprecated('Use inventoryItemId') final String? pantryItemId,
       required final InventoryEventType eventType,
       final double? quantity,
       final Unit? unit,
@@ -332,6 +383,11 @@ abstract class _InventoryEvent implements InventoryEvent {
   @override
   String? get productId;
   @override
+  String? get inventoryId;
+  @override
+  String? get inventoryItemId;
+  @override
+  @Deprecated('Use inventoryItemId')
   String? get pantryItemId;
   @override
   InventoryEventType get eventType;

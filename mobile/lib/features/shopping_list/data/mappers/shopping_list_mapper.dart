@@ -7,6 +7,7 @@ import 'package:drift/drift.dart';
 domain.ShoppingList toDomainShoppingList(local_db.ShoppingList row) {
   return domain.ShoppingList(
     id: row.id,
+    inventoryId: row.inventoryId,
     name: row.name,
     status: _shoppingListStatusFromDb(row.status),
     createdAt: row.createdAt,
@@ -40,6 +41,7 @@ domain.ShoppingListItem toDomainShoppingListItem(local_db.ShoppingListItem row) 
 local_db.ShoppingListsCompanion toShoppingListCompanion(domain.ShoppingList entity) {
   return local_db.ShoppingListsCompanion(
     id: Value(entity.id),
+    inventoryId: Value(entity.inventoryId),
     name: Value(entity.name),
     status: Value(entity.status.name),
     createdAt: Value(entity.createdAt),

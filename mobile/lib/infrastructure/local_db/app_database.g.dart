@@ -946,6 +946,1151 @@ class ProductAliasesCompanion extends UpdateCompanion<ProductAliase> {
   }
 }
 
+class $InventoriesTable extends Inventories
+    with TableInfo<$InventoriesTable, Inventory> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $InventoriesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+      'name', aliasedName, false,
+      additionalChecks:
+          GeneratedColumn.checkTextLength(minTextLength: 1, maxTextLength: 120),
+      type: DriftSqlType.string,
+      requiredDuringInsert: true);
+  static const VerificationMeta _descriptionMeta =
+      const VerificationMeta('description');
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+      'description', aliasedName, true,
+      additionalChecks:
+          GeneratedColumn.checkTextLength(minTextLength: 1, maxTextLength: 240),
+      type: DriftSqlType.string,
+      requiredDuringInsert: false);
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  static const VerificationMeta _deletedAtMeta =
+      const VerificationMeta('deletedAt');
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+      'deleted_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _syncStatusMeta =
+      const VerificationMeta('syncStatus');
+  @override
+  late final GeneratedColumn<String> syncStatus = GeneratedColumn<String>(
+      'sync_status', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      $customConstraints:
+          'NOT NULL DEFAULT \'local_only\' CHECK (sync_status IN (\'local_only\', \'pending_sync\', \'synced\', \'sync_error\'))',
+      defaultValue: const CustomExpression('\'local_only\''));
+  static const VerificationMeta _versionMeta =
+      const VerificationMeta('version');
+  @override
+  late final GeneratedColumn<int> version = GeneratedColumn<int>(
+      'version', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(1));
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        name,
+        description,
+        createdAt,
+        updatedAt,
+        deletedAt,
+        syncStatus,
+        version
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'inventories';
+  @override
+  VerificationContext validateIntegrity(Insertable<Inventory> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+          _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('description')) {
+      context.handle(
+          _descriptionMeta,
+          description.isAcceptableOrUnknown(
+              data['description']!, _descriptionMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(_deletedAtMeta,
+          deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta));
+    }
+    if (data.containsKey('sync_status')) {
+      context.handle(
+          _syncStatusMeta,
+          syncStatus.isAcceptableOrUnknown(
+              data['sync_status']!, _syncStatusMeta));
+    }
+    if (data.containsKey('version')) {
+      context.handle(_versionMeta,
+          version.isAcceptableOrUnknown(data['version']!, _versionMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Inventory map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Inventory(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      name: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
+      description: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}description']),
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+      deletedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}deleted_at']),
+      syncStatus: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}sync_status'])!,
+      version: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}version'])!,
+    );
+  }
+
+  @override
+  $InventoriesTable createAlias(String alias) {
+    return $InventoriesTable(attachedDatabase, alias);
+  }
+}
+
+class Inventory extends DataClass implements Insertable<Inventory> {
+  final String id;
+  final String name;
+  final String? description;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+  final String syncStatus;
+  final int version;
+  const Inventory(
+      {required this.id,
+      required this.name,
+      this.description,
+      required this.createdAt,
+      required this.updatedAt,
+      this.deletedAt,
+      required this.syncStatus,
+      required this.version});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || description != null) {
+      map['description'] = Variable<String>(description);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    map['sync_status'] = Variable<String>(syncStatus);
+    map['version'] = Variable<int>(version);
+    return map;
+  }
+
+  InventoriesCompanion toCompanion(bool nullToAbsent) {
+    return InventoriesCompanion(
+      id: Value(id),
+      name: Value(name),
+      description: description == null && nullToAbsent
+          ? const Value.absent()
+          : Value(description),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      syncStatus: Value(syncStatus),
+      version: Value(version),
+    );
+  }
+
+  factory Inventory.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Inventory(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      description: serializer.fromJson<String?>(json['description']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      syncStatus: serializer.fromJson<String>(json['syncStatus']),
+      version: serializer.fromJson<int>(json['version']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'description': serializer.toJson<String?>(description),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'syncStatus': serializer.toJson<String>(syncStatus),
+      'version': serializer.toJson<int>(version),
+    };
+  }
+
+  Inventory copyWith(
+          {String? id,
+          String? name,
+          Value<String?> description = const Value.absent(),
+          DateTime? createdAt,
+          DateTime? updatedAt,
+          Value<DateTime?> deletedAt = const Value.absent(),
+          String? syncStatus,
+          int? version}) =>
+      Inventory(
+        id: id ?? this.id,
+        name: name ?? this.name,
+        description: description.present ? description.value : this.description,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+        deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+        syncStatus: syncStatus ?? this.syncStatus,
+        version: version ?? this.version,
+      );
+  Inventory copyWithCompanion(InventoriesCompanion data) {
+    return Inventory(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      description:
+          data.description.present ? data.description.value : this.description,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      syncStatus:
+          data.syncStatus.present ? data.syncStatus.value : this.syncStatus,
+      version: data.version.present ? data.version.value : this.version,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Inventory(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('description: $description, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('version: $version')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, name, description, createdAt, updatedAt,
+      deletedAt, syncStatus, version);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Inventory &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.description == this.description &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt &&
+          other.syncStatus == this.syncStatus &&
+          other.version == this.version);
+}
+
+class InventoriesCompanion extends UpdateCompanion<Inventory> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<String?> description;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<String> syncStatus;
+  final Value<int> version;
+  final Value<int> rowid;
+  const InventoriesCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.description = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+    this.version = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  InventoriesCompanion.insert({
+    required String id,
+    required String name,
+    this.description = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+    this.version = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        name = Value(name);
+  static Insertable<Inventory> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<String>? description,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<String>? syncStatus,
+    Expression<int>? version,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (description != null) 'description': description,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (syncStatus != null) 'sync_status': syncStatus,
+      if (version != null) 'version': version,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  InventoriesCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? name,
+      Value<String?>? description,
+      Value<DateTime>? createdAt,
+      Value<DateTime>? updatedAt,
+      Value<DateTime?>? deletedAt,
+      Value<String>? syncStatus,
+      Value<int>? version,
+      Value<int>? rowid}) {
+    return InventoriesCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      syncStatus: syncStatus ?? this.syncStatus,
+      version: version ?? this.version,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (syncStatus.present) {
+      map['sync_status'] = Variable<String>(syncStatus.value);
+    }
+    if (version.present) {
+      map['version'] = Variable<int>(version.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('InventoriesCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('description: $description, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('version: $version, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $InventoryItemsTable extends InventoryItems
+    with TableInfo<$InventoryItemsTable, InventoryItem> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $InventoryItemsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _inventoryIdMeta =
+      const VerificationMeta('inventoryId');
+  @override
+  late final GeneratedColumn<String> inventoryId = GeneratedColumn<String>(
+      'inventory_id', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: true,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('REFERENCES inventories (id)'));
+  static const VerificationMeta _productIdMeta =
+      const VerificationMeta('productId');
+  @override
+  late final GeneratedColumn<String> productId = GeneratedColumn<String>(
+      'product_id', aliasedName, true,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('REFERENCES products (id)'));
+  static const VerificationMeta _rawNameMeta =
+      const VerificationMeta('rawName');
+  @override
+  late final GeneratedColumn<String> rawName = GeneratedColumn<String>(
+      'raw_name', aliasedName, true,
+      additionalChecks:
+          GeneratedColumn.checkTextLength(minTextLength: 1, maxTextLength: 120),
+      type: DriftSqlType.string,
+      requiredDuringInsert: false);
+  static const VerificationMeta _quantityEstimatedMeta =
+      const VerificationMeta('quantityEstimated');
+  @override
+  late final GeneratedColumn<double> quantityEstimated =
+      GeneratedColumn<double>('quantity_estimated', aliasedName, true,
+          type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _unitMeta = const VerificationMeta('unit');
+  @override
+  late final GeneratedColumn<String> unit = GeneratedColumn<String>(
+      'unit', aliasedName, true,
+      additionalChecks:
+          GeneratedColumn.checkTextLength(minTextLength: 1, maxTextLength: 32),
+      type: DriftSqlType.string,
+      requiredDuringInsert: false);
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+      'status', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      $customConstraints:
+          'NOT NULL DEFAULT \'unknown\' CHECK (status IN (\'unknown\', \'in_stock\', \'low\', \'out\'))',
+      defaultValue: const CustomExpression('\'unknown\''));
+  static const VerificationMeta _confidenceScoreMeta =
+      const VerificationMeta('confidenceScore');
+  @override
+  late final GeneratedColumn<double> confidenceScore = GeneratedColumn<double>(
+      'confidence_score', aliasedName, false,
+      type: DriftSqlType.double,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0.5));
+  static const VerificationMeta _lastConfirmedAtMeta =
+      const VerificationMeta('lastConfirmedAt');
+  @override
+  late final GeneratedColumn<DateTime> lastConfirmedAt =
+      GeneratedColumn<DateTime>('last_confirmed_at', aliasedName, true,
+          type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  static const VerificationMeta _deletedAtMeta =
+      const VerificationMeta('deletedAt');
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+      'deleted_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _syncStatusMeta =
+      const VerificationMeta('syncStatus');
+  @override
+  late final GeneratedColumn<String> syncStatus = GeneratedColumn<String>(
+      'sync_status', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      $customConstraints:
+          'NOT NULL DEFAULT \'local_only\' CHECK (sync_status IN (\'local_only\', \'pending_sync\', \'synced\', \'sync_error\'))',
+      defaultValue: const CustomExpression('\'local_only\''));
+  static const VerificationMeta _versionMeta =
+      const VerificationMeta('version');
+  @override
+  late final GeneratedColumn<int> version = GeneratedColumn<int>(
+      'version', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(1));
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        inventoryId,
+        productId,
+        rawName,
+        quantityEstimated,
+        unit,
+        status,
+        confidenceScore,
+        lastConfirmedAt,
+        createdAt,
+        updatedAt,
+        deletedAt,
+        syncStatus,
+        version
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'inventory_items';
+  @override
+  VerificationContext validateIntegrity(Insertable<InventoryItem> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('inventory_id')) {
+      context.handle(
+          _inventoryIdMeta,
+          inventoryId.isAcceptableOrUnknown(
+              data['inventory_id']!, _inventoryIdMeta));
+    } else if (isInserting) {
+      context.missing(_inventoryIdMeta);
+    }
+    if (data.containsKey('product_id')) {
+      context.handle(_productIdMeta,
+          productId.isAcceptableOrUnknown(data['product_id']!, _productIdMeta));
+    }
+    if (data.containsKey('raw_name')) {
+      context.handle(_rawNameMeta,
+          rawName.isAcceptableOrUnknown(data['raw_name']!, _rawNameMeta));
+    }
+    if (data.containsKey('quantity_estimated')) {
+      context.handle(
+          _quantityEstimatedMeta,
+          quantityEstimated.isAcceptableOrUnknown(
+              data['quantity_estimated']!, _quantityEstimatedMeta));
+    }
+    if (data.containsKey('unit')) {
+      context.handle(
+          _unitMeta, unit.isAcceptableOrUnknown(data['unit']!, _unitMeta));
+    }
+    if (data.containsKey('status')) {
+      context.handle(_statusMeta,
+          status.isAcceptableOrUnknown(data['status']!, _statusMeta));
+    }
+    if (data.containsKey('confidence_score')) {
+      context.handle(
+          _confidenceScoreMeta,
+          confidenceScore.isAcceptableOrUnknown(
+              data['confidence_score']!, _confidenceScoreMeta));
+    }
+    if (data.containsKey('last_confirmed_at')) {
+      context.handle(
+          _lastConfirmedAtMeta,
+          lastConfirmedAt.isAcceptableOrUnknown(
+              data['last_confirmed_at']!, _lastConfirmedAtMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(_deletedAtMeta,
+          deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta));
+    }
+    if (data.containsKey('sync_status')) {
+      context.handle(
+          _syncStatusMeta,
+          syncStatus.isAcceptableOrUnknown(
+              data['sync_status']!, _syncStatusMeta));
+    }
+    if (data.containsKey('version')) {
+      context.handle(_versionMeta,
+          version.isAcceptableOrUnknown(data['version']!, _versionMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  InventoryItem map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return InventoryItem(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      inventoryId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}inventory_id'])!,
+      productId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}product_id']),
+      rawName: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}raw_name']),
+      quantityEstimated: attachedDatabase.typeMapping.read(
+          DriftSqlType.double, data['${effectivePrefix}quantity_estimated']),
+      unit: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}unit']),
+      status: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}status'])!,
+      confidenceScore: attachedDatabase.typeMapping.read(
+          DriftSqlType.double, data['${effectivePrefix}confidence_score'])!,
+      lastConfirmedAt: attachedDatabase.typeMapping.read(
+          DriftSqlType.dateTime, data['${effectivePrefix}last_confirmed_at']),
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+      deletedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}deleted_at']),
+      syncStatus: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}sync_status'])!,
+      version: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}version'])!,
+    );
+  }
+
+  @override
+  $InventoryItemsTable createAlias(String alias) {
+    return $InventoryItemsTable(attachedDatabase, alias);
+  }
+}
+
+class InventoryItem extends DataClass implements Insertable<InventoryItem> {
+  final String id;
+  final String inventoryId;
+  final String? productId;
+  final String? rawName;
+  final double? quantityEstimated;
+  final String? unit;
+  final String status;
+  final double confidenceScore;
+  final DateTime? lastConfirmedAt;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+  final String syncStatus;
+  final int version;
+  const InventoryItem(
+      {required this.id,
+      required this.inventoryId,
+      this.productId,
+      this.rawName,
+      this.quantityEstimated,
+      this.unit,
+      required this.status,
+      required this.confidenceScore,
+      this.lastConfirmedAt,
+      required this.createdAt,
+      required this.updatedAt,
+      this.deletedAt,
+      required this.syncStatus,
+      required this.version});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['inventory_id'] = Variable<String>(inventoryId);
+    if (!nullToAbsent || productId != null) {
+      map['product_id'] = Variable<String>(productId);
+    }
+    if (!nullToAbsent || rawName != null) {
+      map['raw_name'] = Variable<String>(rawName);
+    }
+    if (!nullToAbsent || quantityEstimated != null) {
+      map['quantity_estimated'] = Variable<double>(quantityEstimated);
+    }
+    if (!nullToAbsent || unit != null) {
+      map['unit'] = Variable<String>(unit);
+    }
+    map['status'] = Variable<String>(status);
+    map['confidence_score'] = Variable<double>(confidenceScore);
+    if (!nullToAbsent || lastConfirmedAt != null) {
+      map['last_confirmed_at'] = Variable<DateTime>(lastConfirmedAt);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    map['sync_status'] = Variable<String>(syncStatus);
+    map['version'] = Variable<int>(version);
+    return map;
+  }
+
+  InventoryItemsCompanion toCompanion(bool nullToAbsent) {
+    return InventoryItemsCompanion(
+      id: Value(id),
+      inventoryId: Value(inventoryId),
+      productId: productId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(productId),
+      rawName: rawName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(rawName),
+      quantityEstimated: quantityEstimated == null && nullToAbsent
+          ? const Value.absent()
+          : Value(quantityEstimated),
+      unit: unit == null && nullToAbsent ? const Value.absent() : Value(unit),
+      status: Value(status),
+      confidenceScore: Value(confidenceScore),
+      lastConfirmedAt: lastConfirmedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastConfirmedAt),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      syncStatus: Value(syncStatus),
+      version: Value(version),
+    );
+  }
+
+  factory InventoryItem.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return InventoryItem(
+      id: serializer.fromJson<String>(json['id']),
+      inventoryId: serializer.fromJson<String>(json['inventoryId']),
+      productId: serializer.fromJson<String?>(json['productId']),
+      rawName: serializer.fromJson<String?>(json['rawName']),
+      quantityEstimated:
+          serializer.fromJson<double?>(json['quantityEstimated']),
+      unit: serializer.fromJson<String?>(json['unit']),
+      status: serializer.fromJson<String>(json['status']),
+      confidenceScore: serializer.fromJson<double>(json['confidenceScore']),
+      lastConfirmedAt: serializer.fromJson<DateTime?>(json['lastConfirmedAt']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      syncStatus: serializer.fromJson<String>(json['syncStatus']),
+      version: serializer.fromJson<int>(json['version']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'inventoryId': serializer.toJson<String>(inventoryId),
+      'productId': serializer.toJson<String?>(productId),
+      'rawName': serializer.toJson<String?>(rawName),
+      'quantityEstimated': serializer.toJson<double?>(quantityEstimated),
+      'unit': serializer.toJson<String?>(unit),
+      'status': serializer.toJson<String>(status),
+      'confidenceScore': serializer.toJson<double>(confidenceScore),
+      'lastConfirmedAt': serializer.toJson<DateTime?>(lastConfirmedAt),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'syncStatus': serializer.toJson<String>(syncStatus),
+      'version': serializer.toJson<int>(version),
+    };
+  }
+
+  InventoryItem copyWith(
+          {String? id,
+          String? inventoryId,
+          Value<String?> productId = const Value.absent(),
+          Value<String?> rawName = const Value.absent(),
+          Value<double?> quantityEstimated = const Value.absent(),
+          Value<String?> unit = const Value.absent(),
+          String? status,
+          double? confidenceScore,
+          Value<DateTime?> lastConfirmedAt = const Value.absent(),
+          DateTime? createdAt,
+          DateTime? updatedAt,
+          Value<DateTime?> deletedAt = const Value.absent(),
+          String? syncStatus,
+          int? version}) =>
+      InventoryItem(
+        id: id ?? this.id,
+        inventoryId: inventoryId ?? this.inventoryId,
+        productId: productId.present ? productId.value : this.productId,
+        rawName: rawName.present ? rawName.value : this.rawName,
+        quantityEstimated: quantityEstimated.present
+            ? quantityEstimated.value
+            : this.quantityEstimated,
+        unit: unit.present ? unit.value : this.unit,
+        status: status ?? this.status,
+        confidenceScore: confidenceScore ?? this.confidenceScore,
+        lastConfirmedAt: lastConfirmedAt.present
+            ? lastConfirmedAt.value
+            : this.lastConfirmedAt,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+        deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+        syncStatus: syncStatus ?? this.syncStatus,
+        version: version ?? this.version,
+      );
+  InventoryItem copyWithCompanion(InventoryItemsCompanion data) {
+    return InventoryItem(
+      id: data.id.present ? data.id.value : this.id,
+      inventoryId:
+          data.inventoryId.present ? data.inventoryId.value : this.inventoryId,
+      productId: data.productId.present ? data.productId.value : this.productId,
+      rawName: data.rawName.present ? data.rawName.value : this.rawName,
+      quantityEstimated: data.quantityEstimated.present
+          ? data.quantityEstimated.value
+          : this.quantityEstimated,
+      unit: data.unit.present ? data.unit.value : this.unit,
+      status: data.status.present ? data.status.value : this.status,
+      confidenceScore: data.confidenceScore.present
+          ? data.confidenceScore.value
+          : this.confidenceScore,
+      lastConfirmedAt: data.lastConfirmedAt.present
+          ? data.lastConfirmedAt.value
+          : this.lastConfirmedAt,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      syncStatus:
+          data.syncStatus.present ? data.syncStatus.value : this.syncStatus,
+      version: data.version.present ? data.version.value : this.version,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('InventoryItem(')
+          ..write('id: $id, ')
+          ..write('inventoryId: $inventoryId, ')
+          ..write('productId: $productId, ')
+          ..write('rawName: $rawName, ')
+          ..write('quantityEstimated: $quantityEstimated, ')
+          ..write('unit: $unit, ')
+          ..write('status: $status, ')
+          ..write('confidenceScore: $confidenceScore, ')
+          ..write('lastConfirmedAt: $lastConfirmedAt, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('version: $version')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+      id,
+      inventoryId,
+      productId,
+      rawName,
+      quantityEstimated,
+      unit,
+      status,
+      confidenceScore,
+      lastConfirmedAt,
+      createdAt,
+      updatedAt,
+      deletedAt,
+      syncStatus,
+      version);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is InventoryItem &&
+          other.id == this.id &&
+          other.inventoryId == this.inventoryId &&
+          other.productId == this.productId &&
+          other.rawName == this.rawName &&
+          other.quantityEstimated == this.quantityEstimated &&
+          other.unit == this.unit &&
+          other.status == this.status &&
+          other.confidenceScore == this.confidenceScore &&
+          other.lastConfirmedAt == this.lastConfirmedAt &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt &&
+          other.syncStatus == this.syncStatus &&
+          other.version == this.version);
+}
+
+class InventoryItemsCompanion extends UpdateCompanion<InventoryItem> {
+  final Value<String> id;
+  final Value<String> inventoryId;
+  final Value<String?> productId;
+  final Value<String?> rawName;
+  final Value<double?> quantityEstimated;
+  final Value<String?> unit;
+  final Value<String> status;
+  final Value<double> confidenceScore;
+  final Value<DateTime?> lastConfirmedAt;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<String> syncStatus;
+  final Value<int> version;
+  final Value<int> rowid;
+  const InventoryItemsCompanion({
+    this.id = const Value.absent(),
+    this.inventoryId = const Value.absent(),
+    this.productId = const Value.absent(),
+    this.rawName = const Value.absent(),
+    this.quantityEstimated = const Value.absent(),
+    this.unit = const Value.absent(),
+    this.status = const Value.absent(),
+    this.confidenceScore = const Value.absent(),
+    this.lastConfirmedAt = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+    this.version = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  InventoryItemsCompanion.insert({
+    required String id,
+    required String inventoryId,
+    this.productId = const Value.absent(),
+    this.rawName = const Value.absent(),
+    this.quantityEstimated = const Value.absent(),
+    this.unit = const Value.absent(),
+    this.status = const Value.absent(),
+    this.confidenceScore = const Value.absent(),
+    this.lastConfirmedAt = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+    this.version = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        inventoryId = Value(inventoryId);
+  static Insertable<InventoryItem> custom({
+    Expression<String>? id,
+    Expression<String>? inventoryId,
+    Expression<String>? productId,
+    Expression<String>? rawName,
+    Expression<double>? quantityEstimated,
+    Expression<String>? unit,
+    Expression<String>? status,
+    Expression<double>? confidenceScore,
+    Expression<DateTime>? lastConfirmedAt,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<String>? syncStatus,
+    Expression<int>? version,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (inventoryId != null) 'inventory_id': inventoryId,
+      if (productId != null) 'product_id': productId,
+      if (rawName != null) 'raw_name': rawName,
+      if (quantityEstimated != null) 'quantity_estimated': quantityEstimated,
+      if (unit != null) 'unit': unit,
+      if (status != null) 'status': status,
+      if (confidenceScore != null) 'confidence_score': confidenceScore,
+      if (lastConfirmedAt != null) 'last_confirmed_at': lastConfirmedAt,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (syncStatus != null) 'sync_status': syncStatus,
+      if (version != null) 'version': version,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  InventoryItemsCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? inventoryId,
+      Value<String?>? productId,
+      Value<String?>? rawName,
+      Value<double?>? quantityEstimated,
+      Value<String?>? unit,
+      Value<String>? status,
+      Value<double>? confidenceScore,
+      Value<DateTime?>? lastConfirmedAt,
+      Value<DateTime>? createdAt,
+      Value<DateTime>? updatedAt,
+      Value<DateTime?>? deletedAt,
+      Value<String>? syncStatus,
+      Value<int>? version,
+      Value<int>? rowid}) {
+    return InventoryItemsCompanion(
+      id: id ?? this.id,
+      inventoryId: inventoryId ?? this.inventoryId,
+      productId: productId ?? this.productId,
+      rawName: rawName ?? this.rawName,
+      quantityEstimated: quantityEstimated ?? this.quantityEstimated,
+      unit: unit ?? this.unit,
+      status: status ?? this.status,
+      confidenceScore: confidenceScore ?? this.confidenceScore,
+      lastConfirmedAt: lastConfirmedAt ?? this.lastConfirmedAt,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      syncStatus: syncStatus ?? this.syncStatus,
+      version: version ?? this.version,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (inventoryId.present) {
+      map['inventory_id'] = Variable<String>(inventoryId.value);
+    }
+    if (productId.present) {
+      map['product_id'] = Variable<String>(productId.value);
+    }
+    if (rawName.present) {
+      map['raw_name'] = Variable<String>(rawName.value);
+    }
+    if (quantityEstimated.present) {
+      map['quantity_estimated'] = Variable<double>(quantityEstimated.value);
+    }
+    if (unit.present) {
+      map['unit'] = Variable<String>(unit.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (confidenceScore.present) {
+      map['confidence_score'] = Variable<double>(confidenceScore.value);
+    }
+    if (lastConfirmedAt.present) {
+      map['last_confirmed_at'] = Variable<DateTime>(lastConfirmedAt.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (syncStatus.present) {
+      map['sync_status'] = Variable<String>(syncStatus.value);
+    }
+    if (version.present) {
+      map['version'] = Variable<int>(version.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('InventoryItemsCompanion(')
+          ..write('id: $id, ')
+          ..write('inventoryId: $inventoryId, ')
+          ..write('productId: $productId, ')
+          ..write('rawName: $rawName, ')
+          ..write('quantityEstimated: $quantityEstimated, ')
+          ..write('unit: $unit, ')
+          ..write('status: $status, ')
+          ..write('confidenceScore: $confidenceScore, ')
+          ..write('lastConfirmedAt: $lastConfirmedAt, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('version: $version, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $ShoppingListsTable extends ShoppingLists
     with TableInfo<$ShoppingListsTable, ShoppingList> {
   @override
@@ -957,6 +2102,15 @@ class $ShoppingListsTable extends ShoppingLists
   late final GeneratedColumn<String> id = GeneratedColumn<String>(
       'id', aliasedName, false,
       type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _inventoryIdMeta =
+      const VerificationMeta('inventoryId');
+  @override
+  late final GeneratedColumn<String> inventoryId = GeneratedColumn<String>(
+      'inventory_id', aliasedName, true,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('REFERENCES inventories (id)'));
   static const VerificationMeta _nameMeta = const VerificationMeta('name');
   @override
   late final GeneratedColumn<String> name = GeneratedColumn<String>(
@@ -1015,8 +2169,17 @@ class $ShoppingListsTable extends ShoppingLists
       requiredDuringInsert: false,
       defaultValue: const Constant(1));
   @override
-  List<GeneratedColumn> get $columns =>
-      [id, name, status, createdAt, updatedAt, deletedAt, syncStatus, version];
+  List<GeneratedColumn> get $columns => [
+        id,
+        inventoryId,
+        name,
+        status,
+        createdAt,
+        updatedAt,
+        deletedAt,
+        syncStatus,
+        version
+      ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -1031,6 +2194,12 @@ class $ShoppingListsTable extends ShoppingLists
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
     } else if (isInserting) {
       context.missing(_idMeta);
+    }
+    if (data.containsKey('inventory_id')) {
+      context.handle(
+          _inventoryIdMeta,
+          inventoryId.isAcceptableOrUnknown(
+              data['inventory_id']!, _inventoryIdMeta));
     }
     if (data.containsKey('name')) {
       context.handle(
@@ -1075,6 +2244,8 @@ class $ShoppingListsTable extends ShoppingLists
     return ShoppingList(
       id: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      inventoryId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}inventory_id']),
       name: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
       status: attachedDatabase.typeMapping
@@ -1100,6 +2271,7 @@ class $ShoppingListsTable extends ShoppingLists
 
 class ShoppingList extends DataClass implements Insertable<ShoppingList> {
   final String id;
+  final String? inventoryId;
   final String name;
   final String status;
   final DateTime createdAt;
@@ -1109,6 +2281,7 @@ class ShoppingList extends DataClass implements Insertable<ShoppingList> {
   final int version;
   const ShoppingList(
       {required this.id,
+      this.inventoryId,
       required this.name,
       required this.status,
       required this.createdAt,
@@ -1120,6 +2293,9 @@ class ShoppingList extends DataClass implements Insertable<ShoppingList> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<String>(id);
+    if (!nullToAbsent || inventoryId != null) {
+      map['inventory_id'] = Variable<String>(inventoryId);
+    }
     map['name'] = Variable<String>(name);
     map['status'] = Variable<String>(status);
     map['created_at'] = Variable<DateTime>(createdAt);
@@ -1135,6 +2311,9 @@ class ShoppingList extends DataClass implements Insertable<ShoppingList> {
   ShoppingListsCompanion toCompanion(bool nullToAbsent) {
     return ShoppingListsCompanion(
       id: Value(id),
+      inventoryId: inventoryId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(inventoryId),
       name: Value(name),
       status: Value(status),
       createdAt: Value(createdAt),
@@ -1152,6 +2331,7 @@ class ShoppingList extends DataClass implements Insertable<ShoppingList> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return ShoppingList(
       id: serializer.fromJson<String>(json['id']),
+      inventoryId: serializer.fromJson<String?>(json['inventoryId']),
       name: serializer.fromJson<String>(json['name']),
       status: serializer.fromJson<String>(json['status']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
@@ -1166,6 +2346,7 @@ class ShoppingList extends DataClass implements Insertable<ShoppingList> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
+      'inventoryId': serializer.toJson<String?>(inventoryId),
       'name': serializer.toJson<String>(name),
       'status': serializer.toJson<String>(status),
       'createdAt': serializer.toJson<DateTime>(createdAt),
@@ -1178,6 +2359,7 @@ class ShoppingList extends DataClass implements Insertable<ShoppingList> {
 
   ShoppingList copyWith(
           {String? id,
+          Value<String?> inventoryId = const Value.absent(),
           String? name,
           String? status,
           DateTime? createdAt,
@@ -1187,6 +2369,7 @@ class ShoppingList extends DataClass implements Insertable<ShoppingList> {
           int? version}) =>
       ShoppingList(
         id: id ?? this.id,
+        inventoryId: inventoryId.present ? inventoryId.value : this.inventoryId,
         name: name ?? this.name,
         status: status ?? this.status,
         createdAt: createdAt ?? this.createdAt,
@@ -1198,6 +2381,8 @@ class ShoppingList extends DataClass implements Insertable<ShoppingList> {
   ShoppingList copyWithCompanion(ShoppingListsCompanion data) {
     return ShoppingList(
       id: data.id.present ? data.id.value : this.id,
+      inventoryId:
+          data.inventoryId.present ? data.inventoryId.value : this.inventoryId,
       name: data.name.present ? data.name.value : this.name,
       status: data.status.present ? data.status.value : this.status,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
@@ -1213,6 +2398,7 @@ class ShoppingList extends DataClass implements Insertable<ShoppingList> {
   String toString() {
     return (StringBuffer('ShoppingList(')
           ..write('id: $id, ')
+          ..write('inventoryId: $inventoryId, ')
           ..write('name: $name, ')
           ..write('status: $status, ')
           ..write('createdAt: $createdAt, ')
@@ -1225,13 +2411,14 @@ class ShoppingList extends DataClass implements Insertable<ShoppingList> {
   }
 
   @override
-  int get hashCode => Object.hash(
-      id, name, status, createdAt, updatedAt, deletedAt, syncStatus, version);
+  int get hashCode => Object.hash(id, inventoryId, name, status, createdAt,
+      updatedAt, deletedAt, syncStatus, version);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is ShoppingList &&
           other.id == this.id &&
+          other.inventoryId == this.inventoryId &&
           other.name == this.name &&
           other.status == this.status &&
           other.createdAt == this.createdAt &&
@@ -1243,6 +2430,7 @@ class ShoppingList extends DataClass implements Insertable<ShoppingList> {
 
 class ShoppingListsCompanion extends UpdateCompanion<ShoppingList> {
   final Value<String> id;
+  final Value<String?> inventoryId;
   final Value<String> name;
   final Value<String> status;
   final Value<DateTime> createdAt;
@@ -1253,6 +2441,7 @@ class ShoppingListsCompanion extends UpdateCompanion<ShoppingList> {
   final Value<int> rowid;
   const ShoppingListsCompanion({
     this.id = const Value.absent(),
+    this.inventoryId = const Value.absent(),
     this.name = const Value.absent(),
     this.status = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -1264,6 +2453,7 @@ class ShoppingListsCompanion extends UpdateCompanion<ShoppingList> {
   });
   ShoppingListsCompanion.insert({
     required String id,
+    this.inventoryId = const Value.absent(),
     required String name,
     this.status = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -1276,6 +2466,7 @@ class ShoppingListsCompanion extends UpdateCompanion<ShoppingList> {
         name = Value(name);
   static Insertable<ShoppingList> custom({
     Expression<String>? id,
+    Expression<String>? inventoryId,
     Expression<String>? name,
     Expression<String>? status,
     Expression<DateTime>? createdAt,
@@ -1287,6 +2478,7 @@ class ShoppingListsCompanion extends UpdateCompanion<ShoppingList> {
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
+      if (inventoryId != null) 'inventory_id': inventoryId,
       if (name != null) 'name': name,
       if (status != null) 'status': status,
       if (createdAt != null) 'created_at': createdAt,
@@ -1300,6 +2492,7 @@ class ShoppingListsCompanion extends UpdateCompanion<ShoppingList> {
 
   ShoppingListsCompanion copyWith(
       {Value<String>? id,
+      Value<String?>? inventoryId,
       Value<String>? name,
       Value<String>? status,
       Value<DateTime>? createdAt,
@@ -1310,6 +2503,7 @@ class ShoppingListsCompanion extends UpdateCompanion<ShoppingList> {
       Value<int>? rowid}) {
     return ShoppingListsCompanion(
       id: id ?? this.id,
+      inventoryId: inventoryId ?? this.inventoryId,
       name: name ?? this.name,
       status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
@@ -1326,6 +2520,9 @@ class ShoppingListsCompanion extends UpdateCompanion<ShoppingList> {
     final map = <String, Expression>{};
     if (id.present) {
       map['id'] = Variable<String>(id.value);
+    }
+    if (inventoryId.present) {
+      map['inventory_id'] = Variable<String>(inventoryId.value);
     }
     if (name.present) {
       map['name'] = Variable<String>(name.value);
@@ -1358,6 +2555,7 @@ class ShoppingListsCompanion extends UpdateCompanion<ShoppingList> {
   String toString() {
     return (StringBuffer('ShoppingListsCompanion(')
           ..write('id: $id, ')
+          ..write('inventoryId: $inventoryId, ')
           ..write('name: $name, ')
           ..write('status: $status, ')
           ..write('createdAt: $createdAt, ')
@@ -2106,666 +3304,6 @@ class ShoppingListItemsCompanion extends UpdateCompanion<ShoppingListItem> {
   }
 }
 
-class $PantryItemsTable extends PantryItems
-    with TableInfo<$PantryItemsTable, PantryItem> {
-  @override
-  final GeneratedDatabase attachedDatabase;
-  final String? _alias;
-  $PantryItemsTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _idMeta = const VerificationMeta('id');
-  @override
-  late final GeneratedColumn<String> id = GeneratedColumn<String>(
-      'id', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _productIdMeta =
-      const VerificationMeta('productId');
-  @override
-  late final GeneratedColumn<String> productId = GeneratedColumn<String>(
-      'product_id', aliasedName, true,
-      type: DriftSqlType.string,
-      requiredDuringInsert: false,
-      defaultConstraints:
-          GeneratedColumn.constraintIsAlways('REFERENCES products (id)'));
-  static const VerificationMeta _rawNameMeta =
-      const VerificationMeta('rawName');
-  @override
-  late final GeneratedColumn<String> rawName = GeneratedColumn<String>(
-      'raw_name', aliasedName, true,
-      additionalChecks:
-          GeneratedColumn.checkTextLength(minTextLength: 1, maxTextLength: 120),
-      type: DriftSqlType.string,
-      requiredDuringInsert: false);
-  static const VerificationMeta _quantityEstimatedMeta =
-      const VerificationMeta('quantityEstimated');
-  @override
-  late final GeneratedColumn<double> quantityEstimated =
-      GeneratedColumn<double>('quantity_estimated', aliasedName, true,
-          type: DriftSqlType.double, requiredDuringInsert: false);
-  static const VerificationMeta _unitMeta = const VerificationMeta('unit');
-  @override
-  late final GeneratedColumn<String> unit = GeneratedColumn<String>(
-      'unit', aliasedName, true,
-      additionalChecks:
-          GeneratedColumn.checkTextLength(minTextLength: 1, maxTextLength: 32),
-      type: DriftSqlType.string,
-      requiredDuringInsert: false);
-  static const VerificationMeta _statusMeta = const VerificationMeta('status');
-  @override
-  late final GeneratedColumn<String> status = GeneratedColumn<String>(
-      'status', aliasedName, false,
-      type: DriftSqlType.string,
-      requiredDuringInsert: false,
-      $customConstraints:
-          'NOT NULL DEFAULT \'unknown\' CHECK (status IN (\'unknown\', \'in_stock\', \'low\', \'out\'))',
-      defaultValue: const CustomExpression('\'unknown\''));
-  static const VerificationMeta _confidenceScoreMeta =
-      const VerificationMeta('confidenceScore');
-  @override
-  late final GeneratedColumn<double> confidenceScore = GeneratedColumn<double>(
-      'confidence_score', aliasedName, false,
-      type: DriftSqlType.double,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0.5));
-  static const VerificationMeta _lastConfirmedAtMeta =
-      const VerificationMeta('lastConfirmedAt');
-  @override
-  late final GeneratedColumn<DateTime> lastConfirmedAt =
-      GeneratedColumn<DateTime>('last_confirmed_at', aliasedName, true,
-          type: DriftSqlType.dateTime, requiredDuringInsert: false);
-  static const VerificationMeta _createdAtMeta =
-      const VerificationMeta('createdAt');
-  @override
-  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
-      'created_at', aliasedName, false,
-      type: DriftSqlType.dateTime,
-      requiredDuringInsert: false,
-      defaultValue: currentDateAndTime);
-  static const VerificationMeta _updatedAtMeta =
-      const VerificationMeta('updatedAt');
-  @override
-  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
-      'updated_at', aliasedName, false,
-      type: DriftSqlType.dateTime,
-      requiredDuringInsert: false,
-      defaultValue: currentDateAndTime);
-  static const VerificationMeta _deletedAtMeta =
-      const VerificationMeta('deletedAt');
-  @override
-  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
-      'deleted_at', aliasedName, true,
-      type: DriftSqlType.dateTime, requiredDuringInsert: false);
-  static const VerificationMeta _syncStatusMeta =
-      const VerificationMeta('syncStatus');
-  @override
-  late final GeneratedColumn<String> syncStatus = GeneratedColumn<String>(
-      'sync_status', aliasedName, false,
-      type: DriftSqlType.string,
-      requiredDuringInsert: false,
-      $customConstraints:
-          'NOT NULL DEFAULT \'local_only\' CHECK (sync_status IN (\'local_only\', \'pending_sync\', \'synced\', \'sync_error\'))',
-      defaultValue: const CustomExpression('\'local_only\''));
-  static const VerificationMeta _versionMeta =
-      const VerificationMeta('version');
-  @override
-  late final GeneratedColumn<int> version = GeneratedColumn<int>(
-      'version', aliasedName, false,
-      type: DriftSqlType.int,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(1));
-  @override
-  List<GeneratedColumn> get $columns => [
-        id,
-        productId,
-        rawName,
-        quantityEstimated,
-        unit,
-        status,
-        confidenceScore,
-        lastConfirmedAt,
-        createdAt,
-        updatedAt,
-        deletedAt,
-        syncStatus,
-        version
-      ];
-  @override
-  String get aliasedName => _alias ?? actualTableName;
-  @override
-  String get actualTableName => $name;
-  static const String $name = 'pantry_items';
-  @override
-  VerificationContext validateIntegrity(Insertable<PantryItem> instance,
-      {bool isInserting = false}) {
-    final context = VerificationContext();
-    final data = instance.toColumns(true);
-    if (data.containsKey('id')) {
-      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
-    } else if (isInserting) {
-      context.missing(_idMeta);
-    }
-    if (data.containsKey('product_id')) {
-      context.handle(_productIdMeta,
-          productId.isAcceptableOrUnknown(data['product_id']!, _productIdMeta));
-    }
-    if (data.containsKey('raw_name')) {
-      context.handle(_rawNameMeta,
-          rawName.isAcceptableOrUnknown(data['raw_name']!, _rawNameMeta));
-    }
-    if (data.containsKey('quantity_estimated')) {
-      context.handle(
-          _quantityEstimatedMeta,
-          quantityEstimated.isAcceptableOrUnknown(
-              data['quantity_estimated']!, _quantityEstimatedMeta));
-    }
-    if (data.containsKey('unit')) {
-      context.handle(
-          _unitMeta, unit.isAcceptableOrUnknown(data['unit']!, _unitMeta));
-    }
-    if (data.containsKey('status')) {
-      context.handle(_statusMeta,
-          status.isAcceptableOrUnknown(data['status']!, _statusMeta));
-    }
-    if (data.containsKey('confidence_score')) {
-      context.handle(
-          _confidenceScoreMeta,
-          confidenceScore.isAcceptableOrUnknown(
-              data['confidence_score']!, _confidenceScoreMeta));
-    }
-    if (data.containsKey('last_confirmed_at')) {
-      context.handle(
-          _lastConfirmedAtMeta,
-          lastConfirmedAt.isAcceptableOrUnknown(
-              data['last_confirmed_at']!, _lastConfirmedAtMeta));
-    }
-    if (data.containsKey('created_at')) {
-      context.handle(_createdAtMeta,
-          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
-    }
-    if (data.containsKey('updated_at')) {
-      context.handle(_updatedAtMeta,
-          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
-    }
-    if (data.containsKey('deleted_at')) {
-      context.handle(_deletedAtMeta,
-          deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta));
-    }
-    if (data.containsKey('sync_status')) {
-      context.handle(
-          _syncStatusMeta,
-          syncStatus.isAcceptableOrUnknown(
-              data['sync_status']!, _syncStatusMeta));
-    }
-    if (data.containsKey('version')) {
-      context.handle(_versionMeta,
-          version.isAcceptableOrUnknown(data['version']!, _versionMeta));
-    }
-    return context;
-  }
-
-  @override
-  Set<GeneratedColumn> get $primaryKey => {id};
-  @override
-  PantryItem map(Map<String, dynamic> data, {String? tablePrefix}) {
-    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return PantryItem(
-      id: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
-      productId: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}product_id']),
-      rawName: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}raw_name']),
-      quantityEstimated: attachedDatabase.typeMapping.read(
-          DriftSqlType.double, data['${effectivePrefix}quantity_estimated']),
-      unit: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}unit']),
-      status: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}status'])!,
-      confidenceScore: attachedDatabase.typeMapping.read(
-          DriftSqlType.double, data['${effectivePrefix}confidence_score'])!,
-      lastConfirmedAt: attachedDatabase.typeMapping.read(
-          DriftSqlType.dateTime, data['${effectivePrefix}last_confirmed_at']),
-      createdAt: attachedDatabase.typeMapping
-          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
-      updatedAt: attachedDatabase.typeMapping
-          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
-      deletedAt: attachedDatabase.typeMapping
-          .read(DriftSqlType.dateTime, data['${effectivePrefix}deleted_at']),
-      syncStatus: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}sync_status'])!,
-      version: attachedDatabase.typeMapping
-          .read(DriftSqlType.int, data['${effectivePrefix}version'])!,
-    );
-  }
-
-  @override
-  $PantryItemsTable createAlias(String alias) {
-    return $PantryItemsTable(attachedDatabase, alias);
-  }
-}
-
-class PantryItem extends DataClass implements Insertable<PantryItem> {
-  final String id;
-  final String? productId;
-  final String? rawName;
-  final double? quantityEstimated;
-  final String? unit;
-  final String status;
-  final double confidenceScore;
-  final DateTime? lastConfirmedAt;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-  final DateTime? deletedAt;
-  final String syncStatus;
-  final int version;
-  const PantryItem(
-      {required this.id,
-      this.productId,
-      this.rawName,
-      this.quantityEstimated,
-      this.unit,
-      required this.status,
-      required this.confidenceScore,
-      this.lastConfirmedAt,
-      required this.createdAt,
-      required this.updatedAt,
-      this.deletedAt,
-      required this.syncStatus,
-      required this.version});
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    map['id'] = Variable<String>(id);
-    if (!nullToAbsent || productId != null) {
-      map['product_id'] = Variable<String>(productId);
-    }
-    if (!nullToAbsent || rawName != null) {
-      map['raw_name'] = Variable<String>(rawName);
-    }
-    if (!nullToAbsent || quantityEstimated != null) {
-      map['quantity_estimated'] = Variable<double>(quantityEstimated);
-    }
-    if (!nullToAbsent || unit != null) {
-      map['unit'] = Variable<String>(unit);
-    }
-    map['status'] = Variable<String>(status);
-    map['confidence_score'] = Variable<double>(confidenceScore);
-    if (!nullToAbsent || lastConfirmedAt != null) {
-      map['last_confirmed_at'] = Variable<DateTime>(lastConfirmedAt);
-    }
-    map['created_at'] = Variable<DateTime>(createdAt);
-    map['updated_at'] = Variable<DateTime>(updatedAt);
-    if (!nullToAbsent || deletedAt != null) {
-      map['deleted_at'] = Variable<DateTime>(deletedAt);
-    }
-    map['sync_status'] = Variable<String>(syncStatus);
-    map['version'] = Variable<int>(version);
-    return map;
-  }
-
-  PantryItemsCompanion toCompanion(bool nullToAbsent) {
-    return PantryItemsCompanion(
-      id: Value(id),
-      productId: productId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(productId),
-      rawName: rawName == null && nullToAbsent
-          ? const Value.absent()
-          : Value(rawName),
-      quantityEstimated: quantityEstimated == null && nullToAbsent
-          ? const Value.absent()
-          : Value(quantityEstimated),
-      unit: unit == null && nullToAbsent ? const Value.absent() : Value(unit),
-      status: Value(status),
-      confidenceScore: Value(confidenceScore),
-      lastConfirmedAt: lastConfirmedAt == null && nullToAbsent
-          ? const Value.absent()
-          : Value(lastConfirmedAt),
-      createdAt: Value(createdAt),
-      updatedAt: Value(updatedAt),
-      deletedAt: deletedAt == null && nullToAbsent
-          ? const Value.absent()
-          : Value(deletedAt),
-      syncStatus: Value(syncStatus),
-      version: Value(version),
-    );
-  }
-
-  factory PantryItem.fromJson(Map<String, dynamic> json,
-      {ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return PantryItem(
-      id: serializer.fromJson<String>(json['id']),
-      productId: serializer.fromJson<String?>(json['productId']),
-      rawName: serializer.fromJson<String?>(json['rawName']),
-      quantityEstimated:
-          serializer.fromJson<double?>(json['quantityEstimated']),
-      unit: serializer.fromJson<String?>(json['unit']),
-      status: serializer.fromJson<String>(json['status']),
-      confidenceScore: serializer.fromJson<double>(json['confidenceScore']),
-      lastConfirmedAt: serializer.fromJson<DateTime?>(json['lastConfirmedAt']),
-      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
-      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
-      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
-      syncStatus: serializer.fromJson<String>(json['syncStatus']),
-      version: serializer.fromJson<int>(json['version']),
-    );
-  }
-  @override
-  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return <String, dynamic>{
-      'id': serializer.toJson<String>(id),
-      'productId': serializer.toJson<String?>(productId),
-      'rawName': serializer.toJson<String?>(rawName),
-      'quantityEstimated': serializer.toJson<double?>(quantityEstimated),
-      'unit': serializer.toJson<String?>(unit),
-      'status': serializer.toJson<String>(status),
-      'confidenceScore': serializer.toJson<double>(confidenceScore),
-      'lastConfirmedAt': serializer.toJson<DateTime?>(lastConfirmedAt),
-      'createdAt': serializer.toJson<DateTime>(createdAt),
-      'updatedAt': serializer.toJson<DateTime>(updatedAt),
-      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
-      'syncStatus': serializer.toJson<String>(syncStatus),
-      'version': serializer.toJson<int>(version),
-    };
-  }
-
-  PantryItem copyWith(
-          {String? id,
-          Value<String?> productId = const Value.absent(),
-          Value<String?> rawName = const Value.absent(),
-          Value<double?> quantityEstimated = const Value.absent(),
-          Value<String?> unit = const Value.absent(),
-          String? status,
-          double? confidenceScore,
-          Value<DateTime?> lastConfirmedAt = const Value.absent(),
-          DateTime? createdAt,
-          DateTime? updatedAt,
-          Value<DateTime?> deletedAt = const Value.absent(),
-          String? syncStatus,
-          int? version}) =>
-      PantryItem(
-        id: id ?? this.id,
-        productId: productId.present ? productId.value : this.productId,
-        rawName: rawName.present ? rawName.value : this.rawName,
-        quantityEstimated: quantityEstimated.present
-            ? quantityEstimated.value
-            : this.quantityEstimated,
-        unit: unit.present ? unit.value : this.unit,
-        status: status ?? this.status,
-        confidenceScore: confidenceScore ?? this.confidenceScore,
-        lastConfirmedAt: lastConfirmedAt.present
-            ? lastConfirmedAt.value
-            : this.lastConfirmedAt,
-        createdAt: createdAt ?? this.createdAt,
-        updatedAt: updatedAt ?? this.updatedAt,
-        deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
-        syncStatus: syncStatus ?? this.syncStatus,
-        version: version ?? this.version,
-      );
-  PantryItem copyWithCompanion(PantryItemsCompanion data) {
-    return PantryItem(
-      id: data.id.present ? data.id.value : this.id,
-      productId: data.productId.present ? data.productId.value : this.productId,
-      rawName: data.rawName.present ? data.rawName.value : this.rawName,
-      quantityEstimated: data.quantityEstimated.present
-          ? data.quantityEstimated.value
-          : this.quantityEstimated,
-      unit: data.unit.present ? data.unit.value : this.unit,
-      status: data.status.present ? data.status.value : this.status,
-      confidenceScore: data.confidenceScore.present
-          ? data.confidenceScore.value
-          : this.confidenceScore,
-      lastConfirmedAt: data.lastConfirmedAt.present
-          ? data.lastConfirmedAt.value
-          : this.lastConfirmedAt,
-      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
-      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
-      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
-      syncStatus:
-          data.syncStatus.present ? data.syncStatus.value : this.syncStatus,
-      version: data.version.present ? data.version.value : this.version,
-    );
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('PantryItem(')
-          ..write('id: $id, ')
-          ..write('productId: $productId, ')
-          ..write('rawName: $rawName, ')
-          ..write('quantityEstimated: $quantityEstimated, ')
-          ..write('unit: $unit, ')
-          ..write('status: $status, ')
-          ..write('confidenceScore: $confidenceScore, ')
-          ..write('lastConfirmedAt: $lastConfirmedAt, ')
-          ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt, ')
-          ..write('deletedAt: $deletedAt, ')
-          ..write('syncStatus: $syncStatus, ')
-          ..write('version: $version')
-          ..write(')'))
-        .toString();
-  }
-
-  @override
-  int get hashCode => Object.hash(
-      id,
-      productId,
-      rawName,
-      quantityEstimated,
-      unit,
-      status,
-      confidenceScore,
-      lastConfirmedAt,
-      createdAt,
-      updatedAt,
-      deletedAt,
-      syncStatus,
-      version);
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is PantryItem &&
-          other.id == this.id &&
-          other.productId == this.productId &&
-          other.rawName == this.rawName &&
-          other.quantityEstimated == this.quantityEstimated &&
-          other.unit == this.unit &&
-          other.status == this.status &&
-          other.confidenceScore == this.confidenceScore &&
-          other.lastConfirmedAt == this.lastConfirmedAt &&
-          other.createdAt == this.createdAt &&
-          other.updatedAt == this.updatedAt &&
-          other.deletedAt == this.deletedAt &&
-          other.syncStatus == this.syncStatus &&
-          other.version == this.version);
-}
-
-class PantryItemsCompanion extends UpdateCompanion<PantryItem> {
-  final Value<String> id;
-  final Value<String?> productId;
-  final Value<String?> rawName;
-  final Value<double?> quantityEstimated;
-  final Value<String?> unit;
-  final Value<String> status;
-  final Value<double> confidenceScore;
-  final Value<DateTime?> lastConfirmedAt;
-  final Value<DateTime> createdAt;
-  final Value<DateTime> updatedAt;
-  final Value<DateTime?> deletedAt;
-  final Value<String> syncStatus;
-  final Value<int> version;
-  final Value<int> rowid;
-  const PantryItemsCompanion({
-    this.id = const Value.absent(),
-    this.productId = const Value.absent(),
-    this.rawName = const Value.absent(),
-    this.quantityEstimated = const Value.absent(),
-    this.unit = const Value.absent(),
-    this.status = const Value.absent(),
-    this.confidenceScore = const Value.absent(),
-    this.lastConfirmedAt = const Value.absent(),
-    this.createdAt = const Value.absent(),
-    this.updatedAt = const Value.absent(),
-    this.deletedAt = const Value.absent(),
-    this.syncStatus = const Value.absent(),
-    this.version = const Value.absent(),
-    this.rowid = const Value.absent(),
-  });
-  PantryItemsCompanion.insert({
-    required String id,
-    this.productId = const Value.absent(),
-    this.rawName = const Value.absent(),
-    this.quantityEstimated = const Value.absent(),
-    this.unit = const Value.absent(),
-    this.status = const Value.absent(),
-    this.confidenceScore = const Value.absent(),
-    this.lastConfirmedAt = const Value.absent(),
-    this.createdAt = const Value.absent(),
-    this.updatedAt = const Value.absent(),
-    this.deletedAt = const Value.absent(),
-    this.syncStatus = const Value.absent(),
-    this.version = const Value.absent(),
-    this.rowid = const Value.absent(),
-  }) : id = Value(id);
-  static Insertable<PantryItem> custom({
-    Expression<String>? id,
-    Expression<String>? productId,
-    Expression<String>? rawName,
-    Expression<double>? quantityEstimated,
-    Expression<String>? unit,
-    Expression<String>? status,
-    Expression<double>? confidenceScore,
-    Expression<DateTime>? lastConfirmedAt,
-    Expression<DateTime>? createdAt,
-    Expression<DateTime>? updatedAt,
-    Expression<DateTime>? deletedAt,
-    Expression<String>? syncStatus,
-    Expression<int>? version,
-    Expression<int>? rowid,
-  }) {
-    return RawValuesInsertable({
-      if (id != null) 'id': id,
-      if (productId != null) 'product_id': productId,
-      if (rawName != null) 'raw_name': rawName,
-      if (quantityEstimated != null) 'quantity_estimated': quantityEstimated,
-      if (unit != null) 'unit': unit,
-      if (status != null) 'status': status,
-      if (confidenceScore != null) 'confidence_score': confidenceScore,
-      if (lastConfirmedAt != null) 'last_confirmed_at': lastConfirmedAt,
-      if (createdAt != null) 'created_at': createdAt,
-      if (updatedAt != null) 'updated_at': updatedAt,
-      if (deletedAt != null) 'deleted_at': deletedAt,
-      if (syncStatus != null) 'sync_status': syncStatus,
-      if (version != null) 'version': version,
-      if (rowid != null) 'rowid': rowid,
-    });
-  }
-
-  PantryItemsCompanion copyWith(
-      {Value<String>? id,
-      Value<String?>? productId,
-      Value<String?>? rawName,
-      Value<double?>? quantityEstimated,
-      Value<String?>? unit,
-      Value<String>? status,
-      Value<double>? confidenceScore,
-      Value<DateTime?>? lastConfirmedAt,
-      Value<DateTime>? createdAt,
-      Value<DateTime>? updatedAt,
-      Value<DateTime?>? deletedAt,
-      Value<String>? syncStatus,
-      Value<int>? version,
-      Value<int>? rowid}) {
-    return PantryItemsCompanion(
-      id: id ?? this.id,
-      productId: productId ?? this.productId,
-      rawName: rawName ?? this.rawName,
-      quantityEstimated: quantityEstimated ?? this.quantityEstimated,
-      unit: unit ?? this.unit,
-      status: status ?? this.status,
-      confidenceScore: confidenceScore ?? this.confidenceScore,
-      lastConfirmedAt: lastConfirmedAt ?? this.lastConfirmedAt,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-      deletedAt: deletedAt ?? this.deletedAt,
-      syncStatus: syncStatus ?? this.syncStatus,
-      version: version ?? this.version,
-      rowid: rowid ?? this.rowid,
-    );
-  }
-
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    if (id.present) {
-      map['id'] = Variable<String>(id.value);
-    }
-    if (productId.present) {
-      map['product_id'] = Variable<String>(productId.value);
-    }
-    if (rawName.present) {
-      map['raw_name'] = Variable<String>(rawName.value);
-    }
-    if (quantityEstimated.present) {
-      map['quantity_estimated'] = Variable<double>(quantityEstimated.value);
-    }
-    if (unit.present) {
-      map['unit'] = Variable<String>(unit.value);
-    }
-    if (status.present) {
-      map['status'] = Variable<String>(status.value);
-    }
-    if (confidenceScore.present) {
-      map['confidence_score'] = Variable<double>(confidenceScore.value);
-    }
-    if (lastConfirmedAt.present) {
-      map['last_confirmed_at'] = Variable<DateTime>(lastConfirmedAt.value);
-    }
-    if (createdAt.present) {
-      map['created_at'] = Variable<DateTime>(createdAt.value);
-    }
-    if (updatedAt.present) {
-      map['updated_at'] = Variable<DateTime>(updatedAt.value);
-    }
-    if (deletedAt.present) {
-      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
-    }
-    if (syncStatus.present) {
-      map['sync_status'] = Variable<String>(syncStatus.value);
-    }
-    if (version.present) {
-      map['version'] = Variable<int>(version.value);
-    }
-    if (rowid.present) {
-      map['rowid'] = Variable<int>(rowid.value);
-    }
-    return map;
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('PantryItemsCompanion(')
-          ..write('id: $id, ')
-          ..write('productId: $productId, ')
-          ..write('rawName: $rawName, ')
-          ..write('quantityEstimated: $quantityEstimated, ')
-          ..write('unit: $unit, ')
-          ..write('status: $status, ')
-          ..write('confidenceScore: $confidenceScore, ')
-          ..write('lastConfirmedAt: $lastConfirmedAt, ')
-          ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt, ')
-          ..write('deletedAt: $deletedAt, ')
-          ..write('syncStatus: $syncStatus, ')
-          ..write('version: $version, ')
-          ..write('rowid: $rowid')
-          ..write(')'))
-        .toString();
-  }
-}
-
 class $InventoryEventsTable extends InventoryEvents
     with TableInfo<$InventoryEventsTable, InventoryEvent> {
   @override
@@ -2777,6 +3315,15 @@ class $InventoryEventsTable extends InventoryEvents
   late final GeneratedColumn<String> id = GeneratedColumn<String>(
       'id', aliasedName, false,
       type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _inventoryIdMeta =
+      const VerificationMeta('inventoryId');
+  @override
+  late final GeneratedColumn<String> inventoryId = GeneratedColumn<String>(
+      'inventory_id', aliasedName, true,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('REFERENCES inventories (id)'));
   static const VerificationMeta _productIdMeta =
       const VerificationMeta('productId');
   @override
@@ -2786,15 +3333,15 @@ class $InventoryEventsTable extends InventoryEvents
       requiredDuringInsert: false,
       defaultConstraints:
           GeneratedColumn.constraintIsAlways('REFERENCES products (id)'));
-  static const VerificationMeta _pantryItemIdMeta =
-      const VerificationMeta('pantryItemId');
+  static const VerificationMeta _inventoryItemIdMeta =
+      const VerificationMeta('inventoryItemId');
   @override
-  late final GeneratedColumn<String> pantryItemId = GeneratedColumn<String>(
-      'pantry_item_id', aliasedName, true,
+  late final GeneratedColumn<String> inventoryItemId = GeneratedColumn<String>(
+      'inventory_item_id', aliasedName, true,
       type: DriftSqlType.string,
       requiredDuringInsert: false,
-      defaultConstraints:
-          GeneratedColumn.constraintIsAlways('REFERENCES pantry_items (id)'));
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES inventory_items (id)'));
   static const VerificationMeta _eventTypeMeta =
       const VerificationMeta('eventType');
   @override
@@ -2845,8 +3392,9 @@ class $InventoryEventsTable extends InventoryEvents
   @override
   List<GeneratedColumn> get $columns => [
         id,
+        inventoryId,
         productId,
-        pantryItemId,
+        inventoryItemId,
         eventType,
         quantity,
         unit,
@@ -2869,15 +3417,21 @@ class $InventoryEventsTable extends InventoryEvents
     } else if (isInserting) {
       context.missing(_idMeta);
     }
+    if (data.containsKey('inventory_id')) {
+      context.handle(
+          _inventoryIdMeta,
+          inventoryId.isAcceptableOrUnknown(
+              data['inventory_id']!, _inventoryIdMeta));
+    }
     if (data.containsKey('product_id')) {
       context.handle(_productIdMeta,
           productId.isAcceptableOrUnknown(data['product_id']!, _productIdMeta));
     }
-    if (data.containsKey('pantry_item_id')) {
+    if (data.containsKey('inventory_item_id')) {
       context.handle(
-          _pantryItemIdMeta,
-          pantryItemId.isAcceptableOrUnknown(
-              data['pantry_item_id']!, _pantryItemIdMeta));
+          _inventoryItemIdMeta,
+          inventoryItemId.isAcceptableOrUnknown(
+              data['inventory_item_id']!, _inventoryItemIdMeta));
     }
     if (data.containsKey('event_type')) {
       context.handle(_eventTypeMeta,
@@ -2918,10 +3472,12 @@ class $InventoryEventsTable extends InventoryEvents
     return InventoryEvent(
       id: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      inventoryId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}inventory_id']),
       productId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}product_id']),
-      pantryItemId: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}pantry_item_id']),
+      inventoryItemId: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}inventory_item_id']),
       eventType: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}event_type'])!,
       quantity: attachedDatabase.typeMapping
@@ -2945,8 +3501,9 @@ class $InventoryEventsTable extends InventoryEvents
 
 class InventoryEvent extends DataClass implements Insertable<InventoryEvent> {
   final String id;
+  final String? inventoryId;
   final String? productId;
-  final String? pantryItemId;
+  final String? inventoryItemId;
   final String eventType;
   final double? quantity;
   final String? unit;
@@ -2955,8 +3512,9 @@ class InventoryEvent extends DataClass implements Insertable<InventoryEvent> {
   final DateTime createdAt;
   const InventoryEvent(
       {required this.id,
+      this.inventoryId,
       this.productId,
-      this.pantryItemId,
+      this.inventoryItemId,
       required this.eventType,
       this.quantity,
       this.unit,
@@ -2967,11 +3525,14 @@ class InventoryEvent extends DataClass implements Insertable<InventoryEvent> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<String>(id);
+    if (!nullToAbsent || inventoryId != null) {
+      map['inventory_id'] = Variable<String>(inventoryId);
+    }
     if (!nullToAbsent || productId != null) {
       map['product_id'] = Variable<String>(productId);
     }
-    if (!nullToAbsent || pantryItemId != null) {
-      map['pantry_item_id'] = Variable<String>(pantryItemId);
+    if (!nullToAbsent || inventoryItemId != null) {
+      map['inventory_item_id'] = Variable<String>(inventoryItemId);
     }
     map['event_type'] = Variable<String>(eventType);
     if (!nullToAbsent || quantity != null) {
@@ -2989,12 +3550,15 @@ class InventoryEvent extends DataClass implements Insertable<InventoryEvent> {
   InventoryEventsCompanion toCompanion(bool nullToAbsent) {
     return InventoryEventsCompanion(
       id: Value(id),
+      inventoryId: inventoryId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(inventoryId),
       productId: productId == null && nullToAbsent
           ? const Value.absent()
           : Value(productId),
-      pantryItemId: pantryItemId == null && nullToAbsent
+      inventoryItemId: inventoryItemId == null && nullToAbsent
           ? const Value.absent()
-          : Value(pantryItemId),
+          : Value(inventoryItemId),
       eventType: Value(eventType),
       quantity: quantity == null && nullToAbsent
           ? const Value.absent()
@@ -3011,8 +3575,9 @@ class InventoryEvent extends DataClass implements Insertable<InventoryEvent> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return InventoryEvent(
       id: serializer.fromJson<String>(json['id']),
+      inventoryId: serializer.fromJson<String?>(json['inventoryId']),
       productId: serializer.fromJson<String?>(json['productId']),
-      pantryItemId: serializer.fromJson<String?>(json['pantryItemId']),
+      inventoryItemId: serializer.fromJson<String?>(json['inventoryItemId']),
       eventType: serializer.fromJson<String>(json['eventType']),
       quantity: serializer.fromJson<double?>(json['quantity']),
       unit: serializer.fromJson<String?>(json['unit']),
@@ -3026,8 +3591,9 @@ class InventoryEvent extends DataClass implements Insertable<InventoryEvent> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
+      'inventoryId': serializer.toJson<String?>(inventoryId),
       'productId': serializer.toJson<String?>(productId),
-      'pantryItemId': serializer.toJson<String?>(pantryItemId),
+      'inventoryItemId': serializer.toJson<String?>(inventoryItemId),
       'eventType': serializer.toJson<String>(eventType),
       'quantity': serializer.toJson<double?>(quantity),
       'unit': serializer.toJson<String?>(unit),
@@ -3039,8 +3605,9 @@ class InventoryEvent extends DataClass implements Insertable<InventoryEvent> {
 
   InventoryEvent copyWith(
           {String? id,
+          Value<String?> inventoryId = const Value.absent(),
           Value<String?> productId = const Value.absent(),
-          Value<String?> pantryItemId = const Value.absent(),
+          Value<String?> inventoryItemId = const Value.absent(),
           String? eventType,
           Value<double?> quantity = const Value.absent(),
           Value<String?> unit = const Value.absent(),
@@ -3049,9 +3616,11 @@ class InventoryEvent extends DataClass implements Insertable<InventoryEvent> {
           DateTime? createdAt}) =>
       InventoryEvent(
         id: id ?? this.id,
+        inventoryId: inventoryId.present ? inventoryId.value : this.inventoryId,
         productId: productId.present ? productId.value : this.productId,
-        pantryItemId:
-            pantryItemId.present ? pantryItemId.value : this.pantryItemId,
+        inventoryItemId: inventoryItemId.present
+            ? inventoryItemId.value
+            : this.inventoryItemId,
         eventType: eventType ?? this.eventType,
         quantity: quantity.present ? quantity.value : this.quantity,
         unit: unit.present ? unit.value : this.unit,
@@ -3062,10 +3631,12 @@ class InventoryEvent extends DataClass implements Insertable<InventoryEvent> {
   InventoryEvent copyWithCompanion(InventoryEventsCompanion data) {
     return InventoryEvent(
       id: data.id.present ? data.id.value : this.id,
+      inventoryId:
+          data.inventoryId.present ? data.inventoryId.value : this.inventoryId,
       productId: data.productId.present ? data.productId.value : this.productId,
-      pantryItemId: data.pantryItemId.present
-          ? data.pantryItemId.value
-          : this.pantryItemId,
+      inventoryItemId: data.inventoryItemId.present
+          ? data.inventoryItemId.value
+          : this.inventoryItemId,
       eventType: data.eventType.present ? data.eventType.value : this.eventType,
       quantity: data.quantity.present ? data.quantity.value : this.quantity,
       unit: data.unit.present ? data.unit.value : this.unit,
@@ -3080,8 +3651,9 @@ class InventoryEvent extends DataClass implements Insertable<InventoryEvent> {
   String toString() {
     return (StringBuffer('InventoryEvent(')
           ..write('id: $id, ')
+          ..write('inventoryId: $inventoryId, ')
           ..write('productId: $productId, ')
-          ..write('pantryItemId: $pantryItemId, ')
+          ..write('inventoryItemId: $inventoryItemId, ')
           ..write('eventType: $eventType, ')
           ..write('quantity: $quantity, ')
           ..write('unit: $unit, ')
@@ -3093,15 +3665,16 @@ class InventoryEvent extends DataClass implements Insertable<InventoryEvent> {
   }
 
   @override
-  int get hashCode => Object.hash(id, productId, pantryItemId, eventType,
-      quantity, unit, source, occurredAt, createdAt);
+  int get hashCode => Object.hash(id, inventoryId, productId, inventoryItemId,
+      eventType, quantity, unit, source, occurredAt, createdAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is InventoryEvent &&
           other.id == this.id &&
+          other.inventoryId == this.inventoryId &&
           other.productId == this.productId &&
-          other.pantryItemId == this.pantryItemId &&
+          other.inventoryItemId == this.inventoryItemId &&
           other.eventType == this.eventType &&
           other.quantity == this.quantity &&
           other.unit == this.unit &&
@@ -3112,8 +3685,9 @@ class InventoryEvent extends DataClass implements Insertable<InventoryEvent> {
 
 class InventoryEventsCompanion extends UpdateCompanion<InventoryEvent> {
   final Value<String> id;
+  final Value<String?> inventoryId;
   final Value<String?> productId;
-  final Value<String?> pantryItemId;
+  final Value<String?> inventoryItemId;
   final Value<String> eventType;
   final Value<double?> quantity;
   final Value<String?> unit;
@@ -3123,8 +3697,9 @@ class InventoryEventsCompanion extends UpdateCompanion<InventoryEvent> {
   final Value<int> rowid;
   const InventoryEventsCompanion({
     this.id = const Value.absent(),
+    this.inventoryId = const Value.absent(),
     this.productId = const Value.absent(),
-    this.pantryItemId = const Value.absent(),
+    this.inventoryItemId = const Value.absent(),
     this.eventType = const Value.absent(),
     this.quantity = const Value.absent(),
     this.unit = const Value.absent(),
@@ -3135,8 +3710,9 @@ class InventoryEventsCompanion extends UpdateCompanion<InventoryEvent> {
   });
   InventoryEventsCompanion.insert({
     required String id,
+    this.inventoryId = const Value.absent(),
     this.productId = const Value.absent(),
-    this.pantryItemId = const Value.absent(),
+    this.inventoryItemId = const Value.absent(),
     this.eventType = const Value.absent(),
     this.quantity = const Value.absent(),
     this.unit = const Value.absent(),
@@ -3148,8 +3724,9 @@ class InventoryEventsCompanion extends UpdateCompanion<InventoryEvent> {
         occurredAt = Value(occurredAt);
   static Insertable<InventoryEvent> custom({
     Expression<String>? id,
+    Expression<String>? inventoryId,
     Expression<String>? productId,
-    Expression<String>? pantryItemId,
+    Expression<String>? inventoryItemId,
     Expression<String>? eventType,
     Expression<double>? quantity,
     Expression<String>? unit,
@@ -3160,8 +3737,9 @@ class InventoryEventsCompanion extends UpdateCompanion<InventoryEvent> {
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
+      if (inventoryId != null) 'inventory_id': inventoryId,
       if (productId != null) 'product_id': productId,
-      if (pantryItemId != null) 'pantry_item_id': pantryItemId,
+      if (inventoryItemId != null) 'inventory_item_id': inventoryItemId,
       if (eventType != null) 'event_type': eventType,
       if (quantity != null) 'quantity': quantity,
       if (unit != null) 'unit': unit,
@@ -3174,8 +3752,9 @@ class InventoryEventsCompanion extends UpdateCompanion<InventoryEvent> {
 
   InventoryEventsCompanion copyWith(
       {Value<String>? id,
+      Value<String?>? inventoryId,
       Value<String?>? productId,
-      Value<String?>? pantryItemId,
+      Value<String?>? inventoryItemId,
       Value<String>? eventType,
       Value<double?>? quantity,
       Value<String?>? unit,
@@ -3185,8 +3764,9 @@ class InventoryEventsCompanion extends UpdateCompanion<InventoryEvent> {
       Value<int>? rowid}) {
     return InventoryEventsCompanion(
       id: id ?? this.id,
+      inventoryId: inventoryId ?? this.inventoryId,
       productId: productId ?? this.productId,
-      pantryItemId: pantryItemId ?? this.pantryItemId,
+      inventoryItemId: inventoryItemId ?? this.inventoryItemId,
       eventType: eventType ?? this.eventType,
       quantity: quantity ?? this.quantity,
       unit: unit ?? this.unit,
@@ -3203,11 +3783,14 @@ class InventoryEventsCompanion extends UpdateCompanion<InventoryEvent> {
     if (id.present) {
       map['id'] = Variable<String>(id.value);
     }
+    if (inventoryId.present) {
+      map['inventory_id'] = Variable<String>(inventoryId.value);
+    }
     if (productId.present) {
       map['product_id'] = Variable<String>(productId.value);
     }
-    if (pantryItemId.present) {
-      map['pantry_item_id'] = Variable<String>(pantryItemId.value);
+    if (inventoryItemId.present) {
+      map['inventory_item_id'] = Variable<String>(inventoryItemId.value);
     }
     if (eventType.present) {
       map['event_type'] = Variable<String>(eventType.value);
@@ -3237,8 +3820,9 @@ class InventoryEventsCompanion extends UpdateCompanion<InventoryEvent> {
   String toString() {
     return (StringBuffer('InventoryEventsCompanion(')
           ..write('id: $id, ')
+          ..write('inventoryId: $inventoryId, ')
           ..write('productId: $productId, ')
-          ..write('pantryItemId: $pantryItemId, ')
+          ..write('inventoryItemId: $inventoryItemId, ')
           ..write('eventType: $eventType, ')
           ..write('quantity: $quantity, ')
           ..write('unit: $unit, ')
@@ -3741,10 +4325,11 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $ProductsTable products = $ProductsTable(this);
   late final $ProductAliasesTable productAliases = $ProductAliasesTable(this);
+  late final $InventoriesTable inventories = $InventoriesTable(this);
+  late final $InventoryItemsTable inventoryItems = $InventoryItemsTable(this);
   late final $ShoppingListsTable shoppingLists = $ShoppingListsTable(this);
   late final $ShoppingListItemsTable shoppingListItems =
       $ShoppingListItemsTable(this);
-  late final $PantryItemsTable pantryItems = $PantryItemsTable(this);
   late final $InventoryEventsTable inventoryEvents =
       $InventoryEventsTable(this);
   late final $PriceObservationsTable priceObservations =
@@ -3762,9 +4347,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   List<DatabaseSchemaEntity> get allSchemaEntities => [
         products,
         productAliases,
+        inventories,
+        inventoryItems,
         shoppingLists,
         shoppingListItems,
-        pantryItems,
         inventoryEvents,
         priceObservations
       ];
@@ -3818,6 +4404,21 @@ final class $$ProductsTableReferences
         manager.$state.copyWith(prefetchedData: cache));
   }
 
+  static MultiTypedResultKey<$InventoryItemsTable, List<InventoryItem>>
+      _inventoryItemsRefsTable(_$AppDatabase db) =>
+          MultiTypedResultKey.fromTable(db.inventoryItems,
+              aliasName: $_aliasNameGenerator(
+                  db.products.id, db.inventoryItems.productId));
+
+  $$InventoryItemsTableProcessedTableManager get inventoryItemsRefs {
+    final manager = $$InventoryItemsTableTableManager($_db, $_db.inventoryItems)
+        .filter((f) => f.productId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_inventoryItemsRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
+
   static MultiTypedResultKey<$ShoppingListItemsTable, List<ShoppingListItem>>
       _shoppingListItemsRefsTable(_$AppDatabase db) =>
           MultiTypedResultKey.fromTable(db.shoppingListItems,
@@ -3831,21 +4432,6 @@ final class $$ProductsTableReferences
 
     final cache =
         $_typedResult.readTableOrNull(_shoppingListItemsRefsTable($_db));
-    return ProcessedTableManager(
-        manager.$state.copyWith(prefetchedData: cache));
-  }
-
-  static MultiTypedResultKey<$PantryItemsTable, List<PantryItem>>
-      _pantryItemsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
-          db.pantryItems,
-          aliasName:
-              $_aliasNameGenerator(db.products.id, db.pantryItems.productId));
-
-  $$PantryItemsTableProcessedTableManager get pantryItemsRefs {
-    final manager = $$PantryItemsTableTableManager($_db, $_db.pantryItems)
-        .filter((f) => f.productId.id.sqlEquals($_itemColumn<String>('id')!));
-
-    final cache = $_typedResult.readTableOrNull(_pantryItemsRefsTable($_db));
     return ProcessedTableManager(
         manager.$state.copyWith(prefetchedData: cache));
   }
@@ -3949,6 +4535,27 @@ class $$ProductsTableFilterComposer
     return f(composer);
   }
 
+  Expression<bool> inventoryItemsRefs(
+      Expression<bool> Function($$InventoryItemsTableFilterComposer f) f) {
+    final $$InventoryItemsTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.inventoryItems,
+        getReferencedColumn: (t) => t.productId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$InventoryItemsTableFilterComposer(
+              $db: $db,
+              $table: $db.inventoryItems,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
   Expression<bool> shoppingListItemsRefs(
       Expression<bool> Function($$ShoppingListItemsTableFilterComposer f) f) {
     final $$ShoppingListItemsTableFilterComposer composer = $composerBuilder(
@@ -3962,27 +4569,6 @@ class $$ProductsTableFilterComposer
             $$ShoppingListItemsTableFilterComposer(
               $db: $db,
               $table: $db.shoppingListItems,
-              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-              joinBuilder: joinBuilder,
-              $removeJoinBuilderFromRootComposer:
-                  $removeJoinBuilderFromRootComposer,
-            ));
-    return f(composer);
-  }
-
-  Expression<bool> pantryItemsRefs(
-      Expression<bool> Function($$PantryItemsTableFilterComposer f) f) {
-    final $$PantryItemsTableFilterComposer composer = $composerBuilder(
-        composer: this,
-        getCurrentColumn: (t) => t.id,
-        referencedTable: $db.pantryItems,
-        getReferencedColumn: (t) => t.productId,
-        builder: (joinBuilder,
-                {$addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer}) =>
-            $$PantryItemsTableFilterComposer(
-              $db: $db,
-              $table: $db.pantryItems,
               $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
               joinBuilder: joinBuilder,
               $removeJoinBuilderFromRootComposer:
@@ -4142,6 +4728,27 @@ class $$ProductsTableAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> inventoryItemsRefs<T extends Object>(
+      Expression<T> Function($$InventoryItemsTableAnnotationComposer a) f) {
+    final $$InventoryItemsTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.inventoryItems,
+        getReferencedColumn: (t) => t.productId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$InventoryItemsTableAnnotationComposer(
+              $db: $db,
+              $table: $db.inventoryItems,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
   Expression<T> shoppingListItemsRefs<T extends Object>(
       Expression<T> Function($$ShoppingListItemsTableAnnotationComposer a) f) {
     final $$ShoppingListItemsTableAnnotationComposer composer =
@@ -4161,27 +4768,6 @@ class $$ProductsTableAnnotationComposer
                   $removeJoinBuilderFromRootComposer:
                       $removeJoinBuilderFromRootComposer,
                 ));
-    return f(composer);
-  }
-
-  Expression<T> pantryItemsRefs<T extends Object>(
-      Expression<T> Function($$PantryItemsTableAnnotationComposer a) f) {
-    final $$PantryItemsTableAnnotationComposer composer = $composerBuilder(
-        composer: this,
-        getCurrentColumn: (t) => t.id,
-        referencedTable: $db.pantryItems,
-        getReferencedColumn: (t) => t.productId,
-        builder: (joinBuilder,
-                {$addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer}) =>
-            $$PantryItemsTableAnnotationComposer(
-              $db: $db,
-              $table: $db.pantryItems,
-              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-              joinBuilder: joinBuilder,
-              $removeJoinBuilderFromRootComposer:
-                  $removeJoinBuilderFromRootComposer,
-            ));
     return f(composer);
   }
 
@@ -4242,8 +4828,8 @@ class $$ProductsTableTableManager extends RootTableManager<
     Product,
     PrefetchHooks Function(
         {bool productAliasesRefs,
+        bool inventoryItemsRefs,
         bool shoppingListItemsRefs,
-        bool pantryItemsRefs,
         bool inventoryEventsRefs,
         bool priceObservationsRefs})> {
   $$ProductsTableTableManager(_$AppDatabase db, $ProductsTable table)
@@ -4318,16 +4904,16 @@ class $$ProductsTableTableManager extends RootTableManager<
               .toList(),
           prefetchHooksCallback: (
               {productAliasesRefs = false,
+              inventoryItemsRefs = false,
               shoppingListItemsRefs = false,
-              pantryItemsRefs = false,
               inventoryEventsRefs = false,
               priceObservationsRefs = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [
                 if (productAliasesRefs) db.productAliases,
+                if (inventoryItemsRefs) db.inventoryItems,
                 if (shoppingListItemsRefs) db.shoppingListItems,
-                if (pantryItemsRefs) db.pantryItems,
                 if (inventoryEventsRefs) db.inventoryEvents,
                 if (priceObservationsRefs) db.priceObservations
               ],
@@ -4347,6 +4933,19 @@ class $$ProductsTableTableManager extends RootTableManager<
                             (item, referencedItems) => referencedItems
                                 .where((e) => e.productId == item.id),
                         typedResults: items),
+                  if (inventoryItemsRefs)
+                    await $_getPrefetchedData<Product, $ProductsTable,
+                            InventoryItem>(
+                        currentTable: table,
+                        referencedTable: $$ProductsTableReferences
+                            ._inventoryItemsRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$ProductsTableReferences(db, table, p0)
+                                .inventoryItemsRefs,
+                        referencedItemsForCurrentItem:
+                            (item, referencedItems) => referencedItems
+                                .where((e) => e.productId == item.id),
+                        typedResults: items),
                   if (shoppingListItemsRefs)
                     await $_getPrefetchedData<Product, $ProductsTable,
                             ShoppingListItem>(
@@ -4356,19 +4955,6 @@ class $$ProductsTableTableManager extends RootTableManager<
                         managerFromTypedResult: (p0) =>
                             $$ProductsTableReferences(db, table, p0)
                                 .shoppingListItemsRefs,
-                        referencedItemsForCurrentItem:
-                            (item, referencedItems) => referencedItems
-                                .where((e) => e.productId == item.id),
-                        typedResults: items),
-                  if (pantryItemsRefs)
-                    await $_getPrefetchedData<Product, $ProductsTable,
-                            PantryItem>(
-                        currentTable: table,
-                        referencedTable:
-                            $$ProductsTableReferences._pantryItemsRefsTable(db),
-                        managerFromTypedResult: (p0) =>
-                            $$ProductsTableReferences(db, table, p0)
-                                .pantryItemsRefs,
                         referencedItemsForCurrentItem:
                             (item, referencedItems) => referencedItems
                                 .where((e) => e.productId == item.id),
@@ -4419,8 +5005,8 @@ typedef $$ProductsTableProcessedTableManager = ProcessedTableManager<
     Product,
     PrefetchHooks Function(
         {bool productAliasesRefs,
+        bool inventoryItemsRefs,
         bool shoppingListItemsRefs,
-        bool pantryItemsRefs,
         bool inventoryEventsRefs,
         bool priceObservationsRefs})>;
 typedef $$ProductAliasesTableCreateCompanionBuilder = ProductAliasesCompanion
@@ -4716,9 +5302,1040 @@ typedef $$ProductAliasesTableProcessedTableManager = ProcessedTableManager<
     (ProductAliase, $$ProductAliasesTableReferences),
     ProductAliase,
     PrefetchHooks Function({bool productId})>;
+typedef $$InventoriesTableCreateCompanionBuilder = InventoriesCompanion
+    Function({
+  required String id,
+  required String name,
+  Value<String?> description,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<DateTime?> deletedAt,
+  Value<String> syncStatus,
+  Value<int> version,
+  Value<int> rowid,
+});
+typedef $$InventoriesTableUpdateCompanionBuilder = InventoriesCompanion
+    Function({
+  Value<String> id,
+  Value<String> name,
+  Value<String?> description,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<DateTime?> deletedAt,
+  Value<String> syncStatus,
+  Value<int> version,
+  Value<int> rowid,
+});
+
+final class $$InventoriesTableReferences
+    extends BaseReferences<_$AppDatabase, $InventoriesTable, Inventory> {
+  $$InventoriesTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$InventoryItemsTable, List<InventoryItem>>
+      _inventoryItemsRefsTable(_$AppDatabase db) =>
+          MultiTypedResultKey.fromTable(db.inventoryItems,
+              aliasName: $_aliasNameGenerator(
+                  db.inventories.id, db.inventoryItems.inventoryId));
+
+  $$InventoryItemsTableProcessedTableManager get inventoryItemsRefs {
+    final manager = $$InventoryItemsTableTableManager($_db, $_db.inventoryItems)
+        .filter((f) => f.inventoryId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_inventoryItemsRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
+
+  static MultiTypedResultKey<$ShoppingListsTable, List<ShoppingList>>
+      _shoppingListsRefsTable(_$AppDatabase db) =>
+          MultiTypedResultKey.fromTable(db.shoppingLists,
+              aliasName: $_aliasNameGenerator(
+                  db.inventories.id, db.shoppingLists.inventoryId));
+
+  $$ShoppingListsTableProcessedTableManager get shoppingListsRefs {
+    final manager = $$ShoppingListsTableTableManager($_db, $_db.shoppingLists)
+        .filter((f) => f.inventoryId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_shoppingListsRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
+
+  static MultiTypedResultKey<$InventoryEventsTable, List<InventoryEvent>>
+      _inventoryEventsRefsTable(_$AppDatabase db) =>
+          MultiTypedResultKey.fromTable(db.inventoryEvents,
+              aliasName: $_aliasNameGenerator(
+                  db.inventories.id, db.inventoryEvents.inventoryId));
+
+  $$InventoryEventsTableProcessedTableManager get inventoryEventsRefs {
+    final manager = $$InventoryEventsTableTableManager(
+            $_db, $_db.inventoryEvents)
+        .filter((f) => f.inventoryId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache =
+        $_typedResult.readTableOrNull(_inventoryEventsRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
+}
+
+class $$InventoriesTableFilterComposer
+    extends Composer<_$AppDatabase, $InventoriesTable> {
+  $$InventoriesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get description => $composableBuilder(
+      column: $table.description, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get syncStatus => $composableBuilder(
+      column: $table.syncStatus, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get version => $composableBuilder(
+      column: $table.version, builder: (column) => ColumnFilters(column));
+
+  Expression<bool> inventoryItemsRefs(
+      Expression<bool> Function($$InventoryItemsTableFilterComposer f) f) {
+    final $$InventoryItemsTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.inventoryItems,
+        getReferencedColumn: (t) => t.inventoryId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$InventoryItemsTableFilterComposer(
+              $db: $db,
+              $table: $db.inventoryItems,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
+  Expression<bool> shoppingListsRefs(
+      Expression<bool> Function($$ShoppingListsTableFilterComposer f) f) {
+    final $$ShoppingListsTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.shoppingLists,
+        getReferencedColumn: (t) => t.inventoryId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$ShoppingListsTableFilterComposer(
+              $db: $db,
+              $table: $db.shoppingLists,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
+  Expression<bool> inventoryEventsRefs(
+      Expression<bool> Function($$InventoryEventsTableFilterComposer f) f) {
+    final $$InventoryEventsTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.inventoryEvents,
+        getReferencedColumn: (t) => t.inventoryId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$InventoryEventsTableFilterComposer(
+              $db: $db,
+              $table: $db.inventoryEvents,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+}
+
+class $$InventoriesTableOrderingComposer
+    extends Composer<_$AppDatabase, $InventoriesTable> {
+  $$InventoriesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get description => $composableBuilder(
+      column: $table.description, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get syncStatus => $composableBuilder(
+      column: $table.syncStatus, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get version => $composableBuilder(
+      column: $table.version, builder: (column) => ColumnOrderings(column));
+}
+
+class $$InventoriesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $InventoriesTable> {
+  $$InventoriesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get description => $composableBuilder(
+      column: $table.description, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get syncStatus => $composableBuilder(
+      column: $table.syncStatus, builder: (column) => column);
+
+  GeneratedColumn<int> get version =>
+      $composableBuilder(column: $table.version, builder: (column) => column);
+
+  Expression<T> inventoryItemsRefs<T extends Object>(
+      Expression<T> Function($$InventoryItemsTableAnnotationComposer a) f) {
+    final $$InventoryItemsTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.inventoryItems,
+        getReferencedColumn: (t) => t.inventoryId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$InventoryItemsTableAnnotationComposer(
+              $db: $db,
+              $table: $db.inventoryItems,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
+  Expression<T> shoppingListsRefs<T extends Object>(
+      Expression<T> Function($$ShoppingListsTableAnnotationComposer a) f) {
+    final $$ShoppingListsTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.shoppingLists,
+        getReferencedColumn: (t) => t.inventoryId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$ShoppingListsTableAnnotationComposer(
+              $db: $db,
+              $table: $db.shoppingLists,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
+  Expression<T> inventoryEventsRefs<T extends Object>(
+      Expression<T> Function($$InventoryEventsTableAnnotationComposer a) f) {
+    final $$InventoryEventsTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.inventoryEvents,
+        getReferencedColumn: (t) => t.inventoryId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$InventoryEventsTableAnnotationComposer(
+              $db: $db,
+              $table: $db.inventoryEvents,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+}
+
+class $$InventoriesTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $InventoriesTable,
+    Inventory,
+    $$InventoriesTableFilterComposer,
+    $$InventoriesTableOrderingComposer,
+    $$InventoriesTableAnnotationComposer,
+    $$InventoriesTableCreateCompanionBuilder,
+    $$InventoriesTableUpdateCompanionBuilder,
+    (Inventory, $$InventoriesTableReferences),
+    Inventory,
+    PrefetchHooks Function(
+        {bool inventoryItemsRefs,
+        bool shoppingListsRefs,
+        bool inventoryEventsRefs})> {
+  $$InventoriesTableTableManager(_$AppDatabase db, $InventoriesTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$InventoriesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$InventoriesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$InventoriesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> name = const Value.absent(),
+            Value<String?> description = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<DateTime?> deletedAt = const Value.absent(),
+            Value<String> syncStatus = const Value.absent(),
+            Value<int> version = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              InventoriesCompanion(
+            id: id,
+            name: name,
+            description: description,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            deletedAt: deletedAt,
+            syncStatus: syncStatus,
+            version: version,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String name,
+            Value<String?> description = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<DateTime?> deletedAt = const Value.absent(),
+            Value<String> syncStatus = const Value.absent(),
+            Value<int> version = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              InventoriesCompanion.insert(
+            id: id,
+            name: name,
+            description: description,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            deletedAt: deletedAt,
+            syncStatus: syncStatus,
+            version: version,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable(table),
+                    $$InventoriesTableReferences(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: (
+              {inventoryItemsRefs = false,
+              shoppingListsRefs = false,
+              inventoryEventsRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (inventoryItemsRefs) db.inventoryItems,
+                if (shoppingListsRefs) db.shoppingLists,
+                if (inventoryEventsRefs) db.inventoryEvents
+              ],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (inventoryItemsRefs)
+                    await $_getPrefetchedData<Inventory, $InventoriesTable,
+                            InventoryItem>(
+                        currentTable: table,
+                        referencedTable: $$InventoriesTableReferences
+                            ._inventoryItemsRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$InventoriesTableReferences(db, table, p0)
+                                .inventoryItemsRefs,
+                        referencedItemsForCurrentItem:
+                            (item, referencedItems) => referencedItems
+                                .where((e) => e.inventoryId == item.id),
+                        typedResults: items),
+                  if (shoppingListsRefs)
+                    await $_getPrefetchedData<Inventory, $InventoriesTable,
+                            ShoppingList>(
+                        currentTable: table,
+                        referencedTable: $$InventoriesTableReferences
+                            ._shoppingListsRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$InventoriesTableReferences(db, table, p0)
+                                .shoppingListsRefs,
+                        referencedItemsForCurrentItem:
+                            (item, referencedItems) => referencedItems
+                                .where((e) => e.inventoryId == item.id),
+                        typedResults: items),
+                  if (inventoryEventsRefs)
+                    await $_getPrefetchedData<Inventory, $InventoriesTable,
+                            InventoryEvent>(
+                        currentTable: table,
+                        referencedTable: $$InventoriesTableReferences
+                            ._inventoryEventsRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$InventoriesTableReferences(db, table, p0)
+                                .inventoryEventsRefs,
+                        referencedItemsForCurrentItem:
+                            (item, referencedItems) => referencedItems
+                                .where((e) => e.inventoryId == item.id),
+                        typedResults: items)
+                ];
+              },
+            );
+          },
+        ));
+}
+
+typedef $$InventoriesTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $InventoriesTable,
+    Inventory,
+    $$InventoriesTableFilterComposer,
+    $$InventoriesTableOrderingComposer,
+    $$InventoriesTableAnnotationComposer,
+    $$InventoriesTableCreateCompanionBuilder,
+    $$InventoriesTableUpdateCompanionBuilder,
+    (Inventory, $$InventoriesTableReferences),
+    Inventory,
+    PrefetchHooks Function(
+        {bool inventoryItemsRefs,
+        bool shoppingListsRefs,
+        bool inventoryEventsRefs})>;
+typedef $$InventoryItemsTableCreateCompanionBuilder = InventoryItemsCompanion
+    Function({
+  required String id,
+  required String inventoryId,
+  Value<String?> productId,
+  Value<String?> rawName,
+  Value<double?> quantityEstimated,
+  Value<String?> unit,
+  Value<String> status,
+  Value<double> confidenceScore,
+  Value<DateTime?> lastConfirmedAt,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<DateTime?> deletedAt,
+  Value<String> syncStatus,
+  Value<int> version,
+  Value<int> rowid,
+});
+typedef $$InventoryItemsTableUpdateCompanionBuilder = InventoryItemsCompanion
+    Function({
+  Value<String> id,
+  Value<String> inventoryId,
+  Value<String?> productId,
+  Value<String?> rawName,
+  Value<double?> quantityEstimated,
+  Value<String?> unit,
+  Value<String> status,
+  Value<double> confidenceScore,
+  Value<DateTime?> lastConfirmedAt,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<DateTime?> deletedAt,
+  Value<String> syncStatus,
+  Value<int> version,
+  Value<int> rowid,
+});
+
+final class $$InventoryItemsTableReferences
+    extends BaseReferences<_$AppDatabase, $InventoryItemsTable, InventoryItem> {
+  $$InventoryItemsTableReferences(
+      super.$_db, super.$_table, super.$_typedResult);
+
+  static $InventoriesTable _inventoryIdTable(_$AppDatabase db) =>
+      db.inventories.createAlias($_aliasNameGenerator(
+          db.inventoryItems.inventoryId, db.inventories.id));
+
+  $$InventoriesTableProcessedTableManager get inventoryId {
+    final $_column = $_itemColumn<String>('inventory_id')!;
+
+    final manager = $$InventoriesTableTableManager($_db, $_db.inventories)
+        .filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_inventoryIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+
+  static $ProductsTable _productIdTable(_$AppDatabase db) =>
+      db.products.createAlias(
+          $_aliasNameGenerator(db.inventoryItems.productId, db.products.id));
+
+  $$ProductsTableProcessedTableManager? get productId {
+    final $_column = $_itemColumn<String>('product_id');
+    if ($_column == null) return null;
+    final manager = $$ProductsTableTableManager($_db, $_db.products)
+        .filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_productIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+
+  static MultiTypedResultKey<$InventoryEventsTable, List<InventoryEvent>>
+      _inventoryEventsRefsTable(_$AppDatabase db) =>
+          MultiTypedResultKey.fromTable(db.inventoryEvents,
+              aliasName: $_aliasNameGenerator(
+                  db.inventoryItems.id, db.inventoryEvents.inventoryItemId));
+
+  $$InventoryEventsTableProcessedTableManager get inventoryEventsRefs {
+    final manager =
+        $$InventoryEventsTableTableManager($_db, $_db.inventoryEvents).filter(
+            (f) => f.inventoryItemId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache =
+        $_typedResult.readTableOrNull(_inventoryEventsRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
+}
+
+class $$InventoryItemsTableFilterComposer
+    extends Composer<_$AppDatabase, $InventoryItemsTable> {
+  $$InventoryItemsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get rawName => $composableBuilder(
+      column: $table.rawName, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get quantityEstimated => $composableBuilder(
+      column: $table.quantityEstimated,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get unit => $composableBuilder(
+      column: $table.unit, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get status => $composableBuilder(
+      column: $table.status, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get confidenceScore => $composableBuilder(
+      column: $table.confidenceScore,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get lastConfirmedAt => $composableBuilder(
+      column: $table.lastConfirmedAt,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get syncStatus => $composableBuilder(
+      column: $table.syncStatus, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get version => $composableBuilder(
+      column: $table.version, builder: (column) => ColumnFilters(column));
+
+  $$InventoriesTableFilterComposer get inventoryId {
+    final $$InventoriesTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.inventoryId,
+        referencedTable: $db.inventories,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$InventoriesTableFilterComposer(
+              $db: $db,
+              $table: $db.inventories,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$ProductsTableFilterComposer get productId {
+    final $$ProductsTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.productId,
+        referencedTable: $db.products,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$ProductsTableFilterComposer(
+              $db: $db,
+              $table: $db.products,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  Expression<bool> inventoryEventsRefs(
+      Expression<bool> Function($$InventoryEventsTableFilterComposer f) f) {
+    final $$InventoryEventsTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.inventoryEvents,
+        getReferencedColumn: (t) => t.inventoryItemId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$InventoryEventsTableFilterComposer(
+              $db: $db,
+              $table: $db.inventoryEvents,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+}
+
+class $$InventoryItemsTableOrderingComposer
+    extends Composer<_$AppDatabase, $InventoryItemsTable> {
+  $$InventoryItemsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get rawName => $composableBuilder(
+      column: $table.rawName, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get quantityEstimated => $composableBuilder(
+      column: $table.quantityEstimated,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get unit => $composableBuilder(
+      column: $table.unit, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get status => $composableBuilder(
+      column: $table.status, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get confidenceScore => $composableBuilder(
+      column: $table.confidenceScore,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get lastConfirmedAt => $composableBuilder(
+      column: $table.lastConfirmedAt,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get syncStatus => $composableBuilder(
+      column: $table.syncStatus, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get version => $composableBuilder(
+      column: $table.version, builder: (column) => ColumnOrderings(column));
+
+  $$InventoriesTableOrderingComposer get inventoryId {
+    final $$InventoriesTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.inventoryId,
+        referencedTable: $db.inventories,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$InventoriesTableOrderingComposer(
+              $db: $db,
+              $table: $db.inventories,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$ProductsTableOrderingComposer get productId {
+    final $$ProductsTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.productId,
+        referencedTable: $db.products,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$ProductsTableOrderingComposer(
+              $db: $db,
+              $table: $db.products,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$InventoryItemsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $InventoryItemsTable> {
+  $$InventoryItemsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get rawName =>
+      $composableBuilder(column: $table.rawName, builder: (column) => column);
+
+  GeneratedColumn<double> get quantityEstimated => $composableBuilder(
+      column: $table.quantityEstimated, builder: (column) => column);
+
+  GeneratedColumn<String> get unit =>
+      $composableBuilder(column: $table.unit, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<double> get confidenceScore => $composableBuilder(
+      column: $table.confidenceScore, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastConfirmedAt => $composableBuilder(
+      column: $table.lastConfirmedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get syncStatus => $composableBuilder(
+      column: $table.syncStatus, builder: (column) => column);
+
+  GeneratedColumn<int> get version =>
+      $composableBuilder(column: $table.version, builder: (column) => column);
+
+  $$InventoriesTableAnnotationComposer get inventoryId {
+    final $$InventoriesTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.inventoryId,
+        referencedTable: $db.inventories,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$InventoriesTableAnnotationComposer(
+              $db: $db,
+              $table: $db.inventories,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$ProductsTableAnnotationComposer get productId {
+    final $$ProductsTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.productId,
+        referencedTable: $db.products,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$ProductsTableAnnotationComposer(
+              $db: $db,
+              $table: $db.products,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  Expression<T> inventoryEventsRefs<T extends Object>(
+      Expression<T> Function($$InventoryEventsTableAnnotationComposer a) f) {
+    final $$InventoryEventsTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.inventoryEvents,
+        getReferencedColumn: (t) => t.inventoryItemId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$InventoryEventsTableAnnotationComposer(
+              $db: $db,
+              $table: $db.inventoryEvents,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+}
+
+class $$InventoryItemsTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $InventoryItemsTable,
+    InventoryItem,
+    $$InventoryItemsTableFilterComposer,
+    $$InventoryItemsTableOrderingComposer,
+    $$InventoryItemsTableAnnotationComposer,
+    $$InventoryItemsTableCreateCompanionBuilder,
+    $$InventoryItemsTableUpdateCompanionBuilder,
+    (InventoryItem, $$InventoryItemsTableReferences),
+    InventoryItem,
+    PrefetchHooks Function(
+        {bool inventoryId, bool productId, bool inventoryEventsRefs})> {
+  $$InventoryItemsTableTableManager(
+      _$AppDatabase db, $InventoryItemsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$InventoryItemsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$InventoryItemsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$InventoryItemsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> inventoryId = const Value.absent(),
+            Value<String?> productId = const Value.absent(),
+            Value<String?> rawName = const Value.absent(),
+            Value<double?> quantityEstimated = const Value.absent(),
+            Value<String?> unit = const Value.absent(),
+            Value<String> status = const Value.absent(),
+            Value<double> confidenceScore = const Value.absent(),
+            Value<DateTime?> lastConfirmedAt = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<DateTime?> deletedAt = const Value.absent(),
+            Value<String> syncStatus = const Value.absent(),
+            Value<int> version = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              InventoryItemsCompanion(
+            id: id,
+            inventoryId: inventoryId,
+            productId: productId,
+            rawName: rawName,
+            quantityEstimated: quantityEstimated,
+            unit: unit,
+            status: status,
+            confidenceScore: confidenceScore,
+            lastConfirmedAt: lastConfirmedAt,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            deletedAt: deletedAt,
+            syncStatus: syncStatus,
+            version: version,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String inventoryId,
+            Value<String?> productId = const Value.absent(),
+            Value<String?> rawName = const Value.absent(),
+            Value<double?> quantityEstimated = const Value.absent(),
+            Value<String?> unit = const Value.absent(),
+            Value<String> status = const Value.absent(),
+            Value<double> confidenceScore = const Value.absent(),
+            Value<DateTime?> lastConfirmedAt = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<DateTime?> deletedAt = const Value.absent(),
+            Value<String> syncStatus = const Value.absent(),
+            Value<int> version = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              InventoryItemsCompanion.insert(
+            id: id,
+            inventoryId: inventoryId,
+            productId: productId,
+            rawName: rawName,
+            quantityEstimated: quantityEstimated,
+            unit: unit,
+            status: status,
+            confidenceScore: confidenceScore,
+            lastConfirmedAt: lastConfirmedAt,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            deletedAt: deletedAt,
+            syncStatus: syncStatus,
+            version: version,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable(table),
+                    $$InventoryItemsTableReferences(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: (
+              {inventoryId = false,
+              productId = false,
+              inventoryEventsRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (inventoryEventsRefs) db.inventoryEvents
+              ],
+              addJoins: <
+                  T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic>>(state) {
+                if (inventoryId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.inventoryId,
+                    referencedTable:
+                        $$InventoryItemsTableReferences._inventoryIdTable(db),
+                    referencedColumn: $$InventoryItemsTableReferences
+                        ._inventoryIdTable(db)
+                        .id,
+                  ) as T;
+                }
+                if (productId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.productId,
+                    referencedTable:
+                        $$InventoryItemsTableReferences._productIdTable(db),
+                    referencedColumn:
+                        $$InventoryItemsTableReferences._productIdTable(db).id,
+                  ) as T;
+                }
+
+                return state;
+              },
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (inventoryEventsRefs)
+                    await $_getPrefetchedData<InventoryItem,
+                            $InventoryItemsTable, InventoryEvent>(
+                        currentTable: table,
+                        referencedTable: $$InventoryItemsTableReferences
+                            ._inventoryEventsRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$InventoryItemsTableReferences(db, table, p0)
+                                .inventoryEventsRefs,
+                        referencedItemsForCurrentItem:
+                            (item, referencedItems) => referencedItems
+                                .where((e) => e.inventoryItemId == item.id),
+                        typedResults: items)
+                ];
+              },
+            );
+          },
+        ));
+}
+
+typedef $$InventoryItemsTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $InventoryItemsTable,
+    InventoryItem,
+    $$InventoryItemsTableFilterComposer,
+    $$InventoryItemsTableOrderingComposer,
+    $$InventoryItemsTableAnnotationComposer,
+    $$InventoryItemsTableCreateCompanionBuilder,
+    $$InventoryItemsTableUpdateCompanionBuilder,
+    (InventoryItem, $$InventoryItemsTableReferences),
+    InventoryItem,
+    PrefetchHooks Function(
+        {bool inventoryId, bool productId, bool inventoryEventsRefs})>;
 typedef $$ShoppingListsTableCreateCompanionBuilder = ShoppingListsCompanion
     Function({
   required String id,
+  Value<String?> inventoryId,
   required String name,
   Value<String> status,
   Value<DateTime> createdAt,
@@ -4731,6 +6348,7 @@ typedef $$ShoppingListsTableCreateCompanionBuilder = ShoppingListsCompanion
 typedef $$ShoppingListsTableUpdateCompanionBuilder = ShoppingListsCompanion
     Function({
   Value<String> id,
+  Value<String?> inventoryId,
   Value<String> name,
   Value<String> status,
   Value<DateTime> createdAt,
@@ -4745,6 +6363,21 @@ final class $$ShoppingListsTableReferences
     extends BaseReferences<_$AppDatabase, $ShoppingListsTable, ShoppingList> {
   $$ShoppingListsTableReferences(
       super.$_db, super.$_table, super.$_typedResult);
+
+  static $InventoriesTable _inventoryIdTable(_$AppDatabase db) =>
+      db.inventories.createAlias($_aliasNameGenerator(
+          db.shoppingLists.inventoryId, db.inventories.id));
+
+  $$InventoriesTableProcessedTableManager? get inventoryId {
+    final $_column = $_itemColumn<String>('inventory_id');
+    if ($_column == null) return null;
+    final manager = $$InventoriesTableTableManager($_db, $_db.inventories)
+        .filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_inventoryIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
 
   static MultiTypedResultKey<$ShoppingListItemsTable, List<ShoppingListItem>>
       _shoppingListItemsRefsTable(_$AppDatabase db) =>
@@ -4797,6 +6430,26 @@ class $$ShoppingListsTableFilterComposer
 
   ColumnFilters<int> get version => $composableBuilder(
       column: $table.version, builder: (column) => ColumnFilters(column));
+
+  $$InventoriesTableFilterComposer get inventoryId {
+    final $$InventoriesTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.inventoryId,
+        referencedTable: $db.inventories,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$InventoriesTableFilterComposer(
+              $db: $db,
+              $table: $db.inventories,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
 
   Expression<bool> shoppingListItemsRefs(
       Expression<bool> Function($$ShoppingListItemsTableFilterComposer f) f) {
@@ -4852,6 +6505,26 @@ class $$ShoppingListsTableOrderingComposer
 
   ColumnOrderings<int> get version => $composableBuilder(
       column: $table.version, builder: (column) => ColumnOrderings(column));
+
+  $$InventoriesTableOrderingComposer get inventoryId {
+    final $$InventoriesTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.inventoryId,
+        referencedTable: $db.inventories,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$InventoriesTableOrderingComposer(
+              $db: $db,
+              $table: $db.inventories,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
 }
 
 class $$ShoppingListsTableAnnotationComposer
@@ -4887,6 +6560,26 @@ class $$ShoppingListsTableAnnotationComposer
   GeneratedColumn<int> get version =>
       $composableBuilder(column: $table.version, builder: (column) => column);
 
+  $$InventoriesTableAnnotationComposer get inventoryId {
+    final $$InventoriesTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.inventoryId,
+        referencedTable: $db.inventories,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$InventoriesTableAnnotationComposer(
+              $db: $db,
+              $table: $db.inventories,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
   Expression<T> shoppingListItemsRefs<T extends Object>(
       Expression<T> Function($$ShoppingListItemsTableAnnotationComposer a) f) {
     final $$ShoppingListItemsTableAnnotationComposer composer =
@@ -4921,7 +6614,7 @@ class $$ShoppingListsTableTableManager extends RootTableManager<
     $$ShoppingListsTableUpdateCompanionBuilder,
     (ShoppingList, $$ShoppingListsTableReferences),
     ShoppingList,
-    PrefetchHooks Function({bool shoppingListItemsRefs})> {
+    PrefetchHooks Function({bool inventoryId, bool shoppingListItemsRefs})> {
   $$ShoppingListsTableTableManager(_$AppDatabase db, $ShoppingListsTable table)
       : super(TableManagerState(
           db: db,
@@ -4934,6 +6627,7 @@ class $$ShoppingListsTableTableManager extends RootTableManager<
               $$ShoppingListsTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback: ({
             Value<String> id = const Value.absent(),
+            Value<String?> inventoryId = const Value.absent(),
             Value<String> name = const Value.absent(),
             Value<String> status = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
@@ -4945,6 +6639,7 @@ class $$ShoppingListsTableTableManager extends RootTableManager<
           }) =>
               ShoppingListsCompanion(
             id: id,
+            inventoryId: inventoryId,
             name: name,
             status: status,
             createdAt: createdAt,
@@ -4956,6 +6651,7 @@ class $$ShoppingListsTableTableManager extends RootTableManager<
           ),
           createCompanionCallback: ({
             required String id,
+            Value<String?> inventoryId = const Value.absent(),
             required String name,
             Value<String> status = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
@@ -4967,6 +6663,7 @@ class $$ShoppingListsTableTableManager extends RootTableManager<
           }) =>
               ShoppingListsCompanion.insert(
             id: id,
+            inventoryId: inventoryId,
             name: name,
             status: status,
             createdAt: createdAt,
@@ -4982,13 +6679,39 @@ class $$ShoppingListsTableTableManager extends RootTableManager<
                     $$ShoppingListsTableReferences(db, table, e)
                   ))
               .toList(),
-          prefetchHooksCallback: ({shoppingListItemsRefs = false}) {
+          prefetchHooksCallback: (
+              {inventoryId = false, shoppingListItemsRefs = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [
                 if (shoppingListItemsRefs) db.shoppingListItems
               ],
-              addJoins: null,
+              addJoins: <
+                  T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic>>(state) {
+                if (inventoryId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.inventoryId,
+                    referencedTable:
+                        $$ShoppingListsTableReferences._inventoryIdTable(db),
+                    referencedColumn:
+                        $$ShoppingListsTableReferences._inventoryIdTable(db).id,
+                  ) as T;
+                }
+
+                return state;
+              },
               getPrefetchedDataCallback: (items) async {
                 return [
                   if (shoppingListItemsRefs)
@@ -5022,7 +6745,7 @@ typedef $$ShoppingListsTableProcessedTableManager = ProcessedTableManager<
     $$ShoppingListsTableUpdateCompanionBuilder,
     (ShoppingList, $$ShoppingListsTableReferences),
     ShoppingList,
-    PrefetchHooks Function({bool shoppingListItemsRefs})>;
+    PrefetchHooks Function({bool inventoryId, bool shoppingListItemsRefs})>;
 typedef $$ShoppingListItemsTableCreateCompanionBuilder
     = ShoppingListItemsCompanion Function({
   required String id,
@@ -5530,488 +7253,12 @@ typedef $$ShoppingListItemsTableProcessedTableManager = ProcessedTableManager<
     (ShoppingListItem, $$ShoppingListItemsTableReferences),
     ShoppingListItem,
     PrefetchHooks Function({bool shoppingListId, bool productId})>;
-typedef $$PantryItemsTableCreateCompanionBuilder = PantryItemsCompanion
-    Function({
-  required String id,
-  Value<String?> productId,
-  Value<String?> rawName,
-  Value<double?> quantityEstimated,
-  Value<String?> unit,
-  Value<String> status,
-  Value<double> confidenceScore,
-  Value<DateTime?> lastConfirmedAt,
-  Value<DateTime> createdAt,
-  Value<DateTime> updatedAt,
-  Value<DateTime?> deletedAt,
-  Value<String> syncStatus,
-  Value<int> version,
-  Value<int> rowid,
-});
-typedef $$PantryItemsTableUpdateCompanionBuilder = PantryItemsCompanion
-    Function({
-  Value<String> id,
-  Value<String?> productId,
-  Value<String?> rawName,
-  Value<double?> quantityEstimated,
-  Value<String?> unit,
-  Value<String> status,
-  Value<double> confidenceScore,
-  Value<DateTime?> lastConfirmedAt,
-  Value<DateTime> createdAt,
-  Value<DateTime> updatedAt,
-  Value<DateTime?> deletedAt,
-  Value<String> syncStatus,
-  Value<int> version,
-  Value<int> rowid,
-});
-
-final class $$PantryItemsTableReferences
-    extends BaseReferences<_$AppDatabase, $PantryItemsTable, PantryItem> {
-  $$PantryItemsTableReferences(super.$_db, super.$_table, super.$_typedResult);
-
-  static $ProductsTable _productIdTable(_$AppDatabase db) =>
-      db.products.createAlias(
-          $_aliasNameGenerator(db.pantryItems.productId, db.products.id));
-
-  $$ProductsTableProcessedTableManager? get productId {
-    final $_column = $_itemColumn<String>('product_id');
-    if ($_column == null) return null;
-    final manager = $$ProductsTableTableManager($_db, $_db.products)
-        .filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(_productIdTable($_db));
-    if (item == null) return manager;
-    return ProcessedTableManager(
-        manager.$state.copyWith(prefetchedData: [item]));
-  }
-
-  static MultiTypedResultKey<$InventoryEventsTable, List<InventoryEvent>>
-      _inventoryEventsRefsTable(_$AppDatabase db) =>
-          MultiTypedResultKey.fromTable(db.inventoryEvents,
-              aliasName: $_aliasNameGenerator(
-                  db.pantryItems.id, db.inventoryEvents.pantryItemId));
-
-  $$InventoryEventsTableProcessedTableManager get inventoryEventsRefs {
-    final manager =
-        $$InventoryEventsTableTableManager($_db, $_db.inventoryEvents).filter(
-            (f) => f.pantryItemId.id.sqlEquals($_itemColumn<String>('id')!));
-
-    final cache =
-        $_typedResult.readTableOrNull(_inventoryEventsRefsTable($_db));
-    return ProcessedTableManager(
-        manager.$state.copyWith(prefetchedData: cache));
-  }
-}
-
-class $$PantryItemsTableFilterComposer
-    extends Composer<_$AppDatabase, $PantryItemsTable> {
-  $$PantryItemsTableFilterComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnFilters<String> get id => $composableBuilder(
-      column: $table.id, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<String> get rawName => $composableBuilder(
-      column: $table.rawName, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<double> get quantityEstimated => $composableBuilder(
-      column: $table.quantityEstimated,
-      builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<String> get unit => $composableBuilder(
-      column: $table.unit, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<String> get status => $composableBuilder(
-      column: $table.status, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<double> get confidenceScore => $composableBuilder(
-      column: $table.confidenceScore,
-      builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<DateTime> get lastConfirmedAt => $composableBuilder(
-      column: $table.lastConfirmedAt,
-      builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<DateTime> get createdAt => $composableBuilder(
-      column: $table.createdAt, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
-      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
-      column: $table.deletedAt, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<String> get syncStatus => $composableBuilder(
-      column: $table.syncStatus, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<int> get version => $composableBuilder(
-      column: $table.version, builder: (column) => ColumnFilters(column));
-
-  $$ProductsTableFilterComposer get productId {
-    final $$ProductsTableFilterComposer composer = $composerBuilder(
-        composer: this,
-        getCurrentColumn: (t) => t.productId,
-        referencedTable: $db.products,
-        getReferencedColumn: (t) => t.id,
-        builder: (joinBuilder,
-                {$addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer}) =>
-            $$ProductsTableFilterComposer(
-              $db: $db,
-              $table: $db.products,
-              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-              joinBuilder: joinBuilder,
-              $removeJoinBuilderFromRootComposer:
-                  $removeJoinBuilderFromRootComposer,
-            ));
-    return composer;
-  }
-
-  Expression<bool> inventoryEventsRefs(
-      Expression<bool> Function($$InventoryEventsTableFilterComposer f) f) {
-    final $$InventoryEventsTableFilterComposer composer = $composerBuilder(
-        composer: this,
-        getCurrentColumn: (t) => t.id,
-        referencedTable: $db.inventoryEvents,
-        getReferencedColumn: (t) => t.pantryItemId,
-        builder: (joinBuilder,
-                {$addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer}) =>
-            $$InventoryEventsTableFilterComposer(
-              $db: $db,
-              $table: $db.inventoryEvents,
-              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-              joinBuilder: joinBuilder,
-              $removeJoinBuilderFromRootComposer:
-                  $removeJoinBuilderFromRootComposer,
-            ));
-    return f(composer);
-  }
-}
-
-class $$PantryItemsTableOrderingComposer
-    extends Composer<_$AppDatabase, $PantryItemsTable> {
-  $$PantryItemsTableOrderingComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnOrderings<String> get id => $composableBuilder(
-      column: $table.id, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<String> get rawName => $composableBuilder(
-      column: $table.rawName, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<double> get quantityEstimated => $composableBuilder(
-      column: $table.quantityEstimated,
-      builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<String> get unit => $composableBuilder(
-      column: $table.unit, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<String> get status => $composableBuilder(
-      column: $table.status, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<double> get confidenceScore => $composableBuilder(
-      column: $table.confidenceScore,
-      builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<DateTime> get lastConfirmedAt => $composableBuilder(
-      column: $table.lastConfirmedAt,
-      builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
-      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
-      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
-      column: $table.deletedAt, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<String> get syncStatus => $composableBuilder(
-      column: $table.syncStatus, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<int> get version => $composableBuilder(
-      column: $table.version, builder: (column) => ColumnOrderings(column));
-
-  $$ProductsTableOrderingComposer get productId {
-    final $$ProductsTableOrderingComposer composer = $composerBuilder(
-        composer: this,
-        getCurrentColumn: (t) => t.productId,
-        referencedTable: $db.products,
-        getReferencedColumn: (t) => t.id,
-        builder: (joinBuilder,
-                {$addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer}) =>
-            $$ProductsTableOrderingComposer(
-              $db: $db,
-              $table: $db.products,
-              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-              joinBuilder: joinBuilder,
-              $removeJoinBuilderFromRootComposer:
-                  $removeJoinBuilderFromRootComposer,
-            ));
-    return composer;
-  }
-}
-
-class $$PantryItemsTableAnnotationComposer
-    extends Composer<_$AppDatabase, $PantryItemsTable> {
-  $$PantryItemsTableAnnotationComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  GeneratedColumn<String> get id =>
-      $composableBuilder(column: $table.id, builder: (column) => column);
-
-  GeneratedColumn<String> get rawName =>
-      $composableBuilder(column: $table.rawName, builder: (column) => column);
-
-  GeneratedColumn<double> get quantityEstimated => $composableBuilder(
-      column: $table.quantityEstimated, builder: (column) => column);
-
-  GeneratedColumn<String> get unit =>
-      $composableBuilder(column: $table.unit, builder: (column) => column);
-
-  GeneratedColumn<String> get status =>
-      $composableBuilder(column: $table.status, builder: (column) => column);
-
-  GeneratedColumn<double> get confidenceScore => $composableBuilder(
-      column: $table.confidenceScore, builder: (column) => column);
-
-  GeneratedColumn<DateTime> get lastConfirmedAt => $composableBuilder(
-      column: $table.lastConfirmedAt, builder: (column) => column);
-
-  GeneratedColumn<DateTime> get createdAt =>
-      $composableBuilder(column: $table.createdAt, builder: (column) => column);
-
-  GeneratedColumn<DateTime> get updatedAt =>
-      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
-
-  GeneratedColumn<DateTime> get deletedAt =>
-      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
-
-  GeneratedColumn<String> get syncStatus => $composableBuilder(
-      column: $table.syncStatus, builder: (column) => column);
-
-  GeneratedColumn<int> get version =>
-      $composableBuilder(column: $table.version, builder: (column) => column);
-
-  $$ProductsTableAnnotationComposer get productId {
-    final $$ProductsTableAnnotationComposer composer = $composerBuilder(
-        composer: this,
-        getCurrentColumn: (t) => t.productId,
-        referencedTable: $db.products,
-        getReferencedColumn: (t) => t.id,
-        builder: (joinBuilder,
-                {$addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer}) =>
-            $$ProductsTableAnnotationComposer(
-              $db: $db,
-              $table: $db.products,
-              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-              joinBuilder: joinBuilder,
-              $removeJoinBuilderFromRootComposer:
-                  $removeJoinBuilderFromRootComposer,
-            ));
-    return composer;
-  }
-
-  Expression<T> inventoryEventsRefs<T extends Object>(
-      Expression<T> Function($$InventoryEventsTableAnnotationComposer a) f) {
-    final $$InventoryEventsTableAnnotationComposer composer = $composerBuilder(
-        composer: this,
-        getCurrentColumn: (t) => t.id,
-        referencedTable: $db.inventoryEvents,
-        getReferencedColumn: (t) => t.pantryItemId,
-        builder: (joinBuilder,
-                {$addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer}) =>
-            $$InventoryEventsTableAnnotationComposer(
-              $db: $db,
-              $table: $db.inventoryEvents,
-              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-              joinBuilder: joinBuilder,
-              $removeJoinBuilderFromRootComposer:
-                  $removeJoinBuilderFromRootComposer,
-            ));
-    return f(composer);
-  }
-}
-
-class $$PantryItemsTableTableManager extends RootTableManager<
-    _$AppDatabase,
-    $PantryItemsTable,
-    PantryItem,
-    $$PantryItemsTableFilterComposer,
-    $$PantryItemsTableOrderingComposer,
-    $$PantryItemsTableAnnotationComposer,
-    $$PantryItemsTableCreateCompanionBuilder,
-    $$PantryItemsTableUpdateCompanionBuilder,
-    (PantryItem, $$PantryItemsTableReferences),
-    PantryItem,
-    PrefetchHooks Function({bool productId, bool inventoryEventsRefs})> {
-  $$PantryItemsTableTableManager(_$AppDatabase db, $PantryItemsTable table)
-      : super(TableManagerState(
-          db: db,
-          table: table,
-          createFilteringComposer: () =>
-              $$PantryItemsTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () =>
-              $$PantryItemsTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () =>
-              $$PantryItemsTableAnnotationComposer($db: db, $table: table),
-          updateCompanionCallback: ({
-            Value<String> id = const Value.absent(),
-            Value<String?> productId = const Value.absent(),
-            Value<String?> rawName = const Value.absent(),
-            Value<double?> quantityEstimated = const Value.absent(),
-            Value<String?> unit = const Value.absent(),
-            Value<String> status = const Value.absent(),
-            Value<double> confidenceScore = const Value.absent(),
-            Value<DateTime?> lastConfirmedAt = const Value.absent(),
-            Value<DateTime> createdAt = const Value.absent(),
-            Value<DateTime> updatedAt = const Value.absent(),
-            Value<DateTime?> deletedAt = const Value.absent(),
-            Value<String> syncStatus = const Value.absent(),
-            Value<int> version = const Value.absent(),
-            Value<int> rowid = const Value.absent(),
-          }) =>
-              PantryItemsCompanion(
-            id: id,
-            productId: productId,
-            rawName: rawName,
-            quantityEstimated: quantityEstimated,
-            unit: unit,
-            status: status,
-            confidenceScore: confidenceScore,
-            lastConfirmedAt: lastConfirmedAt,
-            createdAt: createdAt,
-            updatedAt: updatedAt,
-            deletedAt: deletedAt,
-            syncStatus: syncStatus,
-            version: version,
-            rowid: rowid,
-          ),
-          createCompanionCallback: ({
-            required String id,
-            Value<String?> productId = const Value.absent(),
-            Value<String?> rawName = const Value.absent(),
-            Value<double?> quantityEstimated = const Value.absent(),
-            Value<String?> unit = const Value.absent(),
-            Value<String> status = const Value.absent(),
-            Value<double> confidenceScore = const Value.absent(),
-            Value<DateTime?> lastConfirmedAt = const Value.absent(),
-            Value<DateTime> createdAt = const Value.absent(),
-            Value<DateTime> updatedAt = const Value.absent(),
-            Value<DateTime?> deletedAt = const Value.absent(),
-            Value<String> syncStatus = const Value.absent(),
-            Value<int> version = const Value.absent(),
-            Value<int> rowid = const Value.absent(),
-          }) =>
-              PantryItemsCompanion.insert(
-            id: id,
-            productId: productId,
-            rawName: rawName,
-            quantityEstimated: quantityEstimated,
-            unit: unit,
-            status: status,
-            confidenceScore: confidenceScore,
-            lastConfirmedAt: lastConfirmedAt,
-            createdAt: createdAt,
-            updatedAt: updatedAt,
-            deletedAt: deletedAt,
-            syncStatus: syncStatus,
-            version: version,
-            rowid: rowid,
-          ),
-          withReferenceMapper: (p0) => p0
-              .map((e) => (
-                    e.readTable(table),
-                    $$PantryItemsTableReferences(db, table, e)
-                  ))
-              .toList(),
-          prefetchHooksCallback: (
-              {productId = false, inventoryEventsRefs = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [
-                if (inventoryEventsRefs) db.inventoryEvents
-              ],
-              addJoins: <
-                  T extends TableManagerState<
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic>>(state) {
-                if (productId) {
-                  state = state.withJoin(
-                    currentTable: table,
-                    currentColumn: table.productId,
-                    referencedTable:
-                        $$PantryItemsTableReferences._productIdTable(db),
-                    referencedColumn:
-                        $$PantryItemsTableReferences._productIdTable(db).id,
-                  ) as T;
-                }
-
-                return state;
-              },
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (inventoryEventsRefs)
-                    await $_getPrefetchedData<PantryItem, $PantryItemsTable,
-                            InventoryEvent>(
-                        currentTable: table,
-                        referencedTable: $$PantryItemsTableReferences
-                            ._inventoryEventsRefsTable(db),
-                        managerFromTypedResult: (p0) =>
-                            $$PantryItemsTableReferences(db, table, p0)
-                                .inventoryEventsRefs,
-                        referencedItemsForCurrentItem:
-                            (item, referencedItems) => referencedItems
-                                .where((e) => e.pantryItemId == item.id),
-                        typedResults: items)
-                ];
-              },
-            );
-          },
-        ));
-}
-
-typedef $$PantryItemsTableProcessedTableManager = ProcessedTableManager<
-    _$AppDatabase,
-    $PantryItemsTable,
-    PantryItem,
-    $$PantryItemsTableFilterComposer,
-    $$PantryItemsTableOrderingComposer,
-    $$PantryItemsTableAnnotationComposer,
-    $$PantryItemsTableCreateCompanionBuilder,
-    $$PantryItemsTableUpdateCompanionBuilder,
-    (PantryItem, $$PantryItemsTableReferences),
-    PantryItem,
-    PrefetchHooks Function({bool productId, bool inventoryEventsRefs})>;
 typedef $$InventoryEventsTableCreateCompanionBuilder = InventoryEventsCompanion
     Function({
   required String id,
+  Value<String?> inventoryId,
   Value<String?> productId,
-  Value<String?> pantryItemId,
+  Value<String?> inventoryItemId,
   Value<String> eventType,
   Value<double?> quantity,
   Value<String?> unit,
@@ -6023,8 +7270,9 @@ typedef $$InventoryEventsTableCreateCompanionBuilder = InventoryEventsCompanion
 typedef $$InventoryEventsTableUpdateCompanionBuilder = InventoryEventsCompanion
     Function({
   Value<String> id,
+  Value<String?> inventoryId,
   Value<String?> productId,
-  Value<String?> pantryItemId,
+  Value<String?> inventoryItemId,
   Value<String> eventType,
   Value<double?> quantity,
   Value<String?> unit,
@@ -6038,6 +7286,21 @@ final class $$InventoryEventsTableReferences extends BaseReferences<
     _$AppDatabase, $InventoryEventsTable, InventoryEvent> {
   $$InventoryEventsTableReferences(
       super.$_db, super.$_table, super.$_typedResult);
+
+  static $InventoriesTable _inventoryIdTable(_$AppDatabase db) =>
+      db.inventories.createAlias($_aliasNameGenerator(
+          db.inventoryEvents.inventoryId, db.inventories.id));
+
+  $$InventoriesTableProcessedTableManager? get inventoryId {
+    final $_column = $_itemColumn<String>('inventory_id');
+    if ($_column == null) return null;
+    final manager = $$InventoriesTableTableManager($_db, $_db.inventories)
+        .filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_inventoryIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
 
   static $ProductsTable _productIdTable(_$AppDatabase db) =>
       db.products.createAlias(
@@ -6054,16 +7317,16 @@ final class $$InventoryEventsTableReferences extends BaseReferences<
         manager.$state.copyWith(prefetchedData: [item]));
   }
 
-  static $PantryItemsTable _pantryItemIdTable(_$AppDatabase db) =>
-      db.pantryItems.createAlias($_aliasNameGenerator(
-          db.inventoryEvents.pantryItemId, db.pantryItems.id));
+  static $InventoryItemsTable _inventoryItemIdTable(_$AppDatabase db) =>
+      db.inventoryItems.createAlias($_aliasNameGenerator(
+          db.inventoryEvents.inventoryItemId, db.inventoryItems.id));
 
-  $$PantryItemsTableProcessedTableManager? get pantryItemId {
-    final $_column = $_itemColumn<String>('pantry_item_id');
+  $$InventoryItemsTableProcessedTableManager? get inventoryItemId {
+    final $_column = $_itemColumn<String>('inventory_item_id');
     if ($_column == null) return null;
-    final manager = $$PantryItemsTableTableManager($_db, $_db.pantryItems)
+    final manager = $$InventoryItemsTableTableManager($_db, $_db.inventoryItems)
         .filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(_pantryItemIdTable($_db));
+    final item = $_typedResult.readTableOrNull(_inventoryItemIdTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
         manager.$state.copyWith(prefetchedData: [item]));
@@ -6100,6 +7363,26 @@ class $$InventoryEventsTableFilterComposer
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnFilters(column));
 
+  $$InventoriesTableFilterComposer get inventoryId {
+    final $$InventoriesTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.inventoryId,
+        referencedTable: $db.inventories,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$InventoriesTableFilterComposer(
+              $db: $db,
+              $table: $db.inventories,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
   $$ProductsTableFilterComposer get productId {
     final $$ProductsTableFilterComposer composer = $composerBuilder(
         composer: this,
@@ -6120,18 +7403,18 @@ class $$InventoryEventsTableFilterComposer
     return composer;
   }
 
-  $$PantryItemsTableFilterComposer get pantryItemId {
-    final $$PantryItemsTableFilterComposer composer = $composerBuilder(
+  $$InventoryItemsTableFilterComposer get inventoryItemId {
+    final $$InventoryItemsTableFilterComposer composer = $composerBuilder(
         composer: this,
-        getCurrentColumn: (t) => t.pantryItemId,
-        referencedTable: $db.pantryItems,
+        getCurrentColumn: (t) => t.inventoryItemId,
+        referencedTable: $db.inventoryItems,
         getReferencedColumn: (t) => t.id,
         builder: (joinBuilder,
                 {$addJoinBuilderToRootComposer,
                 $removeJoinBuilderFromRootComposer}) =>
-            $$PantryItemsTableFilterComposer(
+            $$InventoryItemsTableFilterComposer(
               $db: $db,
-              $table: $db.pantryItems,
+              $table: $db.inventoryItems,
               $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
               joinBuilder: joinBuilder,
               $removeJoinBuilderFromRootComposer:
@@ -6171,6 +7454,26 @@ class $$InventoryEventsTableOrderingComposer
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnOrderings(column));
 
+  $$InventoriesTableOrderingComposer get inventoryId {
+    final $$InventoriesTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.inventoryId,
+        referencedTable: $db.inventories,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$InventoriesTableOrderingComposer(
+              $db: $db,
+              $table: $db.inventories,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
   $$ProductsTableOrderingComposer get productId {
     final $$ProductsTableOrderingComposer composer = $composerBuilder(
         composer: this,
@@ -6191,18 +7494,18 @@ class $$InventoryEventsTableOrderingComposer
     return composer;
   }
 
-  $$PantryItemsTableOrderingComposer get pantryItemId {
-    final $$PantryItemsTableOrderingComposer composer = $composerBuilder(
+  $$InventoryItemsTableOrderingComposer get inventoryItemId {
+    final $$InventoryItemsTableOrderingComposer composer = $composerBuilder(
         composer: this,
-        getCurrentColumn: (t) => t.pantryItemId,
-        referencedTable: $db.pantryItems,
+        getCurrentColumn: (t) => t.inventoryItemId,
+        referencedTable: $db.inventoryItems,
         getReferencedColumn: (t) => t.id,
         builder: (joinBuilder,
                 {$addJoinBuilderToRootComposer,
                 $removeJoinBuilderFromRootComposer}) =>
-            $$PantryItemsTableOrderingComposer(
+            $$InventoryItemsTableOrderingComposer(
               $db: $db,
-              $table: $db.pantryItems,
+              $table: $db.inventoryItems,
               $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
               joinBuilder: joinBuilder,
               $removeJoinBuilderFromRootComposer:
@@ -6242,6 +7545,26 @@ class $$InventoryEventsTableAnnotationComposer
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
+  $$InventoriesTableAnnotationComposer get inventoryId {
+    final $$InventoriesTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.inventoryId,
+        referencedTable: $db.inventories,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$InventoriesTableAnnotationComposer(
+              $db: $db,
+              $table: $db.inventories,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
   $$ProductsTableAnnotationComposer get productId {
     final $$ProductsTableAnnotationComposer composer = $composerBuilder(
         composer: this,
@@ -6262,18 +7585,18 @@ class $$InventoryEventsTableAnnotationComposer
     return composer;
   }
 
-  $$PantryItemsTableAnnotationComposer get pantryItemId {
-    final $$PantryItemsTableAnnotationComposer composer = $composerBuilder(
+  $$InventoryItemsTableAnnotationComposer get inventoryItemId {
+    final $$InventoryItemsTableAnnotationComposer composer = $composerBuilder(
         composer: this,
-        getCurrentColumn: (t) => t.pantryItemId,
-        referencedTable: $db.pantryItems,
+        getCurrentColumn: (t) => t.inventoryItemId,
+        referencedTable: $db.inventoryItems,
         getReferencedColumn: (t) => t.id,
         builder: (joinBuilder,
                 {$addJoinBuilderToRootComposer,
                 $removeJoinBuilderFromRootComposer}) =>
-            $$PantryItemsTableAnnotationComposer(
+            $$InventoryItemsTableAnnotationComposer(
               $db: $db,
-              $table: $db.pantryItems,
+              $table: $db.inventoryItems,
               $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
               joinBuilder: joinBuilder,
               $removeJoinBuilderFromRootComposer:
@@ -6294,7 +7617,8 @@ class $$InventoryEventsTableTableManager extends RootTableManager<
     $$InventoryEventsTableUpdateCompanionBuilder,
     (InventoryEvent, $$InventoryEventsTableReferences),
     InventoryEvent,
-    PrefetchHooks Function({bool productId, bool pantryItemId})> {
+    PrefetchHooks Function(
+        {bool inventoryId, bool productId, bool inventoryItemId})> {
   $$InventoryEventsTableTableManager(
       _$AppDatabase db, $InventoryEventsTable table)
       : super(TableManagerState(
@@ -6308,8 +7632,9 @@ class $$InventoryEventsTableTableManager extends RootTableManager<
               $$InventoryEventsTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback: ({
             Value<String> id = const Value.absent(),
+            Value<String?> inventoryId = const Value.absent(),
             Value<String?> productId = const Value.absent(),
-            Value<String?> pantryItemId = const Value.absent(),
+            Value<String?> inventoryItemId = const Value.absent(),
             Value<String> eventType = const Value.absent(),
             Value<double?> quantity = const Value.absent(),
             Value<String?> unit = const Value.absent(),
@@ -6320,8 +7645,9 @@ class $$InventoryEventsTableTableManager extends RootTableManager<
           }) =>
               InventoryEventsCompanion(
             id: id,
+            inventoryId: inventoryId,
             productId: productId,
-            pantryItemId: pantryItemId,
+            inventoryItemId: inventoryItemId,
             eventType: eventType,
             quantity: quantity,
             unit: unit,
@@ -6332,8 +7658,9 @@ class $$InventoryEventsTableTableManager extends RootTableManager<
           ),
           createCompanionCallback: ({
             required String id,
+            Value<String?> inventoryId = const Value.absent(),
             Value<String?> productId = const Value.absent(),
-            Value<String?> pantryItemId = const Value.absent(),
+            Value<String?> inventoryItemId = const Value.absent(),
             Value<String> eventType = const Value.absent(),
             Value<double?> quantity = const Value.absent(),
             Value<String?> unit = const Value.absent(),
@@ -6344,8 +7671,9 @@ class $$InventoryEventsTableTableManager extends RootTableManager<
           }) =>
               InventoryEventsCompanion.insert(
             id: id,
+            inventoryId: inventoryId,
             productId: productId,
-            pantryItemId: pantryItemId,
+            inventoryItemId: inventoryItemId,
             eventType: eventType,
             quantity: quantity,
             unit: unit,
@@ -6360,7 +7688,10 @@ class $$InventoryEventsTableTableManager extends RootTableManager<
                     $$InventoryEventsTableReferences(db, table, e)
                   ))
               .toList(),
-          prefetchHooksCallback: ({productId = false, pantryItemId = false}) {
+          prefetchHooksCallback: (
+              {inventoryId = false,
+              productId = false,
+              inventoryItemId = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [],
@@ -6377,6 +7708,17 @@ class $$InventoryEventsTableTableManager extends RootTableManager<
                       dynamic,
                       dynamic,
                       dynamic>>(state) {
+                if (inventoryId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.inventoryId,
+                    referencedTable:
+                        $$InventoryEventsTableReferences._inventoryIdTable(db),
+                    referencedColumn: $$InventoryEventsTableReferences
+                        ._inventoryIdTable(db)
+                        .id,
+                  ) as T;
+                }
                 if (productId) {
                   state = state.withJoin(
                     currentTable: table,
@@ -6387,14 +7729,14 @@ class $$InventoryEventsTableTableManager extends RootTableManager<
                         $$InventoryEventsTableReferences._productIdTable(db).id,
                   ) as T;
                 }
-                if (pantryItemId) {
+                if (inventoryItemId) {
                   state = state.withJoin(
                     currentTable: table,
-                    currentColumn: table.pantryItemId,
-                    referencedTable:
-                        $$InventoryEventsTableReferences._pantryItemIdTable(db),
+                    currentColumn: table.inventoryItemId,
+                    referencedTable: $$InventoryEventsTableReferences
+                        ._inventoryItemIdTable(db),
                     referencedColumn: $$InventoryEventsTableReferences
-                        ._pantryItemIdTable(db)
+                        ._inventoryItemIdTable(db)
                         .id,
                   ) as T;
                 }
@@ -6420,7 +7762,8 @@ typedef $$InventoryEventsTableProcessedTableManager = ProcessedTableManager<
     $$InventoryEventsTableUpdateCompanionBuilder,
     (InventoryEvent, $$InventoryEventsTableReferences),
     InventoryEvent,
-    PrefetchHooks Function({bool productId, bool pantryItemId})>;
+    PrefetchHooks Function(
+        {bool inventoryId, bool productId, bool inventoryItemId})>;
 typedef $$PriceObservationsTableCreateCompanionBuilder
     = PriceObservationsCompanion Function({
   required String id,
@@ -6770,12 +8113,14 @@ class $AppDatabaseManager {
       $$ProductsTableTableManager(_db, _db.products);
   $$ProductAliasesTableTableManager get productAliases =>
       $$ProductAliasesTableTableManager(_db, _db.productAliases);
+  $$InventoriesTableTableManager get inventories =>
+      $$InventoriesTableTableManager(_db, _db.inventories);
+  $$InventoryItemsTableTableManager get inventoryItems =>
+      $$InventoryItemsTableTableManager(_db, _db.inventoryItems);
   $$ShoppingListsTableTableManager get shoppingLists =>
       $$ShoppingListsTableTableManager(_db, _db.shoppingLists);
   $$ShoppingListItemsTableTableManager get shoppingListItems =>
       $$ShoppingListItemsTableTableManager(_db, _db.shoppingListItems);
-  $$PantryItemsTableTableManager get pantryItems =>
-      $$PantryItemsTableTableManager(_db, _db.pantryItems);
   $$InventoryEventsTableTableManager get inventoryEvents =>
       $$InventoryEventsTableTableManager(_db, _db.inventoryEvents);
   $$PriceObservationsTableTableManager get priceObservations =>
@@ -6787,14 +8132,16 @@ mixin _$ProductsDaoMixin on DatabaseAccessor<AppDatabase> {
   $ProductAliasesTable get productAliases => attachedDatabase.productAliases;
 }
 mixin _$ShoppingListsDaoMixin on DatabaseAccessor<AppDatabase> {
+  $InventoriesTable get inventories => attachedDatabase.inventories;
   $ShoppingListsTable get shoppingLists => attachedDatabase.shoppingLists;
   $ProductsTable get products => attachedDatabase.products;
   $ShoppingListItemsTable get shoppingListItems =>
       attachedDatabase.shoppingListItems;
 }
 mixin _$PantryDaoMixin on DatabaseAccessor<AppDatabase> {
+  $InventoriesTable get inventories => attachedDatabase.inventories;
   $ProductsTable get products => attachedDatabase.products;
-  $PantryItemsTable get pantryItems => attachedDatabase.pantryItems;
+  $InventoryItemsTable get inventoryItems => attachedDatabase.inventoryItems;
   $InventoryEventsTable get inventoryEvents => attachedDatabase.inventoryEvents;
 }
 mixin _$PriceObservationsDaoMixin on DatabaseAccessor<AppDatabase> {

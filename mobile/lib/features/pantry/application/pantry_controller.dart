@@ -32,7 +32,7 @@ final pantryUuidProvider = Provider<Uuid>((Ref ref) {
 });
 
 final pantryItemsStreamProvider = StreamProvider<List<PantryItem>>((Ref ref) {
-  return ref.watch(pantryRepositoryProvider).watchPantryItems();
+  return ref.watch(pantryRepositoryProvider).watchInventoryItems();
 });
 
 final runningLowPantryItemsProvider = Provider<List<PantryItem>>((Ref ref) {
@@ -51,6 +51,7 @@ class PantryController extends Notifier<PantryState> {
   late final PantryRepository _pantryRepository;
   late final ProductRepository _productRepository;
   late final Uuid _uuid;
+  String? _defaultInventoryId;
 
   StreamSubscription<List<PantryItem>>? _itemsSubscription;
   StreamSubscription<List<Product>>? _productsSubscription;
@@ -66,7 +67,7 @@ class PantryController extends Notifier<PantryState> {
       _productsSubscription?.cancel();
     });
 
-    _itemsSubscription = _pantryRepository.watchPantryItems().listen(_onItemsChanged);
+    _itemsSubscription = _pantryRepository.watchInventoryItems().listen(_onItemsChanged);
     _productsSubscription = _productRepository.watchActiveProducts().listen((List<Product> products) {
       state = state.copyWith(products: products);
     });
@@ -103,10 +104,12 @@ class PantryController extends Notifier<PantryState> {
 
     final double? quantity = double.tryParse(state.quantityInput.trim());
     final Unit? unit = _safeUnit(state.unitCode);
+    _defaultInventoryId ??= await _pantryRepository.ensureDefaultInventoryId();
 
     final DateTime now = DateTime.now();
     final PantryItem item = PantryItem(
       id: _uuid.v4(),
+      inventoryId: _defaultInventoryId!,
       productId: productId,
       rawName: trimmedName.isEmpty ? null : trimmedName,
       quantityEstimated: quantity,
@@ -135,7 +138,7 @@ class PantryController extends Notifier<PantryState> {
       clearSelectedProduct: true,
       quantityInput: '',
       unitCode: 'unit',
-      message: 'Pantry item added.',
+      message: 'Inventory item added.',
     );
   }
 
@@ -253,13 +256,13 @@ class PantryController extends Notifier<PantryState> {
   }) async {
     try {
       state = state.copyWith(isBusy: true, clearMessage: true);
-      await _pantryRepository.savePantryItem(item);
+      await _pantryRepository.saveInventoryItem(item);
       await _pantryRepository.addInventoryEvent(event);
       state = state.copyWith(isBusy: false);
     } catch (_) {
       state = state.copyWith(
         isBusy: false,
-        message: 'Unable to save pantry update.',
+        message: 'Unable to save inventory update.',
       );
     }
   }
@@ -298,7 +301,9 @@ class PantryController extends Notifier<PantryState> {
   }) {
     return InventoryEvent(
       id: _uuid.v4(),
+      inventoryId: pantryItem.inventoryId,
       productId: pantryItem.productId,
+      inventoryItemId: pantryItem.id,
       pantryItemId: pantryItem.id,
       eventType: eventType,
       quantity: quantity,

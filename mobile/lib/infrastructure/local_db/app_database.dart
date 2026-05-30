@@ -13,21 +13,25 @@ part 'daos/price_observations_dao.dart';
 part 'daos/products_dao.dart';
 part 'daos/shopping_lists_dao.dart';
 part 'migrations/app_migrations.dart';
+part 'tables/inventories.dart';
 part 'tables/inventory_events.dart';
-part 'tables/pantry_items.dart';
+part 'tables/inventory_items.dart';
 part 'tables/price_observations.dart';
 part 'tables/product_aliases.dart';
 part 'tables/products.dart';
 part 'tables/shopping_list_items.dart';
 part 'tables/shopping_lists.dart';
 
+const String defaultInventoryId = 'inventory-default-pantry';
+
 @DriftDatabase(
   tables: <Type>[
     Products,
     ProductAliases,
+    Inventories,
+    InventoryItems,
     ShoppingLists,
     ShoppingListItems,
-    PantryItems,
     InventoryEvents,
     PriceObservations,
   ],
@@ -42,7 +46,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase({QueryExecutor? executor}) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => buildMigrationStrategy(this);
@@ -57,7 +61,31 @@ class AppDatabase extends _$AppDatabase {
         await delete(table).go();
       }
       await seedCommonProductsAndAliases();
+      await seedDefaultInventory();
     });
+  }
+
+  Future<void> seedDefaultInventory() async {
+    final int existingInventories = await (selectOnly(inventories)
+          ..addColumns(<Expression<Object>>[inventories.id.count()]))
+        .map((TypedResult row) => row.read(inventories.id.count()) ?? 0)
+        .getSingle();
+
+    if (existingInventories > 0) {
+      return;
+    }
+
+    final DateTime now = DateTime.now();
+    await into(inventories).insert(
+      InventoriesCompanion.insert(
+        id: defaultInventoryId,
+        name: 'Pantry',
+        createdAt: Value(now),
+        updatedAt: Value(now),
+        syncStatus: const Value('local_only'),
+        version: const Value(1),
+      ),
+    );
   }
 
   Future<void> seedCommonProductsAndAliases() async {

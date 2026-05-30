@@ -10,6 +10,8 @@ _$InventoryEventImpl _$$InventoryEventImplFromJson(Map<String, dynamic> json) =>
     _$InventoryEventImpl(
       id: json['id'] as String,
       productId: json['productId'] as String?,
+      inventoryId: json['inventoryId'] as String?,
+      inventoryItemId: json['inventoryItemId'] as String?,
       pantryItemId: json['pantryItemId'] as String?,
       eventType: $enumDecode(_$InventoryEventTypeEnumMap, json['eventType']),
       quantity: (json['quantity'] as num?)?.toDouble(),
@@ -26,6 +28,8 @@ Map<String, dynamic> _$$InventoryEventImplToJson(
     <String, dynamic>{
       'id': instance.id,
       'productId': instance.productId,
+      'inventoryId': instance.inventoryId,
+      'inventoryItemId': instance.inventoryItemId,
       'pantryItemId': instance.pantryItemId,
       'eventType': _$InventoryEventTypeEnumMap[instance.eventType]!,
       'quantity': instance.quantity,

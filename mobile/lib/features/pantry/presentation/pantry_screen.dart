@@ -48,12 +48,12 @@ class _PantryScreenState extends ConsumerState<PantryScreen> {
     _syncController(_quantityController, state.quantityInput);
 
     return AppScaffold(
-      title: 'Pantry',
+        title: 'Inventory',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           const SectionHeader(
-            title: 'Pantry inventory',
+              title: 'Inventory overview',
             subtitle: 'Track stock, low items, and finished essentials.',
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -97,11 +97,11 @@ class _PantryScreenState extends ConsumerState<PantryScreen> {
             child: state.hasAnyItems
                 ? _PantrySections(state: state)
                 : EmptyState(
-                    title: 'No pantry items yet',
+                  title: 'No inventory items yet',
                     description:
-                        'Add pantry items manually and keep your home essentials in sync.',
+                    'Add inventory items manually and keep your home essentials in sync.',
                     icon: Icons.inventory_2_outlined,
-                    primaryActionLabel: 'Add pantry item',
+                  primaryActionLabel: 'Add inventory item',
                     onPrimaryActionPressed: controller.addPantryItem,
                   ),
           ),
@@ -151,7 +151,7 @@ class _AddPantryItemCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Text('Add pantry item', style: Theme.of(context).textTheme.titleMedium),
+          Text('Add inventory item', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: AppSpacing.sm),
           DropdownButtonFormField<String>(
             key: ValueKey('pantry-product-${state.selectedProductId ?? 'none'}'),
@@ -207,7 +207,7 @@ class _AddPantryItemCard extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.sm),
           AppButton(
-            label: 'Add item to pantry',
+            label: 'Add item to inventory',
             onPressed: state.isBusy ? null : onAddPressed,
             icon: Icons.add_circle_outline,
           ),
@@ -281,7 +281,7 @@ class _PantryItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String title = item.rawName ?? item.productId ?? 'Unnamed pantry item';
+    final String title = item.rawName ?? item.productId ?? 'Unnamed inventory item';
     final String quantityText = item.quantityEstimated == null
         ? 'Quantity unknown'
         : '${item.quantityEstimated} ${item.unit?.code ?? ''}'.trim();
@@ -398,7 +398,7 @@ class _AdjustSheetState extends State<_AdjustSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Text('Adjust pantry quantity', style: Theme.of(context).textTheme.titleMedium),
+          Text('Adjust inventory quantity', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: AppSpacing.sm),
           AppTextField(
             label: 'Quantity',

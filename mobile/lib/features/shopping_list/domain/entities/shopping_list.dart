@@ -13,6 +13,7 @@ enum ShoppingListStatus {
 class ShoppingList with _$ShoppingList {
   const factory ShoppingList({
     required String id,
+    String? inventoryId,
     required String name,
     required ShoppingListStatus status,
     required DateTime createdAt,

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cartalyst_mobile/core/domain/value_objects/unit.dart';
 import 'package:cartalyst_mobile/features/pantry/application/pantry_controller.dart';
 import 'package:cartalyst_mobile/features/pantry/application/pantry_state.dart';
+import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory.dart';
 import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory_event.dart';
 import 'package:cartalyst_mobile/features/pantry/domain/entities/pantry_item.dart';
 import 'package:cartalyst_mobile/features/pantry/domain/repositories/pantry_repository.dart';
@@ -73,6 +74,7 @@ void main() {
       final PantryState state = container.read(pantryControllerProvider);
       expect(state.inStockItems.length, 1);
       expect(state.inStockItems.first.productId, 'product-eggs');
+      expect(state.inStockItems.first.inventoryId, isNotEmpty);
       expect(state.inStockItems.first.status, PantryItemStatus.inStock);
     });
 
@@ -164,6 +166,11 @@ void main() {
 }
 
 class FakePantryRepository implements PantryRepository {
+  final StreamController<List<Inventory>> _inventoriesController =
+      StreamController<List<Inventory>>.broadcast();
+
+  final List<Inventory> _inventories = <Inventory>[];
+
   final StreamController<List<PantryItem>> _itemsController =
       StreamController<List<PantryItem>>.broadcast();
 
@@ -179,7 +186,13 @@ class FakePantryRepository implements PantryRepository {
       .toList(growable: false);
 
   @override
-  Stream<List<PantryItem>> watchPantryItems() {
+  Stream<List<Inventory>> watchInventories() {
+    Future<void>.microtask(() => _inventoriesController.add(_inventories));
+    return _inventoriesController.stream;
+  }
+
+  @override
+  Stream<List<PantryItem>> watchInventoryItems() {
     Future<void>.microtask(_emitItems);
     return _itemsController.stream;
   }
@@ -191,7 +204,38 @@ class FakePantryRepository implements PantryRepository {
   }
 
   @override
-  Future<void> savePantryItem(PantryItem item) async {
+  Future<void> saveInventory(Inventory inventory) async {
+    final int index = _inventories.indexWhere((Inventory element) => element.id == inventory.id);
+    if (index >= 0) {
+      _inventories[index] = inventory;
+    } else {
+      _inventories.add(inventory);
+    }
+    _inventoriesController.add(_inventories);
+  }
+
+  @override
+  Future<String> ensureDefaultInventoryId() async {
+    if (_inventories.isNotEmpty) {
+      return _inventories.first.id;
+    }
+
+    final DateTime now = DateTime.now();
+    const String id = 'inventory-test-default';
+    final Inventory inventory = Inventory(
+      id: id,
+      name: 'Pantry',
+      createdAt: now,
+      updatedAt: now,
+      syncStatus: 'pending_sync',
+      version: 1,
+    );
+    await saveInventory(inventory);
+    return id;
+  }
+
+  @override
+  Future<void> saveInventoryItem(PantryItem item) async {
     final int index = _items.indexWhere((PantryItem element) => element.id == item.id);
     if (index >= 0) {
       _items[index] = item;
@@ -215,6 +259,7 @@ class FakePantryRepository implements PantryRepository {
   }
 
   Future<void> dispose() async {
+    await _inventoriesController.close();
     await _itemsController.close();
     await _eventsController.close();
   }
