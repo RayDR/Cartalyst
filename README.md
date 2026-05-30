@@ -2,7 +2,7 @@
 
 **Tagline:** Your smart shopping analyst.
 
-Cartalyst is a local-first grocery intelligence mobile app. It helps people build grocery lists quickly, compare unit prices, track pantry inventory, and make smarter shopping decisions.
+Cartalyst is a local-first grocery intelligence mobile app. It helps people manage multiple shopping lists, track multiple inventories, compare options by unit price, and make smarter shopping decisions.
 
 This repository currently contains foundational product and architecture documentation for the first delivery phase.
 
@@ -55,22 +55,23 @@ Cartalyst should feel:
 - Smart
 - Shopping-focused
 
-## V1 Scope
+## V1.1 Scope
 
-- Fast grocery list
-- Quick product add
-- Product suggestions
-- Unit price comparator
-- Simple pantry inventory
+- Multiple shopping lists
+- Multiple inventories
+- Optional list-to-inventory linking
+- Quick product add and suggestions
+- Price comparison with up to 5 options
 - Local persistence
+- Safe editing with undo and draft behavior for list edits
 - Polished mobile UX
 
-## V1 Out Of Scope
+## V1.1 Out Of Scope
 
 - Real authentication
 - Backend sync
 - Receipt OCR
-- AI predictions
+- AI and AI predictions
 - Geofencing
 - Push notifications
 - Retailer integrations
@@ -109,6 +110,7 @@ Cartalyst should feel:
 ## Documentation Index
 
 - [Product Blueprint](docs/product/product-blueprint.md)
+- [V1.1 Scope](docs/product/v1.1-scope.md)
 - [V1 Definition of Done](docs/product/v1-definition-of-done.md)
 - [Mobile Architecture](docs/architecture/mobile-architecture.md)
 - [Local-First Strategy](docs/architecture/local-first-strategy.md)

@@ -2,7 +2,7 @@
 
 ## Goals
 
-Define a production-quality mobile architecture that supports fast iteration in V1, strong testability, and smooth evolution toward sync and AI-assisted capabilities.
+Define a production-quality mobile architecture that supports fast iteration in V1.1, strong testability, and smooth evolution toward future sync capabilities.
 
 ## Technology Stack
 
@@ -25,6 +25,17 @@ Define a production-quality mobile architecture that supports fast iteration in 
 - Testable domain logic
 - No business logic in widgets
 - No persistence implementation leaking into UI
+
+## V1.1 Product-Driven Constraints
+
+- Multiple shopping lists are first-class and independently editable.
+- Multiple inventories are first-class and user-defined.
+- Pantry is modeled as an inventory name, not a dedicated hardcoded domain concept.
+- Shopping lists can optionally link to an inventory.
+- Home is simplified to list creation and recently modified lists.
+- Bottom navigation structure is: Home, Lists, Inventories, Compare, Settings.
+- Price comparison supports up to 5 options in a single comparison flow.
+- List editing supports draft state and undo-friendly operations.
 
 ## Architectural Style
 
@@ -60,6 +71,8 @@ Guidelines:
 - Keep providers close to feature boundaries.
 - Keep domain logic inside use cases or domain services.
 - UI should consume prepared state, not execute business logic.
+- For list editing, keep draft state isolated from committed state and expose explicit commit or discard transitions.
+- For undo support, controllers should emit reversible actions where applicable.
 
 ## Routing
 
@@ -86,9 +99,10 @@ Guidelines:
 - Presentation layer: widget tests for critical flows
 
 Priority test targets in V1:
-- Product add flow
-- Unit price comparator accuracy
-- Pantry quantity updates
+- Multi-list creation and modification flows
+- Inventory creation and list-to-inventory linking flows
+- Unit price comparator accuracy across up to 5 options
+- Draft and undo list-edit behavior
 
 ## Theming And UX Foundation
 

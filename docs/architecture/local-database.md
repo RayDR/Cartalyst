@@ -49,6 +49,7 @@ Stores user shopping lists and lifecycle state.
 
 Key fields:
 - `id` UUID string
+- `inventoryId` nullable
 - `name`
 - `status`
 - `createdAt`, `updatedAt`, `deletedAt`
@@ -71,12 +72,24 @@ Key fields:
 - `createdAt`, `updatedAt`, `purchasedAt`, `deletedAt`
 - `syncStatus`, `version`
 
-### pantry_items
+### inventories
 
-Stores pantry inventory snapshots.
+Stores user-defined inventories.
 
 Key fields:
 - `id` UUID string
+- `name`
+- `description` nullable
+- `createdAt`, `updatedAt`, `deletedAt`
+- `syncStatus`, `version`
+
+### inventory_items
+
+Stores item snapshots inside inventories.
+
+Key fields:
+- `id` UUID string
+- `inventoryId`
 - `productId` nullable
 - `rawName` nullable
 - `quantityEstimated` nullable
@@ -89,12 +102,13 @@ Key fields:
 
 ### inventory_events
 
-Stores immutable pantry movement events.
+Stores immutable inventory movement events.
 
 Key fields:
 - `id` UUID string
+- `inventoryId` nullable
 - `productId` nullable
-- `pantryItemId` nullable
+- `inventoryItemId` nullable
 - `eventType`
 - `quantity` nullable
 - `unit` nullable
@@ -133,7 +147,8 @@ Key fields:
 - `products`
 - `shopping_lists`
 - `shopping_list_items`
-- `pantry_items`
+- `inventories`
+- `inventory_items`
 
 ## Seed Data
 
