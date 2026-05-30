@@ -7,6 +7,7 @@ import 'package:cartalyst_mobile/core/widgets/app_list_tile.dart';
 import 'package:cartalyst_mobile/core/widgets/app_scaffold.dart';
 import 'package:cartalyst_mobile/core/widgets/app_text_field.dart';
 import 'package:cartalyst_mobile/core/widgets/empty_state.dart';
+import 'package:cartalyst_mobile/core/widgets/keyboard_aware_scroll_view.dart';
 import 'package:cartalyst_mobile/core/widgets/section_header.dart';
 import 'package:cartalyst_mobile/core/widgets/status_chip.dart';
 import 'package:cartalyst_mobile/features/inventories/application/inventories_controller.dart';
@@ -86,131 +87,138 @@ class _ListDetailScreenState extends ConsumerState<ListDetailScreen> {
       title: state.isEditMode
           ? (state.draftName ?? currentList?.name ?? 'Shopping List')
           : (currentList?.name ?? 'Shopping List'),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          if (currentList != null)
-            _EditModeBanner(
-              isEditMode: state.isEditMode,
-              hasDraft: state.hasDraft,
-              onEnterEditMode: () => controller.enterEditMode(currentList),
-              onSaveChanges: () => controller.applyDraft(currentList),
-              onCancelChanges: controller.cancelChanges,
-              onDiscardDraft: controller.discardDraft,
-            ),
-          if (currentList != null)
-            _EditableListHeader(
-              title: state.isEditMode
-                  ? (state.draftName ?? currentList.name)
-                  : currentList.name,
-              isEditMode: state.isEditMode,
-              onRename: () => _showRenameDialog(
-                context,
-                controller,
-                currentList,
+      child: KeyboardAwareScrollView(
+        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            if (currentList != null)
+              _EditModeBanner(
                 isEditMode: state.isEditMode,
+                hasDraft: state.hasDraft,
+                onEnterEditMode: () => controller.enterEditMode(currentList),
+                onSaveChanges: () => controller.applyDraft(currentList),
+                onCancelChanges: controller.cancelChanges,
+                onDiscardDraft: controller.discardDraft,
               ),
-            ),
-          if (currentList != null) _InventoryLinkCard(list: currentList),
-          const SectionHeader(
-            title: 'Quick product add',
-            subtitle: 'Type once, pick a suggestion, and keep moving.',
-          ),
-          const SizedBox(height: AppSpacing.md),
-          AppTextField(
-            label: 'Product',
-            hint: 'Try: 2 milk, huevos 18, paper towels 12 pack',
-            prefixIcon: Icons.search,
-            controller: _quickAddController,
-            onChanged: controller.updateQuickAddInput,
-            textInputAction: TextInputAction.done,
-          ),
-          if (state.suggestions.isNotEmpty) ...<Widget>[
-            const SizedBox(height: AppSpacing.sm),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: state.suggestions
-                    .map(
-                      (suggestion) => Padding(
-                        padding: const EdgeInsets.only(right: AppSpacing.xs),
-                        child: ActionChip(
-                          avatar: const Icon(Icons.local_offer_outlined),
-                          label:
-                              Text(suggestion.suggestedProduct!.canonicalName),
-                          onPressed: () => controller.addFromQuickAdd(
-                            selectedSuggestion: suggestion,
-                          ),
-                        ),
-                      ),
-                    )
-                    .toList(growable: false),
-              ),
-            ),
-          ],
-          const SizedBox(height: AppSpacing.sm),
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: AppButton(
-                  label: 'Add best match',
-                  onPressed: state.isBusy ? null : controller.addFromQuickAdd,
-                  icon: Icons.playlist_add_check_circle_outlined,
+            if (currentList != null)
+              _EditableListHeader(
+                title: state.isEditMode
+                    ? (state.draftName ?? currentList.name)
+                    : currentList.name,
+                isEditMode: state.isEditMode,
+                onRename: () => _showRenameDialog(
+                  context,
+                  controller,
+                  currentList,
+                  isEditMode: state.isEditMode,
                 ),
               ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: AppButton(
-                  label: 'Add custom',
-                  onPressed: state.isBusy ? null : controller.addCustomItem,
-                  icon: Icons.edit_note_outlined,
-                  variant: AppButtonVariant.secondary,
+            if (currentList != null) _InventoryLinkCard(list: currentList),
+            const SectionHeader(
+              title: 'Quick product add',
+              subtitle: 'Type once, pick a suggestion, and keep moving.',
+            ),
+            const SizedBox(height: AppSpacing.md),
+            AppTextField(
+              label: 'Product',
+              hint: 'Try: 2 milk, huevos 18, paper towels 12 pack',
+              prefixIcon: Icons.search,
+              controller: _quickAddController,
+              onChanged: controller.updateQuickAddInput,
+              textInputAction: TextInputAction.done,
+            ),
+            if (state.suggestions.isNotEmpty) ...<Widget>[
+              const SizedBox(height: AppSpacing.sm),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: state.suggestions
+                      .map(
+                        (suggestion) => Padding(
+                          padding: const EdgeInsets.only(right: AppSpacing.xs),
+                          child: ActionChip(
+                            avatar: const Icon(Icons.local_offer_outlined),
+                            label: Text(
+                              suggestion.suggestedProduct!.canonicalName,
+                            ),
+                            onPressed: () => controller.addFromQuickAdd(
+                              selectedSuggestion: suggestion,
+                            ),
+                          ),
+                        ),
+                      )
+                      .toList(growable: false),
                 ),
               ),
             ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-          SwitchListTile.adaptive(
-            title: const Text('One-handed shopping mode'),
-            subtitle:
-                const Text('Shows large bottom actions for the selected item.'),
-            value: state.shoppingModeEnabled,
-            onChanged: controller.setShoppingModeEnabled,
-          ),
-          if (state.errorMessage != null) ...<Widget>[
-            const SizedBox(height: AppSpacing.xs),
-            AppCard(
-              child: Row(
-                children: <Widget>[
-                  const Icon(Icons.error_outline),
-                  const SizedBox(width: AppSpacing.xs),
-                  Expanded(child: Text(state.errorMessage!)),
-                ],
-              ),
-            ),
-          ],
-          const SizedBox(height: AppSpacing.sm),
-          Expanded(
-            child: state.hasItems
-                ? _ItemsView(
-                    state: state,
-                    controller: controller,
-                    isEditMode: state.isEditMode,
-                  )
-                : EmptyState(
-                    title: 'This list is empty',
-                    description: 'Use Quick Add to build your list in seconds.',
-                    icon: Icons.shopping_cart_outlined,
-                    primaryActionLabel: 'Add custom item',
-                    onPrimaryActionPressed: controller.addCustomItem,
-                  ),
-          ),
-          if (state.shoppingModeEnabled &&
-              state.focusedItem != null) ...<Widget>[
             const SizedBox(height: AppSpacing.sm),
-            _ShoppingModeBar(item: state.focusedItem!, controller: controller),
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: AppButton(
+                    label: 'Add best match',
+                    onPressed: state.isBusy ? null : controller.addFromQuickAdd,
+                    icon: Icons.playlist_add_check_circle_outlined,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: AppButton(
+                    label: 'Add custom',
+                    onPressed: state.isBusy ? null : controller.addCustomItem,
+                    icon: Icons.edit_note_outlined,
+                    variant: AppButtonVariant.secondary,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.md),
+            SwitchListTile.adaptive(
+              title: const Text('One-handed shopping mode'),
+              subtitle: const Text(
+                'Shows large bottom actions for the selected item.',
+              ),
+              value: state.shoppingModeEnabled,
+              onChanged: controller.setShoppingModeEnabled,
+            ),
+            if (state.errorMessage != null) ...<Widget>[
+              const SizedBox(height: AppSpacing.xs),
+              AppCard(
+                child: Row(
+                  children: <Widget>[
+                    const Icon(Icons.error_outline),
+                    const SizedBox(width: AppSpacing.xs),
+                    Expanded(child: Text(state.errorMessage!)),
+                  ],
+                ),
+              ),
+            ],
+            const SizedBox(height: AppSpacing.sm),
+            if (state.hasItems)
+              _ItemsView(
+                state: state,
+                controller: controller,
+                isEditMode: state.isEditMode,
+              )
+            else
+              EmptyState(
+                title: 'This list is empty',
+                description: 'Use Quick Add to build your list in seconds.',
+                icon: Icons.shopping_cart_outlined,
+                primaryActionLabel: 'Add custom item',
+                onPrimaryActionPressed: controller.addCustomItem,
+              ),
+            if (state.shoppingModeEnabled &&
+                state.focusedItem != null) ...<Widget>[
+              const SizedBox(height: AppSpacing.sm),
+              _ShoppingModeBar(
+                item: state.focusedItem!,
+                controller: controller,
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -794,7 +802,8 @@ class _ItemsView extends StatelessWidget {
       );
     }
 
-    return ListView(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         if (state.pendingItems.isNotEmpty) ...<Widget>[
           const SectionHeader(

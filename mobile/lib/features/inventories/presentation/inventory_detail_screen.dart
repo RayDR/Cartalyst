@@ -6,6 +6,7 @@ import 'package:cartalyst_mobile/core/widgets/app_list_tile.dart';
 import 'package:cartalyst_mobile/core/widgets/app_scaffold.dart';
 import 'package:cartalyst_mobile/core/widgets/app_text_field.dart';
 import 'package:cartalyst_mobile/core/widgets/empty_state.dart';
+import 'package:cartalyst_mobile/core/widgets/keyboard_aware_scroll_view.dart';
 import 'package:cartalyst_mobile/core/widgets/section_header.dart';
 import 'package:cartalyst_mobile/core/widgets/status_chip.dart';
 import 'package:cartalyst_mobile/features/inventories/application/inventories_controller.dart';
@@ -26,8 +27,7 @@ class InventoryDetailScreen extends ConsumerStatefulWidget {
       _InventoryDetailScreenState();
 }
 
-class _InventoryDetailScreenState
-    extends ConsumerState<InventoryDetailScreen> {
+class _InventoryDetailScreenState extends ConsumerState<InventoryDetailScreen> {
   late final TextEditingController _nameController;
   late final TextEditingController _quantityController;
 
@@ -62,68 +62,69 @@ class _InventoryDetailScreenState
 
     return AppScaffold(
       title: title,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          const SectionHeader(
-            title: 'Inventory overview',
-            subtitle: 'Track stock, low items, and finished essentials.',
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Wrap(
-            spacing: AppSpacing.xs,
-            runSpacing: AppSpacing.xs,
-            children: <StatusChip>[
-              StatusChip(
-                label: 'In stock ${state.inStockItems.length}',
-                tone: StatusChipTone.success,
-              ),
-              StatusChip(
-                label: 'Running low ${state.lowItems.length}',
-                tone: StatusChipTone.warning,
-              ),
-              StatusChip(
-                label: 'Finished recent ${state.finishedItems.length}',
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-          _AddItemCard(
-            state: state,
-            nameController: _nameController,
-            quantityController: _quantityController,
-            onNameChanged: controller.updateNameInput,
-            onQuantityChanged: controller.updateQuantityInput,
-            onProductChanged: controller.updateSelectedProduct,
-            onUnitChanged: controller.updateUnitCode,
-            onAddPressed: controller.addItem,
-          ),
-          const SizedBox(height: AppSpacing.md),
-          if (state.message != null) ...<Widget>[
-            AppCard(
-              child: AppListTile(
-                title: state.message!,
-                leading: const Icon(Icons.info_outline),
-              ),
+      child: KeyboardAwareScrollView(
+        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            const SectionHeader(
+              title: 'Inventory overview',
+              subtitle: 'Track stock, low items, and finished essentials.',
             ),
             const SizedBox(height: AppSpacing.sm),
+            Wrap(
+              spacing: AppSpacing.xs,
+              runSpacing: AppSpacing.xs,
+              children: <StatusChip>[
+                StatusChip(
+                  label: 'In stock ${state.inStockItems.length}',
+                  tone: StatusChipTone.success,
+                ),
+                StatusChip(
+                  label: 'Running low ${state.lowItems.length}',
+                  tone: StatusChipTone.warning,
+                ),
+                StatusChip(
+                  label: 'Finished recent ${state.finishedItems.length}',
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.md),
+            _AddItemCard(
+              state: state,
+              nameController: _nameController,
+              quantityController: _quantityController,
+              onNameChanged: controller.updateNameInput,
+              onQuantityChanged: controller.updateQuantityInput,
+              onProductChanged: controller.updateSelectedProduct,
+              onUnitChanged: controller.updateUnitCode,
+              onAddPressed: controller.addItem,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            if (state.message != null) ...<Widget>[
+              AppCard(
+                child: AppListTile(
+                  title: state.message!,
+                  leading: const Icon(Icons.info_outline),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+            ],
+            if (state.hasAnyItems)
+              _ItemSections(
+                state: state,
+                inventoryId: widget.inventoryId,
+              )
+            else
+              EmptyState(
+                title: 'No items yet',
+                description: 'Add items to this inventory to track your stock.',
+                icon: Icons.inventory_2_outlined,
+                primaryActionLabel: 'Add item',
+                onPrimaryActionPressed: controller.addItem,
+              ),
           ],
-          Expanded(
-            child: state.hasAnyItems
-                ? _ItemSections(
-                    state: state,
-                    inventoryId: widget.inventoryId,
-                  )
-                : EmptyState(
-                    title: 'No items yet',
-                    description:
-                        'Add items to this inventory to track your stock.',
-                    icon: Icons.inventory_2_outlined,
-                    primaryActionLabel: 'Add item',
-                    onPrimaryActionPressed: controller.addItem,
-                  ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -167,8 +168,8 @@ class _AddItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final List<String> units =
-        Unit.supportedCodes.toList(growable: false)..sort();
+    final List<String> units = Unit.supportedCodes.toList(growable: false)
+      ..sort();
 
     return AppCard(
       child: Column(
@@ -257,7 +258,8 @@ class _ItemSections extends ConsumerWidget {
     final InventoryDetailController controller =
         ref.read(inventoryDetailControllerProvider(inventoryId).notifier);
 
-    return ListView(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         if (state.inStockItems.isNotEmpty) ...<Widget>[
           const SectionHeader(title: 'In stock', subtitle: 'Ready to use.'),
@@ -279,8 +281,11 @@ class _ItemSections extends ConsumerWidget {
           ...state.lowItems.map(
             (InventoryItem item) => Padding(
               padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-              child:
-                  _ItemCard(item: item, controller: controller, highlightLow: true),
+              child: _ItemCard(
+                item: item,
+                controller: controller,
+                highlightLow: true,
+              ),
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -316,8 +321,7 @@ class _ItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String title =
-        item.rawName ?? item.productId ?? 'Unnamed item';
+    final String title = item.rawName ?? item.productId ?? 'Unnamed item';
     final String quantityText = item.quantityEstimated == null
         ? 'Quantity unknown'
         : '${item.quantityEstimated} ${item.unit?.code ?? ''}'.trim();

@@ -5,6 +5,7 @@ import 'package:cartalyst_mobile/core/widgets/app_list_tile.dart';
 import 'package:cartalyst_mobile/core/widgets/app_scaffold.dart';
 import 'package:cartalyst_mobile/core/widgets/app_text_field.dart';
 import 'package:cartalyst_mobile/core/widgets/empty_state.dart';
+import 'package:cartalyst_mobile/core/widgets/keyboard_aware_scroll_view.dart';
 import 'package:cartalyst_mobile/core/widgets/section_header.dart';
 import 'package:cartalyst_mobile/core/widgets/status_chip.dart';
 import 'package:cartalyst_mobile/features/price_compare/application/price_compare_controller.dart';
@@ -44,6 +45,7 @@ class _PriceCompareScreenState extends ConsumerState<PriceCompareScreen> {
     final PriceCompareState state = ref.watch(priceCompareControllerProvider);
     final PriceCompareController controller =
         ref.read(priceCompareControllerProvider.notifier);
+    final bool hasMinimumOptions = state.options.length >= 2;
 
     return AppScaffold(
       title: 'Price Compare',
@@ -51,7 +53,7 @@ class _PriceCompareScreenState extends ConsumerState<PriceCompareScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Expanded(
-            child: SingleChildScrollView(
+            child: KeyboardAwareScrollView(
               padding: const EdgeInsets.only(bottom: AppSpacing.sm),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -77,63 +79,105 @@ class _PriceCompareScreenState extends ConsumerState<PriceCompareScreen> {
                     ],
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  ...state.options.asMap().entries.map(
-                    (MapEntry<int, PriceCompareOptionDraft> entry) {
-                      final PriceCompareOptionDraft option = entry.value;
-                      final TextEditingController priceController =
-                          _controllerFor(
-                        _priceControllers,
-                        option.id,
-                        option.price,
-                      );
-                      final TextEditingController quantityController =
-                          _controllerFor(
-                        _quantityControllers,
-                        option.id,
-                        option.quantity,
-                      );
+                  if (!hasMinimumOptions)
+                    AppCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text(
+                            'Comparison options are unavailable.',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: AppSpacing.xs),
+                          const Text(
+                            'Reset to recover the default two-option form.',
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                          AppButton(
+                            label: 'Reset options',
+                            onPressed: controller.reset,
+                            icon: Icons.refresh,
+                            expanded: false,
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    ...state.options.asMap().entries.map(
+                      (MapEntry<int, PriceCompareOptionDraft> entry) {
+                        final PriceCompareOptionDraft option = entry.value;
+                        final TextEditingController priceController =
+                            _controllerFor(
+                          _priceControllers,
+                          option.id,
+                          option.price,
+                        );
+                        final TextEditingController quantityController =
+                            _controllerFor(
+                          _quantityControllers,
+                          option.id,
+                          option.quantity,
+                        );
 
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                        child: option.showsCompactCard
-                            ? _OptionCompactCard(
-                                option: option,
-                                onEdit: () => controller.editOption(option.id),
-                                onRemove: state.canRemoveOptions
-                                    ? () => controller.removeOption(option.id)
-                                    : null,
-                              )
-                            : _OptionEditorCard(
-                                option: option,
-                                products: state.products,
-                                unitOptions: PriceCompareController.unitOptions,
-                                canRemove: state.canRemoveOptions,
-                                priceController: priceController,
-                                quantityController: quantityController,
-                                onPriceChanged: (String value) => controller
-                                    .updateOptionPrice(option.id, value),
-                                onQuantityChanged: (String value) => controller
-                                    .updateOptionQuantity(option.id, value),
-                                onUnitChanged: (String? value) => controller
-                                    .updateOptionUnit(option.id, value),
-                                onProductChanged: (String? value) => controller
-                                    .updateOptionProduct(option.id, value),
-                                onDoneEditing: option.hasRequiredFields
-                                    ? () => controller.collapseOption(option.id)
-                                    : null,
-                                onRemove: state.canRemoveOptions
-                                    ? () => controller.removeOption(option.id)
-                                    : null,
-                              ),
-                      );
-                    },
-                  ),
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                          child: option.showsCompactCard
+                              ? _OptionCompactCard(
+                                  option: option,
+                                  onEdit: () =>
+                                      controller.editOption(option.id),
+                                  onRemove: state.canRemoveOptions
+                                      ? () => controller.removeOption(option.id)
+                                      : null,
+                                )
+                              : _OptionEditorCard(
+                                  option: option,
+                                  products: state.products,
+                                  unitOptions:
+                                      PriceCompareController.unitOptions,
+                                  canRemove: state.canRemoveOptions,
+                                  priceController: priceController,
+                                  quantityController: quantityController,
+                                  onPriceChanged: (String value) => controller
+                                      .updateOptionPrice(option.id, value),
+                                  onQuantityChanged: (String value) =>
+                                      controller.updateOptionQuantity(
+                                    option.id,
+                                    value,
+                                  ),
+                                  onUnitChanged: (String? value) => controller
+                                      .updateOptionUnit(option.id, value),
+                                  onProductChanged: (String? value) =>
+                                      controller.updateOptionProduct(
+                                    option.id,
+                                    value,
+                                  ),
+                                  onDoneEditing: option.hasRequiredFields
+                                      ? () =>
+                                          controller.collapseOption(option.id)
+                                      : null,
+                                  onRemove: state.canRemoveOptions
+                                      ? () => controller.removeOption(option.id)
+                                      : null,
+                                ),
+                        );
+                      },
+                    ),
                   if (state.message != null &&
                       state.comparisonResult == null) ...<Widget>[
                     AppCard(child: Text(state.message!)),
                     const SizedBox(height: AppSpacing.sm),
                   ],
-                  if (state.comparisonResult == null)
+                  if (!hasMinimumOptions)
+                    EmptyState(
+                      title: 'Price compare unavailable',
+                      description:
+                          'Tap reset to restore the default comparison form.',
+                      icon: Icons.warning_amber_outlined,
+                      primaryActionLabel: 'Reset',
+                      onPrimaryActionPressed: controller.reset,
+                    )
+                  else if (state.comparisonResult == null)
                     EmptyState(
                       title: 'No comparison yet',
                       description:

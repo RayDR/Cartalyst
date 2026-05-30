@@ -2,6 +2,7 @@ import 'package:cartalyst_mobile/core/design/app_spacing.dart';
 import 'package:cartalyst_mobile/core/widgets/app_card.dart';
 import 'package:cartalyst_mobile/core/widgets/app_list_tile.dart';
 import 'package:cartalyst_mobile/core/widgets/empty_state.dart';
+import 'package:cartalyst_mobile/core/widgets/keyboard_aware_scroll_view.dart';
 import 'package:cartalyst_mobile/features/inventories/application/inventories_controller.dart';
 import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory.dart';
 import 'package:cartalyst_mobile/features/shopping_list/application/lists_controller.dart';
@@ -35,57 +36,84 @@ class ListsScreen extends ConsumerWidget {
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.md),
-          child: state.isEmpty
-              ? EmptyState(
-                  title: 'No lists yet',
-                  description: 'Create a list to start tracking your shopping.',
-                  icon: Icons.shopping_cart_outlined,
-                  primaryActionLabel: 'Create my first list',
-                  onPrimaryActionPressed: () =>
-                      _showCreateDialog(context, controller),
-                )
-              : ListView.separated(
-                  padding: const EdgeInsets.only(bottom: 80),
-                  itemCount: state.lists.length,
-                  separatorBuilder: (_, __) =>
-                      const SizedBox(height: AppSpacing.xs),
-                  itemBuilder: (BuildContext context, int index) {
-                    final ShoppingList list = state.lists[index];
-                    return Dismissible(
-                      key: ValueKey<String>(list.id),
-                      direction: DismissDirection.endToStart,
-                      background: const SizedBox.shrink(),
-                      secondaryBackground: Container(
-                        margin: const EdgeInsets.only(bottom: AppSpacing.xs),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.md,
+          child: Column(
+            children: <Widget>[
+              if (state.errorMessage != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                  child: AppCard(
+                    child: Row(
+                      children: <Widget>[
+                        const Icon(Icons.error_outline),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(child: Text(state.errorMessage!)),
+                        TextButton(
+                          onPressed: controller.refresh,
+                          child: const Text('Retry'),
                         ),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.errorContainer,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        alignment: Alignment.centerRight,
-                        child: const Icon(Icons.delete_outline),
-                      ),
-                      onDismissed: (_) => _deleteListWithUndo(
-                        context,
-                        controller,
-                        list,
-                      ),
-                      child: _ListCard(
-                        list: list,
-                        inventoryName: list.inventoryId == null
-                            ? null
-                            : inventoriesById[list.inventoryId!]?.name,
-                        onTap: () => context.go('/lists/${list.id}'),
-                        onRename: () =>
-                            _showRenameDialog(context, controller, list),
-                        onDelete: () =>
-                            _confirmDelete(context, controller, list),
-                      ),
-                    );
-                  },
+                      ],
+                    ),
+                  ),
                 ),
+              Expanded(
+                child: state.isEmpty
+                    ? EmptyState(
+                        title: 'No lists yet',
+                        description:
+                            'Create a list to start tracking your shopping.',
+                        icon: Icons.shopping_cart_outlined,
+                        primaryActionLabel: 'Create my first list',
+                        onPrimaryActionPressed: () =>
+                            _showCreateDialog(context, controller),
+                      )
+                    : ListView.separated(
+                        padding: const EdgeInsets.only(bottom: 80),
+                        itemCount: state.lists.length,
+                        separatorBuilder: (_, __) =>
+                            const SizedBox(height: AppSpacing.xs),
+                        itemBuilder: (BuildContext context, int index) {
+                          final ShoppingList list = state.lists[index];
+                          return Dismissible(
+                            key: ValueKey<String>(list.id),
+                            direction: DismissDirection.endToStart,
+                            background: const SizedBox.shrink(),
+                            secondaryBackground: Container(
+                              margin:
+                                  const EdgeInsets.only(bottom: AppSpacing.xs),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.md,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .errorContainer,
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              alignment: Alignment.centerRight,
+                              child: const Icon(Icons.delete_outline),
+                            ),
+                            onDismissed: (_) => _deleteListWithUndo(
+                              context,
+                              controller,
+                              list,
+                            ),
+                            child: _ListCard(
+                              list: list,
+                              inventoryName: list.inventoryId == null
+                                  ? null
+                                  : inventoriesById[list.inventoryId!]?.name,
+                              onTap: () => context.go('/lists/${list.id}'),
+                              onRename: () =>
+                                  _showRenameDialog(context, controller, list),
+                              onDelete: () =>
+                                  _confirmDelete(context, controller, list),
+                            ),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -103,9 +131,23 @@ class ListsScreen extends ConsumerWidget {
       draft.name,
       inventoryId: draft.inventoryId,
     );
-    if (newId != null && context.mounted) {
-      context.go('/lists/$newId');
+    if (!context.mounted) {
+      return;
     }
+    if (newId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Unable to create list. Try again.')),
+      );
+      return;
+    }
+
+    final String message = draft.inventoryId == null
+        ? 'List created'
+        : 'List created and linked to inventory';
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+    context.go('/lists/$newId');
   }
 
   Future<void> _showRenameDialog(
@@ -325,6 +367,7 @@ class _ListComposerSheetState extends ConsumerState<_ListComposerSheet> {
   Widget build(BuildContext context) {
     final List<Inventory> inventories =
         ref.watch(inventoriesControllerProvider).inventories;
+    final double maxHeight = MediaQuery.sizeOf(context).height * 0.85;
 
     return Padding(
       padding: EdgeInsets.fromLTRB(
@@ -333,81 +376,88 @@ class _ListComposerSheetState extends ConsumerState<_ListComposerSheet> {
         AppSpacing.md,
         AppSpacing.md + MediaQuery.viewInsetsOf(context).bottom,
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text('New list', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: AppSpacing.md),
-          const Text('You can skip inventory linking now and change it later.'),
-          const SizedBox(height: AppSpacing.md),
-          TextField(
-            controller: _controller,
-            autofocus: true,
-            textInputAction: TextInputAction.done,
-            decoration: const InputDecoration(
-              labelText: 'List name',
-              hintText: 'Example: Weekly groceries',
-            ),
-            onSubmitted: (_) => _submit(),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            'Linked inventory (optional)',
-            style: Theme.of(context).textTheme.titleSmall,
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          _InventoryChoiceTile(
-            label: 'No inventory',
-            subtitle: 'Keep this list standalone for now.',
-            selected: _selectedInventoryId == null,
-            onTap: () {
-              setState(() {
-                _selectedInventoryId = null;
-              });
-            },
-          ),
-          if (inventories.isEmpty)
-            const Padding(
-              padding: EdgeInsets.only(top: AppSpacing.xs),
-              child: Text(
-                'No inventories yet. Create one below if you want to link now.',
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: maxHeight),
+        child: KeyboardAwareScrollView(
+          fillViewport: true,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text('New list', style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: AppSpacing.md),
+              const Text(
+                'You can skip inventory linking now and change it later.',
               ),
-            )
-          else
-            ...inventories.map(
-              (Inventory inventory) => _InventoryChoiceTile(
-                label: inventory.name,
-                selected: _selectedInventoryId == inventory.id,
+              const SizedBox(height: AppSpacing.md),
+              TextField(
+                controller: _controller,
+                autofocus: true,
+                textInputAction: TextInputAction.done,
+                decoration: const InputDecoration(
+                  labelText: 'List name',
+                  hintText: 'Example: Weekly groceries',
+                ),
+                onSubmitted: (_) => _submit(),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                'Linked inventory (optional)',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              _InventoryChoiceTile(
+                label: 'No inventory',
+                subtitle: 'Keep this list standalone for now.',
+                selected: _selectedInventoryId == null,
                 onTap: () {
                   setState(() {
-                    _selectedInventoryId = inventory.id;
+                    _selectedInventoryId = null;
                   });
                 },
               ),
-            ),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton.icon(
-              onPressed: () => _createAndSelectInventory(context),
-              icon: const Icon(Icons.add_circle_outline),
-              label: const Text('Create inventory and link'),
-            ),
+              if (inventories.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.only(top: AppSpacing.xs),
+                  child: Text(
+                    'No inventories yet. Create one below if you want to link now.',
+                  ),
+                )
+              else
+                ...inventories.map(
+                  (Inventory inventory) => _InventoryChoiceTile(
+                    label: inventory.name,
+                    selected: _selectedInventoryId == inventory.id,
+                    onTap: () {
+                      setState(() {
+                        _selectedInventoryId = inventory.id;
+                      });
+                    },
+                  ),
+                ),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: _createAndSelectInventory,
+                  icon: const Icon(Icons.add_circle_outline),
+                  label: const Text('Create inventory and link'),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: _submit,
+                  child: const Text('Create list'),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: AppSpacing.sm),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: _submit,
-              child: const Text('Create list'),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 
-  Future<void> _createAndSelectInventory(BuildContext context) async {
+  Future<void> _createAndSelectInventory() async {
     final String? name = await showDialog<String>(
       context: context,
       builder: (BuildContext context) => const _InventoryNameDialog(),
@@ -419,13 +469,23 @@ class _ListComposerSheetState extends ConsumerState<_ListComposerSheet> {
     final String? inventoryId = await ref
         .read(inventoriesControllerProvider.notifier)
         .createInventory(name);
-    if (inventoryId == null || !mounted) {
+    if (!mounted) {
+      return;
+    }
+    if (inventoryId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Unable to create inventory. Try again.')),
+      );
       return;
     }
 
     setState(() {
       _selectedInventoryId = inventoryId;
     });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Inventory created and selected.')),
+    );
   }
 
   void _submit() {

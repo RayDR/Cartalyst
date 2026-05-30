@@ -31,10 +31,22 @@ class ListsController extends Notifier<ListsState> {
 
   void _subscribe() {
     _subscription?.cancel();
-    _subscription =
-        _repository.watchAllLists().listen((List<ShoppingList> lists) {
-      state = state.copyWith(lists: lists);
-    });
+    _subscription = _repository.watchAllLists().listen(
+      (List<ShoppingList> lists) {
+        state = state.copyWith(
+          lists: lists,
+          isBusy: false,
+          clearErrorMessage: true,
+        );
+      },
+      onError: (_, __) {
+        state = state.copyWith(
+          isBusy: false,
+          errorMessage: 'Unable to load lists right now.',
+        );
+      },
+      cancelOnError: false,
+    );
   }
 
   /// Creates a new list with [name]. Returns the new list's id on success, null on failure.
@@ -184,6 +196,11 @@ class ListsController extends Notifier<ListsState> {
 
   void clearError() {
     state = state.copyWith(clearErrorMessage: true);
+  }
+
+  void refresh() {
+    state = state.copyWith(isBusy: true, clearErrorMessage: true);
+    _subscribe();
   }
 
   void _pushUndo(_ListUndoEntry entry) {

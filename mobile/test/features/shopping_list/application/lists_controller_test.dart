@@ -88,6 +88,34 @@ void main() {
       expect(state.lists.first.inventoryId, 'inv-home');
     });
 
+    test('createList without inventory keeps list standalone', () async {
+      final ListsController controller =
+          container.read(listsControllerProvider.notifier);
+
+      await controller.createList('Quick list');
+
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+
+      final ListsState state = container.read(listsControllerProvider);
+      expect(state.lists.first.inventoryId, isNull);
+    });
+
+    test('createList can link to a newly created inventory id', () async {
+      final ListsController controller =
+          container.read(listsControllerProvider.notifier);
+
+      const String newInventoryId = 'inv-created-now';
+      await controller.createList(
+        'Weekly groceries',
+        inventoryId: newInventoryId,
+      );
+
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+
+      final ListsState state = container.read(listsControllerProvider);
+      expect(state.lists.first.inventoryId, newInventoryId);
+    });
+
     test('createList returns null for empty name', () async {
       final ListsController controller =
           container.read(listsControllerProvider.notifier);
