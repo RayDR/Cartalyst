@@ -1,5 +1,6 @@
 import 'package:cartalyst_mobile/features/home/presentation/home_screen.dart';
-import 'package:cartalyst_mobile/features/pantry/presentation/pantry_screen.dart';
+import 'package:cartalyst_mobile/features/inventories/presentation/inventories_screen.dart';
+import 'package:cartalyst_mobile/features/inventories/presentation/inventory_detail_screen.dart';
 import 'package:cartalyst_mobile/features/price_compare/presentation/price_compare_screen.dart';
 import 'package:cartalyst_mobile/features/settings/presentation/settings_screen.dart';
 import 'package:cartalyst_mobile/features/shopping_list/presentation/list_detail_screen.dart';
@@ -54,10 +55,19 @@ final GoRouter appRouter = GoRouter(
         StatefulShellBranch(
           routes: <RouteBase>[
             GoRoute(
-              path: '/pantry',
+              path: '/inventories',
               builder: (BuildContext context, GoRouterState state) {
-                return const PantryScreen();
+                return const InventoriesScreen();
               },
+              routes: <RouteBase>[
+                GoRoute(
+                  path: ':id',
+                  builder: (BuildContext context, GoRouterState state) {
+                    final String inventoryId = state.pathParameters['id']!;
+                    return InventoryDetailScreen(inventoryId: inventoryId);
+                  },
+                ),
+              ],
             ),
           ],
         ),
@@ -112,8 +122,8 @@ class AppNavigationShell extends StatelessWidget {
             label: 'Lists',
           ),
           NavigationDestination(
-            icon: Icon(Icons.kitchen_outlined),
-            selectedIcon: Icon(Icons.kitchen),
+            icon: Icon(Icons.inventory_2_outlined),
+            selectedIcon: Icon(Icons.inventory_2),
             label: 'Inventories',
           ),
           NavigationDestination(

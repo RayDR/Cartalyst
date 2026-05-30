@@ -9,6 +9,8 @@ import 'package:cartalyst_mobile/core/widgets/app_text_field.dart';
 import 'package:cartalyst_mobile/core/widgets/empty_state.dart';
 import 'package:cartalyst_mobile/core/widgets/section_header.dart';
 import 'package:cartalyst_mobile/core/widgets/status_chip.dart';
+import 'package:cartalyst_mobile/features/inventories/application/inventories_controller.dart';
+import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory.dart';
 import 'package:cartalyst_mobile/features/shopping_list/application/lists_controller.dart';
 import 'package:cartalyst_mobile/features/shopping_list/application/lists_state.dart';
 import 'package:cartalyst_mobile/features/shopping_list/application/shopping_list_controller.dart';
@@ -171,13 +173,16 @@ class _ListDetailScreenState extends ConsumerState<ListDetailScreen> {
   }
 }
 
-class _InventoryLinkSuggestion extends StatelessWidget {
+class _InventoryLinkSuggestion extends ConsumerWidget {
   const _InventoryLinkSuggestion({required this.list});
 
   final ShoppingList list;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final List<Inventory> inventories =
+        ref.watch(inventoriesControllerProvider).inventories;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: AppCard(
@@ -190,8 +195,68 @@ class _InventoryLinkSuggestion extends StatelessWidget {
                 'Link this list to an inventory to track stock as you shop.',
               ),
             ),
+            if (inventories.isNotEmpty)
+              TextButton(
+                onPressed: () => _showInventoryPicker(context, ref, inventories),
+                child: const Text('Link'),
+              ),
           ],
         ),
+      ),
+    );
+  }
+
+  Future<void> _showInventoryPicker(
+    BuildContext context,
+    WidgetRef ref,
+    List<Inventory> inventories,
+  ) async {
+    final Inventory? picked = await showModalBottomSheet<Inventory>(
+      context: context,
+      showDragHandle: true,
+      useSafeArea: true,
+      builder: (BuildContext context) =>
+          _InventoryPickerSheet(inventories: inventories),
+    );
+
+    if (picked == null) return;
+    await ref
+        .read(listsControllerProvider.notifier)
+        .linkToInventory(list, picked.id);
+  }
+}
+
+class _InventoryPickerSheet extends StatelessWidget {
+  const _InventoryPickerSheet({required this.inventories});
+
+  final List<Inventory> inventories;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.sm,
+        AppSpacing.md,
+        AppSpacing.md,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            'Link to inventory',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          ...inventories.map(
+            (Inventory inv) => ListTile(
+              leading: const Icon(Icons.inventory_2_outlined),
+              title: Text(inv.name),
+              onTap: () => Navigator.of(context).pop(inv),
+            ),
+          ),
+        ],
       ),
     );
   }
