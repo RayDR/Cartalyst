@@ -5,6 +5,9 @@ class InventoryItems extends Table {
 
   TextColumn get inventoryId => text().references(Inventories, #id)();
 
+  TextColumn get inventoryCategoryId =>
+      text().nullable().references(InventoryCategories, #id)();
+
   TextColumn get productId => text().nullable().references(Products, #id)();
 
   TextColumn get rawName => text().nullable().withLength(min: 1, max: 120)();
@@ -13,8 +16,7 @@ class InventoryItems extends Table {
 
   TextColumn get unit => text().nullable().withLength(min: 1, max: 32)();
 
-  TextColumn get status =>
-      text().customConstraint(
+  TextColumn get status => text().customConstraint(
         "NOT NULL DEFAULT 'unknown' CHECK (status IN ('unknown', 'in_stock', 'low', 'out'))",
       )();
 
@@ -28,8 +30,7 @@ class InventoryItems extends Table {
 
   DateTimeColumn get deletedAt => dateTime().nullable()();
 
-  TextColumn get syncStatus =>
-      text().customConstraint(
+  TextColumn get syncStatus => text().customConstraint(
         "NOT NULL DEFAULT 'local_only' CHECK (sync_status IN ('local_only', 'pending_sync', 'synced', 'sync_error'))",
       )();
 

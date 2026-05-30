@@ -5,12 +5,15 @@ import 'package:cartalyst_mobile/features/pantry/data/mappers/pantry_mapper.dart
 import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory.dart'
     as inventory_domain;
 import 'package:cartalyst_mobile/features/shopping_list/data/mappers/shopping_list_mapper.dart';
+import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list_category.dart'
+    as domain_category;
 import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list.dart'
     as domain;
 import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list_item.dart'
     as domain;
 import 'package:cartalyst_mobile/features/shopping_list/domain/repositories/shopping_list_repository.dart';
 import 'package:cartalyst_mobile/infrastructure/local_db/app_database.dart';
+import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 
 class LocalShoppingListRepository implements ShoppingListRepository {
@@ -160,11 +163,58 @@ class LocalShoppingListRepository implements ShoppingListRepository {
     return _database.shoppingListsDao.deleteDraft(shoppingListId);
   }
 
+  @override
+  Stream<List<domain_category.ShoppingListCategory>> watchCategoriesForList(
+    String shoppingListId,
+  ) {
+    return _database.shoppingListsDao
+        .watchCategoriesForList(shoppingListId)
+        .map(
+          (List<TypedResult> rows) => rows.map((TypedResult row) {
+            final ShoppingListCategory rowCategory = row
+                .readTable(_database.shoppingListsDao.shoppingListCategories);
+            return domain_category.ShoppingListCategory(
+              id: rowCategory.id,
+              shoppingListId: rowCategory.shoppingListId,
+              categoryId: rowCategory.categoryId,
+              targetInventoryId: rowCategory.targetInventoryId,
+              targetInventoryCategoryId: rowCategory.targetInventoryCategoryId,
+              sortOrder: rowCategory.sortOrder,
+              createdAt: rowCategory.createdAt,
+              updatedAt: rowCategory.updatedAt,
+              deletedAt: rowCategory.deletedAt,
+            );
+          }).toList(growable: false),
+        );
+  }
+
+  @override
+  Future<void> saveShoppingListCategory(
+    domain_category.ShoppingListCategory category,
+  ) {
+    return _database.shoppingListsDao.upsertShoppingListCategory(
+      ShoppingListCategoriesCompanion.insert(
+        id: category.id,
+        shoppingListId: category.shoppingListId,
+        categoryId: category.categoryId,
+        targetInventoryId: Value(category.targetInventoryId),
+        targetInventoryCategoryId: Value(category.targetInventoryCategoryId),
+        sortOrder: Value(category.sortOrder),
+        createdAt: Value(category.createdAt),
+        updatedAt: Value(category.updatedAt),
+        deletedAt: Value(category.deletedAt),
+      ),
+    );
+  }
+
   Map<String, Object?> _draftItemToJson(domain.ShoppingListItem item) {
     return <String, Object?>{
       'id': item.id,
       'shoppingListId': item.shoppingListId,
       'productId': item.productId,
+      'categoryId': item.categoryId,
+      'targetInventoryId': item.targetInventoryId,
+      'targetInventoryCategoryId': item.targetInventoryCategoryId,
       'rawText': item.rawText,
       'quantity': item.quantity,
       'unit': item.unit?.code,
@@ -185,6 +235,9 @@ class LocalShoppingListRepository implements ShoppingListRepository {
       id: (json['id'] as String?) ?? '',
       shoppingListId: (json['shoppingListId'] as String?) ?? '',
       productId: json['productId'] as String?,
+      categoryId: json['categoryId'] as String?,
+      targetInventoryId: json['targetInventoryId'] as String?,
+      targetInventoryCategoryId: json['targetInventoryCategoryId'] as String?,
       rawText: (json['rawText'] as String?) ?? '',
       quantity: (json['quantity'] as num?)?.toDouble(),
       unit: _unitFromCode(json['unit'] as String?),

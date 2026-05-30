@@ -236,6 +236,29 @@ class InventoryDetailController
     );
   }
 
+  Future<void> assignItemToCategory({
+    required InventoryItem item,
+    String? inventoryCategoryId,
+  }) async {
+    final DateTime now = DateTime.now();
+    final InventoryItem updated = item.copyWith(
+      inventoryCategoryId: inventoryCategoryId,
+      updatedAt: now,
+      version: item.version + 1,
+      syncStatus: 'pending_sync',
+    );
+    await _saveItemAndEvent(
+      item: updated,
+      event: _buildEvent(
+        item: updated,
+        eventType: InventoryEventType.adjust,
+        quantity: updated.quantityEstimated,
+        unit: updated.unit,
+        occurredAt: now,
+      ),
+    );
+  }
+
   Future<void> softDelete(InventoryItem item) async {
     final DateTime now = DateTime.now();
     final InventoryItem updated = item.copyWith(

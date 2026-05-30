@@ -24,6 +24,8 @@ mixin _$ShoppingList {
   @Deprecated('Use shopping_list_inventory_links for list-inventory relations.')
   String? get inventoryId => throw _privateConstructorUsedError;
   String get name => throw _privateConstructorUsedError;
+  ShoppingListType get listType => throw _privateConstructorUsedError;
+  ShoppingListRoutingMode get routingMode => throw _privateConstructorUsedError;
   ShoppingListStatus get status => throw _privateConstructorUsedError;
   DateTime get createdAt => throw _privateConstructorUsedError;
   DateTime get updatedAt => throw _privateConstructorUsedError;
@@ -53,6 +55,8 @@ abstract class $ShoppingListCopyWith<$Res> {
           'Use shopping_list_inventory_links for list-inventory relations.')
       String? inventoryId,
       String name,
+      ShoppingListType listType,
+      ShoppingListRoutingMode routingMode,
       ShoppingListStatus status,
       DateTime createdAt,
       DateTime updatedAt,
@@ -79,6 +83,8 @@ class _$ShoppingListCopyWithImpl<$Res, $Val extends ShoppingList>
     Object? id = null,
     Object? inventoryId = freezed,
     Object? name = null,
+    Object? listType = null,
+    Object? routingMode = null,
     Object? status = null,
     Object? createdAt = null,
     Object? updatedAt = null,
@@ -99,6 +105,14 @@ class _$ShoppingListCopyWithImpl<$Res, $Val extends ShoppingList>
           ? _value.name
           : name // ignore: cast_nullable_to_non_nullable
               as String,
+      listType: null == listType
+          ? _value.listType
+          : listType // ignore: cast_nullable_to_non_nullable
+              as ShoppingListType,
+      routingMode: null == routingMode
+          ? _value.routingMode
+          : routingMode // ignore: cast_nullable_to_non_nullable
+              as ShoppingListRoutingMode,
       status: null == status
           ? _value.status
           : status // ignore: cast_nullable_to_non_nullable
@@ -141,6 +155,8 @@ abstract class _$$ShoppingListImplCopyWith<$Res>
           'Use shopping_list_inventory_links for list-inventory relations.')
       String? inventoryId,
       String name,
+      ShoppingListType listType,
+      ShoppingListRoutingMode routingMode,
       ShoppingListStatus status,
       DateTime createdAt,
       DateTime updatedAt,
@@ -165,6 +181,8 @@ class __$$ShoppingListImplCopyWithImpl<$Res>
     Object? id = null,
     Object? inventoryId = freezed,
     Object? name = null,
+    Object? listType = null,
+    Object? routingMode = null,
     Object? status = null,
     Object? createdAt = null,
     Object? updatedAt = null,
@@ -185,6 +203,14 @@ class __$$ShoppingListImplCopyWithImpl<$Res>
           ? _value.name
           : name // ignore: cast_nullable_to_non_nullable
               as String,
+      listType: null == listType
+          ? _value.listType
+          : listType // ignore: cast_nullable_to_non_nullable
+              as ShoppingListType,
+      routingMode: null == routingMode
+          ? _value.routingMode
+          : routingMode // ignore: cast_nullable_to_non_nullable
+              as ShoppingListRoutingMode,
       status: null == status
           ? _value.status
           : status // ignore: cast_nullable_to_non_nullable
@@ -222,6 +248,8 @@ class _$ShoppingListImpl implements _ShoppingList {
           'Use shopping_list_inventory_links for list-inventory relations.')
       this.inventoryId,
       required this.name,
+      this.listType = ShoppingListType.simple,
+      this.routingMode = ShoppingListRoutingMode.none,
       required this.status,
       required this.createdAt,
       required this.updatedAt,
@@ -240,6 +268,12 @@ class _$ShoppingListImpl implements _ShoppingList {
   @override
   final String name;
   @override
+  @JsonKey()
+  final ShoppingListType listType;
+  @override
+  @JsonKey()
+  final ShoppingListRoutingMode routingMode;
+  @override
   final ShoppingListStatus status;
   @override
   final DateTime createdAt;
@@ -254,7 +288,7 @@ class _$ShoppingListImpl implements _ShoppingList {
 
   @override
   String toString() {
-    return 'ShoppingList(id: $id, inventoryId: $inventoryId, name: $name, status: $status, createdAt: $createdAt, updatedAt: $updatedAt, deletedAt: $deletedAt, syncStatus: $syncStatus, version: $version)';
+    return 'ShoppingList(id: $id, inventoryId: $inventoryId, name: $name, listType: $listType, routingMode: $routingMode, status: $status, createdAt: $createdAt, updatedAt: $updatedAt, deletedAt: $deletedAt, syncStatus: $syncStatus, version: $version)';
   }
 
   @override
@@ -266,6 +300,10 @@ class _$ShoppingListImpl implements _ShoppingList {
             (identical(other.inventoryId, inventoryId) ||
                 other.inventoryId == inventoryId) &&
             (identical(other.name, name) || other.name == name) &&
+            (identical(other.listType, listType) ||
+                other.listType == listType) &&
+            (identical(other.routingMode, routingMode) ||
+                other.routingMode == routingMode) &&
             (identical(other.status, status) || other.status == status) &&
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
@@ -280,8 +318,19 @@ class _$ShoppingListImpl implements _ShoppingList {
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, id, inventoryId, name, status,
-      createdAt, updatedAt, deletedAt, syncStatus, version);
+  int get hashCode => Object.hash(
+      runtimeType,
+      id,
+      inventoryId,
+      name,
+      listType,
+      routingMode,
+      status,
+      createdAt,
+      updatedAt,
+      deletedAt,
+      syncStatus,
+      version);
 
   /// Create a copy of ShoppingList
   /// with the given fields replaced by the non-null parameter values.
@@ -306,6 +355,8 @@ abstract class _ShoppingList implements ShoppingList {
           'Use shopping_list_inventory_links for list-inventory relations.')
       final String? inventoryId,
       required final String name,
+      final ShoppingListType listType,
+      final ShoppingListRoutingMode routingMode,
       required final ShoppingListStatus status,
       required final DateTime createdAt,
       required final DateTime updatedAt,
@@ -323,6 +374,10 @@ abstract class _ShoppingList implements ShoppingList {
   String? get inventoryId;
   @override
   String get name;
+  @override
+  ShoppingListType get listType;
+  @override
+  ShoppingListRoutingMode get routingMode;
   @override
   ShoppingListStatus get status;
   @override

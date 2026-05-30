@@ -46,7 +46,7 @@ class _TestHomeDashboardController extends HomeDashboardController {
   }
 }
 
-class _TestShoppingListRepository implements ShoppingListRepository {
+class _TestShoppingListRepository extends ShoppingListRepository {
   final StreamController<List<ShoppingList>> _allListsController =
       StreamController<List<ShoppingList>>.broadcast();
   final StreamController<List<ShoppingList>> _activeListsController =

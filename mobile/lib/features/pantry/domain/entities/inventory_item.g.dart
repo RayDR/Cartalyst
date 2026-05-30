@@ -10,6 +10,7 @@ _$InventoryItemImpl _$$InventoryItemImplFromJson(Map<String, dynamic> json) =>
     _$InventoryItemImpl(
       id: json['id'] as String,
       inventoryId: json['inventoryId'] as String,
+      inventoryCategoryId: json['inventoryCategoryId'] as String?,
       productId: json['productId'] as String?,
       rawName: json['rawName'] as String?,
       quantityEstimated: (json['quantityEstimated'] as num?)?.toDouble(),
@@ -34,6 +35,7 @@ Map<String, dynamic> _$$InventoryItemImplToJson(_$InventoryItemImpl instance) =>
     <String, dynamic>{
       'id': instance.id,
       'inventoryId': instance.inventoryId,
+      'inventoryCategoryId': instance.inventoryCategoryId,
       'productId': instance.productId,
       'rawName': instance.rawName,
       'quantityEstimated': instance.quantityEstimated,

@@ -24,6 +24,9 @@ class ShoppingListItem with _$ShoppingListItem {
     required String id,
     required String shoppingListId,
     String? productId,
+    String? categoryId,
+    String? targetInventoryId,
+    String? targetInventoryCategoryId,
     required String rawText,
     double? quantity,
     Unit? unit,
@@ -72,7 +75,8 @@ class ShoppingListItem with _$ShoppingListItem {
       ShoppingListItemStatus.pending =>
         next == ShoppingListItemStatus.purchased ||
             next == ShoppingListItemStatus.skipped,
-      ShoppingListItemStatus.purchased => next == ShoppingListItemStatus.pending,
+      ShoppingListItemStatus.purchased =>
+        next == ShoppingListItemStatus.pending,
       ShoppingListItemStatus.skipped => next == ShoppingListItemStatus.pending,
     };
   }

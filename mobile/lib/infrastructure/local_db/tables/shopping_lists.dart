@@ -9,6 +9,14 @@ class ShoppingLists extends Table {
 
   TextColumn get name => text().withLength(min: 1, max: 120)();
 
+  TextColumn get listType => text().customConstraint(
+        "NOT NULL DEFAULT 'simple' CHECK (list_type IN ('simple', 'organized'))",
+      )();
+
+  TextColumn get routingMode => text().customConstraint(
+        "NOT NULL DEFAULT 'none' CHECK (routing_mode IN ('none', 'inventory_categories', 'category_as_inventory'))",
+      )();
+
   TextColumn get status => text().customConstraint(
         "NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'completed', 'archived'))",
       )();

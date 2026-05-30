@@ -64,6 +64,31 @@ void main() {
       expect(state.lists.length, 1);
       expect(state.lists.first.name, 'Weekly groceries');
       expect(state.lists.first.id, newId);
+      expect(state.lists.first.listType, ShoppingListType.simple);
+      expect(
+        state.lists.first.routingMode,
+        ShoppingListRoutingMode.none,
+      );
+    });
+
+    test('createList supports organized list type and routing mode', () async {
+      final ListsController controller =
+          container.read(listsControllerProvider.notifier);
+
+      final String? newId = await controller.createList(
+        'Weekly organized',
+        listType: ShoppingListType.organized,
+        routingMode: ShoppingListRoutingMode.inventoryCategories,
+      );
+
+      expect(newId, isNotNull);
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+
+      final ListsState state = container.read(listsControllerProvider);
+      final ShoppingList list =
+          state.lists.firstWhere((ShoppingList item) => item.id == newId);
+      expect(list.listType, ShoppingListType.organized);
+      expect(list.routingMode, ShoppingListRoutingMode.inventoryCategories);
     });
 
     test('createList trims whitespace', () async {
@@ -313,7 +338,9 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 20));
 
       expect(
-          repository.linkedInventoryIdsForList(list.id), contains('inv-123'),);
+        repository.linkedInventoryIdsForList(list.id),
+        contains('inv-123'),
+      );
     });
 
     test('linkToInventory supports multiple linked inventories', () async {
@@ -326,7 +353,9 @@ void main() {
       final ShoppingList list =
           container.read(listsControllerProvider).lists.first;
       expect(
-          repository.linkedInventoryIdsForList(list.id), contains('inv-123'),);
+        repository.linkedInventoryIdsForList(list.id),
+        contains('inv-123'),
+      );
 
       await controller.linkToInventory(list, 'inv-456');
 
@@ -362,7 +391,9 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 20));
 
       expect(
-          repository.linkedInventoryIdsForList(list.id), <String>{'inv-456'},);
+        repository.linkedInventoryIdsForList(list.id),
+        <String>{'inv-456'},
+      );
     });
 
     test('recentLists returns at most 5 lists', () async {
@@ -396,7 +427,7 @@ void main() {
 // Fake repository
 // ---------------------------------------------------------------------------
 
-class FakeShoppingListRepository implements ShoppingListRepository {
+class FakeShoppingListRepository extends ShoppingListRepository {
   final StreamController<List<ShoppingList>> _allListsController =
       StreamController<List<ShoppingList>>.broadcast();
 

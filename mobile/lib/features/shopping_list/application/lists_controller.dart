@@ -69,7 +69,12 @@ class ListsController extends Notifier<ListsState> {
   }
 
   /// Creates a new list with [name]. Returns the new list's id on success, null on failure.
-  Future<String?> createList(String name, {String? inventoryId}) async {
+  Future<String?> createList(
+    String name, {
+    String? inventoryId,
+    ShoppingListType listType = ShoppingListType.simple,
+    ShoppingListRoutingMode routingMode = ShoppingListRoutingMode.none,
+  }) async {
     final String trimmed = name.trim();
     if (trimmed.isEmpty) {
       return null;
@@ -79,6 +84,8 @@ class ListsController extends Notifier<ListsState> {
     final ShoppingList list = ShoppingList(
       id: _uuid.v4(),
       name: trimmed,
+      listType: listType,
+      routingMode: routingMode,
       status: ShoppingListStatus.active,
       createdAt: now,
       updatedAt: now,
@@ -117,6 +124,8 @@ class ListsController extends Notifier<ListsState> {
       id: list.id,
       inventoryId: list.inventoryId,
       name: trimmed,
+      listType: list.listType,
+      routingMode: list.routingMode,
       status: list.status,
       createdAt: list.createdAt,
       updatedAt: now,
@@ -167,6 +176,8 @@ class ListsController extends Notifier<ListsState> {
       id: list.id,
       inventoryId: list.inventoryId,
       name: list.name,
+      listType: list.listType,
+      routingMode: list.routingMode,
       status: ShoppingListStatus.archived,
       createdAt: list.createdAt,
       updatedAt: now,

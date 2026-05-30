@@ -242,6 +242,32 @@ void main() {
       expect(repository.events.length, 1);
       expect(repository.events.first.eventType, InventoryEventType.purchase);
     });
+
+    test('assignItemToCategory persists selected category id', () async {
+      await waitForProducts();
+
+      final InventoryDetailController controller = container
+          .read(inventoryDetailControllerProvider(_inventoryId).notifier);
+
+      controller.updateNameInput('Apples');
+      controller.updateQuantityInput('4');
+      controller.updateUnitCode('unit');
+      await controller.addItem();
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+
+      InventoryDetailState state =
+          container.read(inventoryDetailControllerProvider(_inventoryId));
+      final InventoryItem created = state.inStockItems.first;
+
+      await controller.assignItemToCategory(
+        item: created,
+        inventoryCategoryId: 'invcat-fruits',
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+
+      state = container.read(inventoryDetailControllerProvider(_inventoryId));
+      expect(state.inStockItems.first.inventoryCategoryId, 'invcat-fruits');
+    });
   });
 }
 
@@ -249,7 +275,7 @@ void main() {
 // Fake repository
 // ---------------------------------------------------------------------------
 
-class FakeInventoryRepository implements InventoryRepository {
+class FakeInventoryRepository extends InventoryRepository {
   final StreamController<List<Inventory>> _inventoriesController =
       StreamController<List<Inventory>>.broadcast();
 

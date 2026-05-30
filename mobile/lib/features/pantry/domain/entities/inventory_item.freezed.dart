@@ -22,6 +22,7 @@ InventoryItem _$InventoryItemFromJson(Map<String, dynamic> json) {
 mixin _$InventoryItem {
   String get id => throw _privateConstructorUsedError;
   String get inventoryId => throw _privateConstructorUsedError;
+  String? get inventoryCategoryId => throw _privateConstructorUsedError;
   String? get productId => throw _privateConstructorUsedError;
   String? get rawName => throw _privateConstructorUsedError;
   double? get quantityEstimated => throw _privateConstructorUsedError;
@@ -54,6 +55,7 @@ abstract class $InventoryItemCopyWith<$Res> {
   $Res call(
       {String id,
       String inventoryId,
+      String? inventoryCategoryId,
       String? productId,
       String? rawName,
       double? quantityEstimated,
@@ -87,6 +89,7 @@ class _$InventoryItemCopyWithImpl<$Res, $Val extends InventoryItem>
   $Res call({
     Object? id = null,
     Object? inventoryId = null,
+    Object? inventoryCategoryId = freezed,
     Object? productId = freezed,
     Object? rawName = freezed,
     Object? quantityEstimated = freezed,
@@ -109,6 +112,10 @@ class _$InventoryItemCopyWithImpl<$Res, $Val extends InventoryItem>
           ? _value.inventoryId
           : inventoryId // ignore: cast_nullable_to_non_nullable
               as String,
+      inventoryCategoryId: freezed == inventoryCategoryId
+          ? _value.inventoryCategoryId
+          : inventoryCategoryId // ignore: cast_nullable_to_non_nullable
+              as String?,
       productId: freezed == productId
           ? _value.productId
           : productId // ignore: cast_nullable_to_non_nullable
@@ -186,6 +193,7 @@ abstract class _$$InventoryItemImplCopyWith<$Res>
   $Res call(
       {String id,
       String inventoryId,
+      String? inventoryCategoryId,
       String? productId,
       String? rawName,
       double? quantityEstimated,
@@ -218,6 +226,7 @@ class __$$InventoryItemImplCopyWithImpl<$Res>
   $Res call({
     Object? id = null,
     Object? inventoryId = null,
+    Object? inventoryCategoryId = freezed,
     Object? productId = freezed,
     Object? rawName = freezed,
     Object? quantityEstimated = freezed,
@@ -240,6 +249,10 @@ class __$$InventoryItemImplCopyWithImpl<$Res>
           ? _value.inventoryId
           : inventoryId // ignore: cast_nullable_to_non_nullable
               as String,
+      inventoryCategoryId: freezed == inventoryCategoryId
+          ? _value.inventoryCategoryId
+          : inventoryCategoryId // ignore: cast_nullable_to_non_nullable
+              as String?,
       productId: freezed == productId
           ? _value.productId
           : productId // ignore: cast_nullable_to_non_nullable
@@ -298,6 +311,7 @@ class _$InventoryItemImpl implements _InventoryItem {
   const _$InventoryItemImpl(
       {required this.id,
       required this.inventoryId,
+      this.inventoryCategoryId,
       this.productId,
       this.rawName,
       this.quantityEstimated,
@@ -318,6 +332,8 @@ class _$InventoryItemImpl implements _InventoryItem {
   final String id;
   @override
   final String inventoryId;
+  @override
+  final String? inventoryCategoryId;
   @override
   final String? productId;
   @override
@@ -345,7 +361,7 @@ class _$InventoryItemImpl implements _InventoryItem {
 
   @override
   String toString() {
-    return 'InventoryItem(id: $id, inventoryId: $inventoryId, productId: $productId, rawName: $rawName, quantityEstimated: $quantityEstimated, unit: $unit, status: $status, confidenceScore: $confidenceScore, lastConfirmedAt: $lastConfirmedAt, createdAt: $createdAt, updatedAt: $updatedAt, deletedAt: $deletedAt, syncStatus: $syncStatus, version: $version)';
+    return 'InventoryItem(id: $id, inventoryId: $inventoryId, inventoryCategoryId: $inventoryCategoryId, productId: $productId, rawName: $rawName, quantityEstimated: $quantityEstimated, unit: $unit, status: $status, confidenceScore: $confidenceScore, lastConfirmedAt: $lastConfirmedAt, createdAt: $createdAt, updatedAt: $updatedAt, deletedAt: $deletedAt, syncStatus: $syncStatus, version: $version)';
   }
 
   @override
@@ -356,6 +372,8 @@ class _$InventoryItemImpl implements _InventoryItem {
             (identical(other.id, id) || other.id == id) &&
             (identical(other.inventoryId, inventoryId) ||
                 other.inventoryId == inventoryId) &&
+            (identical(other.inventoryCategoryId, inventoryCategoryId) ||
+                other.inventoryCategoryId == inventoryCategoryId) &&
             (identical(other.productId, productId) ||
                 other.productId == productId) &&
             (identical(other.rawName, rawName) || other.rawName == rawName) &&
@@ -384,6 +402,7 @@ class _$InventoryItemImpl implements _InventoryItem {
       runtimeType,
       id,
       inventoryId,
+      inventoryCategoryId,
       productId,
       rawName,
       quantityEstimated,
@@ -417,6 +436,7 @@ abstract class _InventoryItem implements InventoryItem {
   const factory _InventoryItem(
       {required final String id,
       required final String inventoryId,
+      final String? inventoryCategoryId,
       final String? productId,
       final String? rawName,
       final double? quantityEstimated,
@@ -437,6 +457,8 @@ abstract class _InventoryItem implements InventoryItem {
   String get id;
   @override
   String get inventoryId;
+  @override
+  String? get inventoryCategoryId;
   @override
   String? get productId;
   @override

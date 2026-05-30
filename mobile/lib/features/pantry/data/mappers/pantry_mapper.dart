@@ -1,8 +1,11 @@
 import 'package:cartalyst_mobile/core/domain/value_objects/unit.dart';
+import 'package:cartalyst_mobile/features/pantry/domain/entities/category.dart';
 import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory.dart';
+import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory_category.dart';
 import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory_event.dart';
 import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory_item.dart';
-import 'package:cartalyst_mobile/infrastructure/local_db/app_database.dart' as local_db;
+import 'package:cartalyst_mobile/infrastructure/local_db/app_database.dart'
+    as local_db;
 import 'package:drift/drift.dart';
 
 Inventory toDomainInventory(local_db.Inventory row) {
@@ -22,6 +25,7 @@ InventoryItem toDomainInventoryItem(local_db.InventoryItem row) {
   return InventoryItem(
     id: row.id,
     inventoryId: row.inventoryId,
+    inventoryCategoryId: row.inventoryCategoryId,
     productId: row.productId,
     rawName: row.rawName,
     quantityEstimated: row.quantityEstimated,
@@ -66,10 +70,12 @@ local_db.InventoriesCompanion toInventoryCompanion(Inventory entity) {
   );
 }
 
-local_db.InventoryItemsCompanion toInventoryItemCompanion(InventoryItem entity) {
+local_db.InventoryItemsCompanion toInventoryItemCompanion(
+    InventoryItem entity) {
   return local_db.InventoryItemsCompanion(
     id: Value(entity.id),
     inventoryId: Value(entity.inventoryId),
+    inventoryCategoryId: Value(entity.inventoryCategoryId),
     productId: Value(entity.productId),
     rawName: Value(entity.rawName),
     quantityEstimated: Value(entity.quantityEstimated),
@@ -99,6 +105,66 @@ local_db.InventoryEventsCompanion toInventoryEventCompanion(
     source: Value(_inventoryEventSourceToDb(entity.source)),
     occurredAt: Value(entity.occurredAt),
     createdAt: Value(entity.createdAt),
+  );
+}
+
+Category toDomainCategory(local_db.Category row) {
+  return Category(
+    id: row.id,
+    name: row.name,
+    color: row.color,
+    icon: row.icon,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+    deletedAt: row.deletedAt,
+    syncStatus: row.syncStatus,
+    version: row.version,
+  );
+}
+
+local_db.CategoriesCompanion toCategoryCompanion(Category entity) {
+  return local_db.CategoriesCompanion(
+    id: Value(entity.id),
+    name: Value(entity.name),
+    color: Value(entity.color),
+    icon: Value(entity.icon),
+    createdAt: Value(entity.createdAt),
+    updatedAt: Value(entity.updatedAt),
+    deletedAt: Value(entity.deletedAt),
+    syncStatus: Value(entity.syncStatus),
+    version: Value(entity.version),
+  );
+}
+
+InventoryCategory toDomainInventoryCategory({
+  required local_db.InventoryCategory link,
+  required local_db.Category category,
+}) {
+  return InventoryCategory(
+    id: link.id,
+    inventoryId: link.inventoryId,
+    categoryId: link.categoryId,
+    name: category.name,
+    color: category.color,
+    icon: category.icon,
+    sortOrder: link.sortOrder,
+    createdAt: link.createdAt,
+    updatedAt: link.updatedAt,
+    deletedAt: link.deletedAt,
+  );
+}
+
+local_db.InventoryCategoriesCompanion toInventoryCategoryCompanion(
+  InventoryCategory entity,
+) {
+  return local_db.InventoryCategoriesCompanion(
+    id: Value(entity.id),
+    inventoryId: Value(entity.inventoryId),
+    categoryId: Value(entity.categoryId),
+    sortOrder: Value(entity.sortOrder),
+    createdAt: Value(entity.createdAt),
+    updatedAt: Value(entity.updatedAt),
+    deletedAt: Value(entity.deletedAt),
   );
 }
 

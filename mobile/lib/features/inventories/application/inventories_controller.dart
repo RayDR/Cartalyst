@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:cartalyst_mobile/features/inventories/application/inventories_state.dart';
 import 'package:cartalyst_mobile/features/inventories/data/repositories/local_inventory_repository.dart';
 import 'package:cartalyst_mobile/features/inventories/domain/repositories/inventory_repository.dart';
+import 'package:cartalyst_mobile/features/pantry/domain/entities/category.dart';
 import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory.dart';
+import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory_category.dart';
 import 'package:cartalyst_mobile/features/shopping_list/application/shopping_list_controller.dart'
     show appDatabaseProvider, uuidProvider;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -58,6 +60,7 @@ class InventoriesController extends Notifier<InventoriesState> {
     state = state.copyWith(isBusy: true, clearErrorMessage: true);
     try {
       await _repository.saveInventory(inventory);
+      await _repository.ensureUncategorizedInventoryCategory(inventory.id);
       state = state.copyWith(isBusy: false);
       return inventory.id;
     } catch (_) {
@@ -130,6 +133,65 @@ class InventoriesController extends Notifier<InventoriesState> {
         isBusy: false,
         errorMessage: 'Unable to restore inventory.',
       );
+    }
+  }
+
+  Future<String?> createInventoryCategory({
+    required String inventoryId,
+    required String name,
+    String? color,
+    String? icon,
+  }) async {
+    final String trimmed = name.trim();
+    if (trimmed.isEmpty) {
+      return null;
+    }
+
+    final DateTime now = DateTime.now();
+    final String categoryId = _uuid.v4();
+    final String inventoryCategoryId = _uuid.v4();
+
+    state = state.copyWith(isBusy: true, clearErrorMessage: true);
+    try {
+      await _repository.saveCategory(
+        Category(
+          id: categoryId,
+          name: trimmed,
+          color: color,
+          icon: icon,
+          createdAt: now,
+          updatedAt: now,
+          syncStatus: 'pending_sync',
+          version: 1,
+        ),
+      );
+
+      final List<InventoryCategory> existing =
+          await _repository.watchInventoryCategories(inventoryId).first;
+      final int sortOrder = existing.length;
+
+      await _repository.saveInventoryCategory(
+        InventoryCategory(
+          id: inventoryCategoryId,
+          inventoryId: inventoryId,
+          categoryId: categoryId,
+          name: trimmed,
+          color: color,
+          icon: icon,
+          sortOrder: sortOrder,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+
+      state = state.copyWith(isBusy: false);
+      return inventoryCategoryId;
+    } catch (_) {
+      state = state.copyWith(
+        isBusy: false,
+        errorMessage: 'Unable to create inventory category.',
+      );
+      return null;
     }
   }
 }

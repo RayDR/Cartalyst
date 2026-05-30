@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:cartalyst_mobile/features/inventories/application/inventories_controller.dart';
 import 'package:cartalyst_mobile/features/inventories/application/inventories_state.dart';
 import 'package:cartalyst_mobile/features/inventories/domain/repositories/inventory_repository.dart';
+import 'package:cartalyst_mobile/features/pantry/domain/entities/category.dart';
 import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory.dart';
+import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory_category.dart';
 import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory_event.dart';
 import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory_item.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -175,6 +177,62 @@ void main() {
       expect(inventories[1].id, 'inv-b');
       expect(inventories[2].id, 'inv-a');
     });
+
+    test('createInventoryCategory creates category linked to inventory',
+        () async {
+      final InventoriesController controller =
+          container.read(inventoriesControllerProvider.notifier);
+
+      final String? inventoryId = await controller.createInventory('Pantry');
+      expect(inventoryId, isNotNull);
+
+      final String? inventoryCategoryId =
+          await controller.createInventoryCategory(
+        inventoryId: inventoryId!,
+        name: 'Fruits',
+      );
+
+      expect(inventoryCategoryId, isNotNull);
+
+      final List<InventoryCategory> categories =
+          await repository.watchInventoryCategories(inventoryId).first;
+      expect(
+          categories.any((InventoryCategory c) => c.name == 'Fruits'), isTrue);
+    });
+
+    test('saveInventoryItem falls back to Uncategorized when category is null',
+        () async {
+      final InventoriesController controller =
+          container.read(inventoriesControllerProvider.notifier);
+
+      final String? inventoryId = await controller.createInventory('Pantry');
+      expect(inventoryId, isNotNull);
+
+      final InventoryItem item = InventoryItem(
+        id: 'item-1',
+        inventoryId: inventoryId!,
+        inventoryCategoryId: null,
+        rawName: 'Loose item',
+        status: InventoryItemStatus.inStock,
+        confidenceScore: 0.8,
+        createdAt: DateTime(2026),
+        updatedAt: DateTime(2026),
+        syncStatus: 'pending_sync',
+        version: 1,
+      );
+
+      await repository.saveInventoryItem(item);
+
+      expect(repository.items.single.inventoryCategoryId, isNotNull);
+      final String assignedCategoryId =
+          repository.items.single.inventoryCategoryId!;
+      final List<InventoryCategory> categories =
+          await repository.watchInventoryCategories(inventoryId).first;
+      final InventoryCategory assigned = categories.firstWhere(
+        (InventoryCategory c) => c.id == assignedCategoryId,
+      );
+      expect(assigned.name, 'Uncategorized');
+    });
   });
 }
 
@@ -182,7 +240,7 @@ void main() {
 // Fake repository
 // ---------------------------------------------------------------------------
 
-class FakeInventoryRepository implements InventoryRepository {
+class FakeInventoryRepository extends InventoryRepository {
   final StreamController<List<Inventory>> _inventoriesController =
       StreamController<List<Inventory>>.broadcast();
 
@@ -195,9 +253,13 @@ class FakeInventoryRepository implements InventoryRepository {
   final List<Inventory> _inventories = <Inventory>[];
   final List<InventoryItem> _items = <InventoryItem>[];
   final List<InventoryEvent> _events = <InventoryEvent>[];
+  final List<Category> _categories = <Category>[];
+  final List<InventoryCategory> _inventoryCategories = <InventoryCategory>[];
 
   final List<String> deletedInventoryIds = <String>[];
   final List<String> deletedItemIds = <String>[];
+
+  List<InventoryItem> get items => List<InventoryItem>.unmodifiable(_items);
 
   void seedInventory(Inventory inventory) {
     _inventories.add(inventory);
@@ -260,11 +322,22 @@ class FakeInventoryRepository implements InventoryRepository {
 
   @override
   Future<void> saveInventoryItem(InventoryItem item) async {
+    String? resolvedCategoryId = item.inventoryCategoryId;
+    if (resolvedCategoryId == null) {
+      resolvedCategoryId = await ensureUncategorizedInventoryCategory(
+        item.inventoryId,
+      );
+    }
+
+    final InventoryItem normalized = item.copyWith(
+      inventoryCategoryId: resolvedCategoryId,
+    );
+
     final int index = _items.indexWhere((InventoryItem e) => e.id == item.id);
     if (index >= 0) {
-      _items[index] = item;
+      _items[index] = normalized;
     } else {
-      _items.add(item);
+      _items.add(normalized);
     }
     _emitItems();
   }
@@ -283,6 +356,94 @@ class FakeInventoryRepository implements InventoryRepository {
   Future<void> addInventoryEvent(InventoryEvent event) async {
     _events.add(event);
     _eventsController.add(List<InventoryEvent>.unmodifiable(_events));
+  }
+
+  @override
+  Stream<List<InventoryCategory>> watchInventoryCategories(String inventoryId) {
+    final List<InventoryCategory> categories = _inventoryCategories
+        .where(
+          (InventoryCategory category) =>
+              category.inventoryId == inventoryId && category.deletedAt == null,
+        )
+        .toList(growable: false)
+      ..sort(
+        (InventoryCategory a, InventoryCategory b) =>
+            a.sortOrder.compareTo(b.sortOrder),
+      );
+    return Stream<List<InventoryCategory>>.value(categories);
+  }
+
+  @override
+  Future<void> saveCategory(Category category) async {
+    final int index =
+        _categories.indexWhere((Category e) => e.id == category.id);
+    if (index >= 0) {
+      _categories[index] = category;
+    } else {
+      _categories.add(category);
+    }
+  }
+
+  @override
+  Future<void> saveInventoryCategory(InventoryCategory category) async {
+    final int index = _inventoryCategories
+        .indexWhere((InventoryCategory e) => e.id == category.id);
+    if (index >= 0) {
+      _inventoryCategories[index] = category;
+    } else {
+      _inventoryCategories.add(category);
+    }
+  }
+
+  @override
+  Future<String?> findUncategorizedInventoryCategoryId(
+      String inventoryId) async {
+    for (final InventoryCategory category in _inventoryCategories) {
+      if (category.inventoryId != inventoryId || category.deletedAt != null) {
+        continue;
+      }
+      if (category.name.toLowerCase() == 'uncategorized') {
+        return category.id;
+      }
+    }
+    return null;
+  }
+
+  @override
+  Future<String> ensureUncategorizedInventoryCategory(
+      String inventoryId) async {
+    final String? existing =
+        await findUncategorizedInventoryCategoryId(inventoryId);
+    if (existing != null) {
+      return existing;
+    }
+
+    const String categoryId = 'category-uncategorized';
+    final DateTime now = DateTime.now();
+    await saveCategory(
+      Category(
+        id: categoryId,
+        name: 'Uncategorized',
+        createdAt: now,
+        updatedAt: now,
+        syncStatus: 'pending_sync',
+        version: 1,
+      ),
+    );
+
+    final String inventoryCategoryId = 'invcat-$inventoryId-uncategorized';
+    await saveInventoryCategory(
+      InventoryCategory(
+        id: inventoryCategoryId,
+        inventoryId: inventoryId,
+        categoryId: categoryId,
+        name: 'Uncategorized',
+        sortOrder: 0,
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
+    return inventoryCategoryId;
   }
 
   void _emitInventories() {

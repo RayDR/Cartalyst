@@ -16,6 +16,7 @@ class InventoryItem with _$InventoryItem {
   const factory InventoryItem({
     required String id,
     required String inventoryId,
+    String? inventoryCategoryId,
     String? productId,
     String? rawName,
     double? quantityEstimated,

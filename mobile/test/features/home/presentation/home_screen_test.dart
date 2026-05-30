@@ -104,7 +104,7 @@ void main() {
   });
 }
 
-class FakeShoppingListRepository implements ShoppingListRepository {
+class FakeShoppingListRepository extends ShoppingListRepository {
   final StreamController<List<ShoppingList>> _allListsController =
       StreamController<List<ShoppingList>>.broadcast();
 

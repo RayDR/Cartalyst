@@ -1,14 +1,20 @@
 import 'package:cartalyst_mobile/features/inventories/domain/repositories/inventory_repository.dart';
 import 'package:cartalyst_mobile/features/pantry/data/mappers/pantry_mapper.dart';
+import 'package:cartalyst_mobile/features/pantry/domain/entities/category.dart';
 import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory.dart';
+import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory_category.dart';
 import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory_event.dart';
 import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory_item.dart';
-import 'package:cartalyst_mobile/infrastructure/local_db/app_database.dart' show AppDatabase;
+import 'package:cartalyst_mobile/infrastructure/local_db/app_database.dart'
+    hide Category, Inventory, InventoryCategory, InventoryEvent, InventoryItem;
+import 'package:drift/drift.dart';
+import 'package:uuid/uuid.dart';
 
 class LocalInventoryRepository implements InventoryRepository {
   LocalInventoryRepository(this._database);
 
   final AppDatabase _database;
+  static const Uuid _uuid = Uuid();
 
   @override
   Stream<List<Inventory>> watchAllInventories() {
@@ -36,7 +42,17 @@ class LocalInventoryRepository implements InventoryRepository {
 
   @override
   Future<void> saveInventoryItem(InventoryItem item) {
-    return _database.pantryDao.upsertInventoryItem(toInventoryItemCompanion(item));
+    return _saveInventoryItemWithFallback(item);
+  }
+
+  Future<void> _saveInventoryItemWithFallback(InventoryItem item) async {
+    final String categoryId = item.inventoryCategoryId ??
+        await ensureUncategorizedInventoryCategory(item.inventoryId);
+    await _database.pantryDao.upsertInventoryItem(
+      toInventoryItemCompanion(
+        item.copyWith(inventoryCategoryId: categoryId),
+      ),
+    );
   }
 
   @override
@@ -46,6 +62,85 @@ class LocalInventoryRepository implements InventoryRepository {
 
   @override
   Future<void> addInventoryEvent(InventoryEvent event) {
-    return _database.pantryDao.addInventoryEvent(toInventoryEventCompanion(event));
+    return _database.pantryDao
+        .addInventoryEvent(toInventoryEventCompanion(event));
+  }
+
+  @override
+  Stream<List<InventoryCategory>> watchInventoryCategories(String inventoryId) {
+    return _database.pantryDao
+        .watchInventoryCategoriesWithDetails(inventoryId)
+        .map(
+          (List<TypedResult> rows) => rows
+              .map(
+                (TypedResult row) => toDomainInventoryCategory(
+                  link: row.readTable(_database.pantryDao.inventoryCategories),
+                  category: row.readTable(_database.pantryDao.categories),
+                ),
+              )
+              .toList(growable: false),
+        );
+  }
+
+  @override
+  Future<void> saveCategory(Category category) {
+    return _database.pantryDao.upsertCategory(toCategoryCompanion(category));
+  }
+
+  @override
+  Future<void> saveInventoryCategory(InventoryCategory category) {
+    return _database.pantryDao.upsertInventoryCategory(
+      toInventoryCategoryCompanion(category),
+    );
+  }
+
+  @override
+  Future<String?> findUncategorizedInventoryCategoryId(String inventoryId) {
+    return _database.pantryDao
+        .findUncategorizedInventoryCategoryId(inventoryId);
+  }
+
+  @override
+  Future<String> ensureUncategorizedInventoryCategory(
+      String inventoryId) async {
+    final String? existing =
+        await _database.pantryDao.findUncategorizedInventoryCategoryId(
+      inventoryId,
+    );
+    if (existing != null) {
+      return existing;
+    }
+
+    final DateTime now = DateTime.now();
+    final String categoryId = _uuid.v4();
+    final String inventoryCategoryId = _uuid.v4();
+    final int sortOrder =
+        await _database.pantryDao.nextInventoryCategorySortOrder(inventoryId);
+
+    await _database.pantryDao.upsertCategory(
+      CategoriesCompanion.insert(
+        id: categoryId,
+        name: 'Uncategorized',
+        createdAt: Value(now),
+        updatedAt: Value(now),
+        deletedAt: const Value(null),
+        syncStatus: const Value('pending_sync'),
+        version: const Value(1),
+      ),
+    );
+
+    await _database.pantryDao.upsertInventoryCategory(
+      InventoryCategoriesCompanion.insert(
+        id: inventoryCategoryId,
+        inventoryId: inventoryId,
+        categoryId: categoryId,
+        sortOrder: Value(sortOrder),
+        createdAt: Value(now),
+        updatedAt: Value(now),
+        deletedAt: const Value(null),
+      ),
+    );
+
+    return inventoryCategoryId;
   }
 }

@@ -533,7 +533,7 @@ void main() {
   });
 }
 
-class FakeShoppingListRepository implements ShoppingListRepository {
+class FakeShoppingListRepository extends ShoppingListRepository {
   final StreamController<List<ShoppingList>> _allListsController =
       StreamController<List<ShoppingList>>.broadcast();
 
@@ -814,7 +814,7 @@ class FakeProductRepository implements ProductRepository {
   }
 }
 
-class FakeInventoryRepository implements InventoryRepository {
+class FakeInventoryRepository extends InventoryRepository {
   @override
   Stream<List<Inventory>> watchAllInventories() {
     return Stream<List<Inventory>>.value(const <Inventory>[]);

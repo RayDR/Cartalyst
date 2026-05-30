@@ -9,14 +9,28 @@ enum ShoppingListStatus {
   archived,
 }
 
+enum ShoppingListType {
+  simple,
+  organized,
+}
+
+enum ShoppingListRoutingMode {
+  none,
+  inventoryCategories,
+  categoryAsInventory,
+}
+
 @freezed
 class ShoppingList with _$ShoppingList {
   const factory ShoppingList({
     required String id,
     @Deprecated(
-        'Use shopping_list_inventory_links for list-inventory relations.',)
+      'Use shopping_list_inventory_links for list-inventory relations.',
+    )
     String? inventoryId,
     required String name,
+    @Default(ShoppingListType.simple) ShoppingListType listType,
+    @Default(ShoppingListRoutingMode.none) ShoppingListRoutingMode routingMode,
     required ShoppingListStatus status,
     required DateTime createdAt,
     required DateTime updatedAt,

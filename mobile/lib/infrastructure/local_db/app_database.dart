@@ -13,7 +13,9 @@ part 'daos/price_observations_dao.dart';
 part 'daos/products_dao.dart';
 part 'daos/shopping_lists_dao.dart';
 part 'migrations/app_migrations.dart';
+part 'tables/categories.dart';
 part 'tables/inventories.dart';
+part 'tables/inventory_categories.dart';
 part 'tables/inventory_events.dart';
 part 'tables/inventory_items.dart';
 part 'tables/price_observations.dart';
@@ -21,6 +23,7 @@ part 'tables/product_aliases.dart';
 part 'tables/products.dart';
 part 'tables/shopping_list_inventory_links.dart';
 part 'tables/shopping_list_items.dart';
+part 'tables/shopping_list_categories.dart';
 part 'tables/shopping_lists.dart';
 
 const String defaultInventoryId = 'inventory-default-pantry';
@@ -29,10 +32,13 @@ const String defaultInventoryId = 'inventory-default-pantry';
   tables: <Type>[
     Products,
     ProductAliases,
+    Categories,
     Inventories,
+    InventoryCategories,
     InventoryItems,
     ShoppingListInventoryLinks,
     ShoppingLists,
+    ShoppingListCategories,
     ShoppingListItems,
     InventoryEvents,
     PriceObservations,
@@ -48,7 +54,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase({QueryExecutor? executor}) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => buildMigrationStrategy(this);
@@ -75,6 +81,7 @@ class AppDatabase extends _$AppDatabase {
         .getSingle();
 
     if (existingInventories > 0) {
+      await _ensureUncategorizedForInventory(defaultInventoryId);
       return;
     }
 
@@ -88,6 +95,53 @@ class AppDatabase extends _$AppDatabase {
         syncStatus: const Value('local_only'),
         version: const Value(1),
       ),
+    );
+
+    await _ensureUncategorizedForInventory(defaultInventoryId);
+  }
+
+  Future<void> _ensureUncategorizedForInventory(String inventoryId) async {
+    final DateTime now = DateTime.now();
+    await customStatement(
+      '''
+      INSERT OR IGNORE INTO categories (
+        id,
+        name,
+        color,
+        icon,
+        created_at,
+        updated_at,
+        deleted_at,
+        sync_status,
+        version
+      ) VALUES (?, 'Uncategorized', NULL, NULL, ?, ?, NULL, 'pending_sync', 1)
+      ''',
+      <Object>[
+        '$inventoryId::uncategorized',
+        now.toIso8601String(),
+        now.toIso8601String(),
+      ],
+    );
+
+    await customStatement(
+      '''
+      INSERT OR IGNORE INTO inventory_categories (
+        id,
+        inventory_id,
+        category_id,
+        sort_order,
+        created_at,
+        updated_at,
+        deleted_at
+      ) VALUES (?, ?, ?, 0, ?, ?, NULL)
+      ''',
+      <Object>[
+        '$inventoryId::inventory-uncategorized',
+        inventoryId,
+        '$inventoryId::uncategorized',
+        now.toIso8601String(),
+        now.toIso8601String(),
+      ],
     );
   }
 

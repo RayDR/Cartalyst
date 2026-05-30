@@ -2,8 +2,11 @@ part of '../app_database.dart';
 
 @DriftAccessor(
   tables: <Type>[
+    Categories,
     ShoppingLists,
+    ShoppingListCategories,
     ShoppingListItems,
+    InventoryCategories,
     ShoppingListInventoryLinks,
     Inventories,
   ],
@@ -27,6 +30,10 @@ class ShoppingListsDao extends DatabaseAccessor<AppDatabase>
 
   Future<void> upsertListItem(ShoppingListItemsCompanion item) {
     return into(shoppingListItems).insertOnConflictUpdate(item);
+  }
+
+  Future<void> upsertShoppingListCategory(ShoppingListCategoriesCompanion row) {
+    return into(shoppingListCategories).insertOnConflictUpdate(row);
   }
 
   Stream<List<ShoppingList>> watchAllLists() {
@@ -58,6 +65,26 @@ class ShoppingListsDao extends DatabaseAccessor<AppDatabase>
         (tbl) => OrderingTerm.desc(tbl.priorityScore),
         (tbl) => OrderingTerm.asc(tbl.createdAt),
       ]);
+    return query.watch();
+  }
+
+  Stream<List<TypedResult>> watchCategoriesForList(String shoppingListId) {
+    final query = select(shoppingListCategories).join([
+      innerJoin(
+        categories,
+        categories.id.equalsExp(shoppingListCategories.categoryId) &
+            categories.deletedAt.isNull(),
+      ),
+    ])
+      ..where(
+        shoppingListCategories.shoppingListId.equals(shoppingListId) &
+            shoppingListCategories.deletedAt.isNull(),
+      )
+      ..orderBy(<OrderingTerm>[
+        OrderingTerm.asc(shoppingListCategories.sortOrder),
+        OrderingTerm.asc(categories.name),
+      ]);
+
     return query.watch();
   }
 

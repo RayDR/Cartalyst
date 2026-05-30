@@ -228,7 +228,7 @@ ShoppingListItem _sampleItem({
   );
 }
 
-class _FakeShoppingListRepository implements ShoppingListRepository {
+class _FakeShoppingListRepository extends ShoppingListRepository {
   final StreamController<List<ShoppingList>> _allListsController =
       StreamController<List<ShoppingList>>.broadcast();
   final StreamController<List<ShoppingList>> _activeListsController =
@@ -457,7 +457,7 @@ class _FakeProductRepository implements ProductRepository {
   }
 }
 
-class _FakeInventoryRepository implements InventoryRepository {
+class _FakeInventoryRepository extends InventoryRepository {
   final StreamController<List<Inventory>> _inventoriesController =
       StreamController<List<Inventory>>.broadcast();
   final Map<String, StreamController<List<InventoryItem>>>

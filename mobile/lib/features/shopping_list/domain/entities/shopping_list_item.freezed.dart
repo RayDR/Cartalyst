@@ -23,6 +23,9 @@ mixin _$ShoppingListItem {
   String get id => throw _privateConstructorUsedError;
   String get shoppingListId => throw _privateConstructorUsedError;
   String? get productId => throw _privateConstructorUsedError;
+  String? get categoryId => throw _privateConstructorUsedError;
+  String? get targetInventoryId => throw _privateConstructorUsedError;
+  String? get targetInventoryCategoryId => throw _privateConstructorUsedError;
   String get rawText => throw _privateConstructorUsedError;
   double? get quantity => throw _privateConstructorUsedError;
   Unit? get unit => throw _privateConstructorUsedError;
@@ -56,6 +59,9 @@ abstract class $ShoppingListItemCopyWith<$Res> {
       {String id,
       String shoppingListId,
       String? productId,
+      String? categoryId,
+      String? targetInventoryId,
+      String? targetInventoryCategoryId,
       String rawText,
       double? quantity,
       Unit? unit,
@@ -90,6 +96,9 @@ class _$ShoppingListItemCopyWithImpl<$Res, $Val extends ShoppingListItem>
     Object? id = null,
     Object? shoppingListId = null,
     Object? productId = freezed,
+    Object? categoryId = freezed,
+    Object? targetInventoryId = freezed,
+    Object? targetInventoryCategoryId = freezed,
     Object? rawText = null,
     Object? quantity = freezed,
     Object? unit = freezed,
@@ -115,6 +124,18 @@ class _$ShoppingListItemCopyWithImpl<$Res, $Val extends ShoppingListItem>
       productId: freezed == productId
           ? _value.productId
           : productId // ignore: cast_nullable_to_non_nullable
+              as String?,
+      categoryId: freezed == categoryId
+          ? _value.categoryId
+          : categoryId // ignore: cast_nullable_to_non_nullable
+              as String?,
+      targetInventoryId: freezed == targetInventoryId
+          ? _value.targetInventoryId
+          : targetInventoryId // ignore: cast_nullable_to_non_nullable
+              as String?,
+      targetInventoryCategoryId: freezed == targetInventoryCategoryId
+          ? _value.targetInventoryCategoryId
+          : targetInventoryCategoryId // ignore: cast_nullable_to_non_nullable
               as String?,
       rawText: null == rawText
           ? _value.rawText
@@ -194,6 +215,9 @@ abstract class _$$ShoppingListItemImplCopyWith<$Res>
       {String id,
       String shoppingListId,
       String? productId,
+      String? categoryId,
+      String? targetInventoryId,
+      String? targetInventoryCategoryId,
       String rawText,
       double? quantity,
       Unit? unit,
@@ -227,6 +251,9 @@ class __$$ShoppingListItemImplCopyWithImpl<$Res>
     Object? id = null,
     Object? shoppingListId = null,
     Object? productId = freezed,
+    Object? categoryId = freezed,
+    Object? targetInventoryId = freezed,
+    Object? targetInventoryCategoryId = freezed,
     Object? rawText = null,
     Object? quantity = freezed,
     Object? unit = freezed,
@@ -252,6 +279,18 @@ class __$$ShoppingListItemImplCopyWithImpl<$Res>
       productId: freezed == productId
           ? _value.productId
           : productId // ignore: cast_nullable_to_non_nullable
+              as String?,
+      categoryId: freezed == categoryId
+          ? _value.categoryId
+          : categoryId // ignore: cast_nullable_to_non_nullable
+              as String?,
+      targetInventoryId: freezed == targetInventoryId
+          ? _value.targetInventoryId
+          : targetInventoryId // ignore: cast_nullable_to_non_nullable
+              as String?,
+      targetInventoryCategoryId: freezed == targetInventoryCategoryId
+          ? _value.targetInventoryCategoryId
+          : targetInventoryCategoryId // ignore: cast_nullable_to_non_nullable
               as String?,
       rawText: null == rawText
           ? _value.rawText
@@ -312,6 +351,9 @@ class _$ShoppingListItemImpl extends _ShoppingListItem {
       {required this.id,
       required this.shoppingListId,
       this.productId,
+      this.categoryId,
+      this.targetInventoryId,
+      this.targetInventoryCategoryId,
       required this.rawText,
       this.quantity,
       this.unit,
@@ -335,6 +377,12 @@ class _$ShoppingListItemImpl extends _ShoppingListItem {
   final String shoppingListId;
   @override
   final String? productId;
+  @override
+  final String? categoryId;
+  @override
+  final String? targetInventoryId;
+  @override
+  final String? targetInventoryCategoryId;
   @override
   final String rawText;
   @override
@@ -362,7 +410,7 @@ class _$ShoppingListItemImpl extends _ShoppingListItem {
 
   @override
   String toString() {
-    return 'ShoppingListItem(id: $id, shoppingListId: $shoppingListId, productId: $productId, rawText: $rawText, quantity: $quantity, unit: $unit, status: $status, source: $source, priorityScore: $priorityScore, createdAt: $createdAt, updatedAt: $updatedAt, purchasedAt: $purchasedAt, deletedAt: $deletedAt, syncStatus: $syncStatus, version: $version)';
+    return 'ShoppingListItem(id: $id, shoppingListId: $shoppingListId, productId: $productId, categoryId: $categoryId, targetInventoryId: $targetInventoryId, targetInventoryCategoryId: $targetInventoryCategoryId, rawText: $rawText, quantity: $quantity, unit: $unit, status: $status, source: $source, priorityScore: $priorityScore, createdAt: $createdAt, updatedAt: $updatedAt, purchasedAt: $purchasedAt, deletedAt: $deletedAt, syncStatus: $syncStatus, version: $version)';
   }
 
   @override
@@ -375,6 +423,13 @@ class _$ShoppingListItemImpl extends _ShoppingListItem {
                 other.shoppingListId == shoppingListId) &&
             (identical(other.productId, productId) ||
                 other.productId == productId) &&
+            (identical(other.categoryId, categoryId) ||
+                other.categoryId == categoryId) &&
+            (identical(other.targetInventoryId, targetInventoryId) ||
+                other.targetInventoryId == targetInventoryId) &&
+            (identical(other.targetInventoryCategoryId,
+                    targetInventoryCategoryId) ||
+                other.targetInventoryCategoryId == targetInventoryCategoryId) &&
             (identical(other.rawText, rawText) || other.rawText == rawText) &&
             (identical(other.quantity, quantity) ||
                 other.quantity == quantity) &&
@@ -403,6 +458,9 @@ class _$ShoppingListItemImpl extends _ShoppingListItem {
       id,
       shoppingListId,
       productId,
+      categoryId,
+      targetInventoryId,
+      targetInventoryCategoryId,
       rawText,
       quantity,
       unit,
@@ -438,6 +496,9 @@ abstract class _ShoppingListItem extends ShoppingListItem {
       {required final String id,
       required final String shoppingListId,
       final String? productId,
+      final String? categoryId,
+      final String? targetInventoryId,
+      final String? targetInventoryCategoryId,
       required final String rawText,
       final double? quantity,
       final Unit? unit,
@@ -461,6 +522,12 @@ abstract class _ShoppingListItem extends ShoppingListItem {
   String get shoppingListId;
   @override
   String? get productId;
+  @override
+  String? get categoryId;
+  @override
+  String? get targetInventoryId;
+  @override
+  String? get targetInventoryCategoryId;
   @override
   String get rawText;
   @override
