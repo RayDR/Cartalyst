@@ -701,9 +701,9 @@ class _InventoryPickerSheetState extends ConsumerState<_InventoryPickerSheet> {
           const SizedBox(height: AppSpacing.sm),
           if (widget.allowUnlink)
             const ListTile(
-              leading: const Icon(Icons.link_off_outlined),
-              title: const Text('No inventory'),
-              subtitle: const Text('Tap an inventory below to unlink it.'),
+              leading: Icon(Icons.link_off_outlined),
+              title: Text('No inventory'),
+              subtitle: Text('Tap an inventory below to unlink it.'),
             ),
           if (widget.allowUnlink) const Divider(),
           if (inventories.isEmpty)

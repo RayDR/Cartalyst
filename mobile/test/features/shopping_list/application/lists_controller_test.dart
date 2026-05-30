@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory.dart';
 import 'package:cartalyst_mobile/features/shopping_list/application/lists_controller.dart';
 import 'package:cartalyst_mobile/features/shopping_list/application/lists_state.dart';
 import 'package:cartalyst_mobile/features/shopping_list/application/shopping_list_controller.dart'
@@ -7,7 +8,6 @@ import 'package:cartalyst_mobile/features/shopping_list/application/shopping_lis
 import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list.dart';
 import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list_item.dart';
 import 'package:cartalyst_mobile/features/shopping_list/domain/repositories/shopping_list_repository.dart';
-import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:uuid/uuid.dart';
@@ -313,7 +313,7 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 20));
 
       expect(
-          repository.linkedInventoryIdsForList(list.id), contains('inv-123'));
+          repository.linkedInventoryIdsForList(list.id), contains('inv-123'),);
     });
 
     test('linkToInventory supports multiple linked inventories', () async {
@@ -326,7 +326,7 @@ void main() {
       final ShoppingList list =
           container.read(listsControllerProvider).lists.first;
       expect(
-          repository.linkedInventoryIdsForList(list.id), contains('inv-123'));
+          repository.linkedInventoryIdsForList(list.id), contains('inv-123'),);
 
       await controller.linkToInventory(list, 'inv-456');
 
@@ -362,7 +362,7 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 20));
 
       expect(
-          repository.linkedInventoryIdsForList(list.id), <String>{'inv-456'});
+          repository.linkedInventoryIdsForList(list.id), <String>{'inv-456'},);
     });
 
     test('recentLists returns at most 5 lists', () async {

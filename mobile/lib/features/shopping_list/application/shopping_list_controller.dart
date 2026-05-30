@@ -1,16 +1,16 @@
 import 'dart:async';
 
 import 'package:cartalyst_mobile/core/domain/value_objects/unit.dart';
-import 'package:cartalyst_mobile/features/products/data/repositories/local_product_repository.dart';
-import 'package:cartalyst_mobile/features/products/domain/entities/product.dart';
-import 'package:cartalyst_mobile/features/products/domain/entities/product_alias.dart';
-import 'package:cartalyst_mobile/features/products/domain/repositories/product_repository.dart';
-import 'package:cartalyst_mobile/features/products/domain/services/product_suggestion_service.dart';
 import 'package:cartalyst_mobile/features/inventories/data/repositories/local_inventory_repository.dart';
 import 'package:cartalyst_mobile/features/inventories/domain/repositories/inventory_repository.dart';
 import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory.dart';
 import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory_event.dart';
 import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory_item.dart';
+import 'package:cartalyst_mobile/features/products/data/repositories/local_product_repository.dart';
+import 'package:cartalyst_mobile/features/products/domain/entities/product.dart';
+import 'package:cartalyst_mobile/features/products/domain/entities/product_alias.dart';
+import 'package:cartalyst_mobile/features/products/domain/repositories/product_repository.dart';
+import 'package:cartalyst_mobile/features/products/domain/services/product_suggestion_service.dart';
 import 'package:cartalyst_mobile/features/shopping_list/application/shopping_list_state.dart';
 import 'package:cartalyst_mobile/features/shopping_list/data/repositories/local_shopping_list_repository.dart';
 import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list.dart';

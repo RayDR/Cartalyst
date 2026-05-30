@@ -1,15 +1,15 @@
 import 'dart:convert';
 
 import 'package:cartalyst_mobile/core/domain/value_objects/unit.dart';
+import 'package:cartalyst_mobile/features/pantry/data/mappers/pantry_mapper.dart';
+import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory.dart'
+    as inventory_domain;
 import 'package:cartalyst_mobile/features/shopping_list/data/mappers/shopping_list_mapper.dart';
 import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list.dart'
     as domain;
 import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list_item.dart'
     as domain;
 import 'package:cartalyst_mobile/features/shopping_list/domain/repositories/shopping_list_repository.dart';
-import 'package:cartalyst_mobile/features/pantry/data/mappers/pantry_mapper.dart';
-import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory.dart'
-    as inventory_domain;
 import 'package:cartalyst_mobile/infrastructure/local_db/app_database.dart';
 import 'package:uuid/uuid.dart';
 

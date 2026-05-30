@@ -1,6 +1,6 @@
+import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory.dart';
 import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list.dart';
 import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list_item.dart';
-import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory.dart';
 
 class ShoppingListDraft {
   const ShoppingListDraft({

@@ -146,7 +146,7 @@ void main() {
         expect(
             inventories
                 .any((Inventory inventory) => inventory.name == 'Despensa'),
-            isTrue);
+            isTrue,);
       } on ArgumentError catch (error) {
         if (_isMissingSqlite(error)) {
           return;

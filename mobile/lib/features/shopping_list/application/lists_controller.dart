@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:cartalyst_mobile/features/shopping_list/application/lists_state.dart';
 import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory.dart';
+import 'package:cartalyst_mobile/features/shopping_list/application/lists_state.dart';
 import 'package:cartalyst_mobile/features/shopping_list/application/shopping_list_controller.dart'
     show shoppingListRepositoryProvider, uuidProvider;
 import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list.dart';
