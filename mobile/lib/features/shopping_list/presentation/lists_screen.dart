@@ -3,8 +3,6 @@ import 'package:cartalyst_mobile/core/widgets/app_card.dart';
 import 'package:cartalyst_mobile/core/widgets/app_list_tile.dart';
 import 'package:cartalyst_mobile/core/widgets/empty_state.dart';
 import 'package:cartalyst_mobile/core/widgets/keyboard_aware_scroll_view.dart';
-import 'package:cartalyst_mobile/features/inventories/application/inventories_controller.dart';
-import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory.dart';
 import 'package:cartalyst_mobile/features/shopping_list/application/lists_controller.dart';
 import 'package:cartalyst_mobile/features/shopping_list/application/lists_state.dart';
 import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list.dart';
@@ -20,11 +18,6 @@ class ListsScreen extends ConsumerWidget {
     final ListsState state = ref.watch(listsControllerProvider);
     final ListsController controller =
         ref.read(listsControllerProvider.notifier);
-    final Map<String, Inventory> inventoriesById = <String, Inventory>{
-      for (final Inventory inventory
-          in ref.watch(inventoriesControllerProvider).inventories)
-        inventory.id: inventory,
-    };
 
     return Scaffold(
       appBar: AppBar(title: const Text('My Lists')),
@@ -99,9 +92,6 @@ class ListsScreen extends ConsumerWidget {
                             ),
                             child: _ListCard(
                               list: list,
-                              inventoryName: list.inventoryId == null
-                                  ? null
-                                  : inventoriesById[list.inventoryId!]?.name,
                               onTap: () => context.go('/lists/${list.id}'),
                               onRename: () =>
                                   _showRenameDialog(context, controller, list),
@@ -129,7 +119,8 @@ class ListsScreen extends ConsumerWidget {
     }
     final String? newId = await controller.createList(
       draft.name,
-      inventoryId: draft.inventoryId,
+      listType: draft.listType,
+      routingMode: draft.routingMode,
     );
     if (!context.mounted) {
       return;
@@ -141,11 +132,8 @@ class ListsScreen extends ConsumerWidget {
       return;
     }
 
-    final String message = draft.inventoryId == null
-        ? 'List created'
-        : 'List created and linked to inventory';
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
+      const SnackBar(content: Text('List created')),
     );
     context.go('/lists/$newId');
   }
@@ -273,14 +261,12 @@ class ListsScreen extends ConsumerWidget {
 class _ListCard extends StatelessWidget {
   const _ListCard({
     required this.list,
-    required this.inventoryName,
     required this.onTap,
     required this.onRename,
     required this.onDelete,
   });
 
   final ShoppingList list;
-  final String? inventoryName;
   final VoidCallback onTap;
   final VoidCallback onRename;
   final VoidCallback onDelete;
@@ -291,11 +277,7 @@ class _ListCard extends StatelessWidget {
       onTap: onTap,
       child: AppListTile(
         title: list.name,
-        subtitle: list.inventoryId == null
-            ? 'No inventory linked'
-            : inventoryName == null
-                ? 'Linked to inventory'
-                : 'Linked to $inventoryName',
+        subtitle: _subtitleForList(list),
         leading: const Icon(Icons.shopping_cart_outlined),
         trailing: PopupMenuButton<_ListAction>(
           onSelected: (_ListAction action) {
@@ -326,6 +308,20 @@ class _ListCard extends StatelessWidget {
       ),
     );
   }
+
+  String _subtitleForList(ShoppingList value) {
+    if (value.listType == ShoppingListType.simple) {
+      return 'Simple list';
+    }
+
+    return switch (value.routingMode) {
+      ShoppingListRoutingMode.inventoryCategories =>
+        'Organized inside one inventory',
+      ShoppingListRoutingMode.categoryAsInventory =>
+        'Organized across inventories',
+      ShoppingListRoutingMode.none => 'Organized list',
+    };
+  }
 }
 
 enum _ListAction { rename, delete }
@@ -333,23 +329,27 @@ enum _ListAction { rename, delete }
 class _ListDraft {
   const _ListDraft({
     required this.name,
-    required this.inventoryId,
+    required this.listType,
+    required this.routingMode,
   });
 
   final String name;
-  final String? inventoryId;
+  final ShoppingListType listType;
+  final ShoppingListRoutingMode routingMode;
 }
 
-class _ListComposerSheet extends ConsumerStatefulWidget {
+class _ListComposerSheet extends StatefulWidget {
   const _ListComposerSheet();
 
   @override
-  ConsumerState<_ListComposerSheet> createState() => _ListComposerSheetState();
+  State<_ListComposerSheet> createState() => _ListComposerSheetState();
 }
 
-class _ListComposerSheetState extends ConsumerState<_ListComposerSheet> {
+class _ListComposerSheetState extends State<_ListComposerSheet> {
   late final TextEditingController _controller;
-  String? _selectedInventoryId;
+  int _step = 1;
+  ShoppingListType? _selectedListType;
+  ShoppingListRoutingMode? _selectedRoutingMode;
 
   @override
   void initState() {
@@ -365,8 +365,6 @@ class _ListComposerSheetState extends ConsumerState<_ListComposerSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final List<Inventory> inventories =
-        ref.watch(inventoriesControllerProvider).inventories;
     final double maxHeight = MediaQuery.sizeOf(context).height * 0.85;
 
     return Padding(
@@ -385,70 +383,93 @@ class _ListComposerSheetState extends ConsumerState<_ListComposerSheet> {
             children: <Widget>[
               Text('New list', style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: AppSpacing.md),
-              const Text(
-                'You can skip inventory linking now and change it later.',
-              ),
+              Text('Step $_step of 3',
+                  style: Theme.of(context).textTheme.bodyMedium),
               const SizedBox(height: AppSpacing.md),
-              TextField(
-                controller: _controller,
-                autofocus: true,
-                textInputAction: TextInputAction.done,
-                decoration: const InputDecoration(
-                  labelText: 'List name',
-                  hintText: 'Example: Weekly groceries',
-                ),
-                onSubmitted: (_) => _submit(),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              Text(
-                'Linked inventory (optional)',
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              _InventoryChoiceTile(
-                label: 'No inventory',
-                subtitle: 'Keep this list standalone for now.',
-                selected: _selectedInventoryId == null,
-                onTap: () {
-                  setState(() {
-                    _selectedInventoryId = null;
-                  });
-                },
-              ),
-              if (inventories.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.only(top: AppSpacing.xs),
-                  child: Text(
-                    'No inventories yet. Create one below if you want to link now.',
+              if (_step == 1) ...<Widget>[
+                const Text('Name your list.'),
+                const SizedBox(height: AppSpacing.md),
+                TextField(
+                  controller: _controller,
+                  autofocus: true,
+                  textInputAction: TextInputAction.done,
+                  decoration: const InputDecoration(
+                    labelText: 'List name',
+                    hintText: 'Example: Weekly groceries',
                   ),
-                )
-              else
-                ...inventories.map(
-                  (Inventory inventory) => _InventoryChoiceTile(
-                    label: inventory.name,
-                    selected: _selectedInventoryId == inventory.id,
-                    onTap: () {
-                      setState(() {
-                        _selectedInventoryId = inventory.id;
-                      });
-                    },
-                  ),
+                  onSubmitted: (_) => _nextFromName(),
                 ),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton.icon(
-                  onPressed: _createAndSelectInventory,
-                  icon: const Icon(Icons.add_circle_outline),
-                  label: const Text('Create inventory and link'),
+              ] else if (_step == 2) ...<Widget>[
+                const Text('Choose how this list should behave.'),
+                const SizedBox(height: AppSpacing.md),
+                _ChoiceTile(
+                  label: 'Simple list',
+                  subtitle: 'Quick checklist with no category routing.',
+                  selected: _selectedListType == ShoppingListType.simple,
+                  onTap: () {
+                    setState(() {
+                      _selectedListType = ShoppingListType.simple;
+                      _selectedRoutingMode = ShoppingListRoutingMode.none;
+                    });
+                  },
                 ),
-              ),
+                _ChoiceTile(
+                  label: 'Organized list',
+                  subtitle: 'Group items by categories and route destinations.',
+                  selected: _selectedListType == ShoppingListType.organized,
+                  onTap: () {
+                    setState(() {
+                      _selectedListType = ShoppingListType.organized;
+                    });
+                  },
+                ),
+              ] else ...<Widget>[
+                const Text('Choose routing mode.'),
+                const SizedBox(height: AppSpacing.md),
+                _ChoiceTile(
+                  label: 'Organize inside one inventory',
+                  subtitle:
+                      'Route categories to sections inside a single inventory.',
+                  selected: _selectedRoutingMode ==
+                      ShoppingListRoutingMode.inventoryCategories,
+                  onTap: () {
+                    setState(() {
+                      _selectedRoutingMode =
+                          ShoppingListRoutingMode.inventoryCategories;
+                    });
+                  },
+                ),
+                _ChoiceTile(
+                  label: 'Organize across inventories',
+                  subtitle: 'Route categories to different inventories.',
+                  selected: _selectedRoutingMode ==
+                      ShoppingListRoutingMode.categoryAsInventory,
+                  onTap: () {
+                    setState(() {
+                      _selectedRoutingMode =
+                          ShoppingListRoutingMode.categoryAsInventory;
+                    });
+                  },
+                ),
+              ],
               const SizedBox(height: AppSpacing.md),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: _submit,
-                  child: const Text('Create list'),
-                ),
+              Row(
+                children: <Widget>[
+                  if (_step > 1)
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: _goBack,
+                        child: const Text('Back'),
+                      ),
+                    ),
+                  if (_step > 1) const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: _onPrimaryAction,
+                      child: Text(_primaryLabel),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -457,50 +478,92 @@ class _ListComposerSheetState extends ConsumerState<_ListComposerSheet> {
     );
   }
 
-  Future<void> _createAndSelectInventory() async {
-    final String? name = await showDialog<String>(
-      context: context,
-      builder: (BuildContext context) => const _InventoryNameDialog(),
-    );
-    if (name == null || !mounted) {
+  String get _primaryLabel {
+    if (_step == 1) {
+      return 'Next';
+    }
+    if (_step == 2 && _selectedListType == ShoppingListType.simple) {
+      return 'Create list';
+    }
+    if (_step == 2) {
+      return 'Continue';
+    }
+    return 'Create list';
+  }
+
+  void _onPrimaryAction() {
+    if (_step == 1) {
+      _nextFromName();
       return;
     }
 
-    final String? inventoryId = await ref
-        .read(inventoriesControllerProvider.notifier)
-        .createInventory(name);
-    if (!mounted) {
-      return;
-    }
-    if (inventoryId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unable to create inventory. Try again.')),
-      );
+    if (_step == 2) {
+      if (_selectedListType == null) {
+        return;
+      }
+      if (_selectedListType == ShoppingListType.simple) {
+        _submit(
+          listType: ShoppingListType.simple,
+          routingMode: ShoppingListRoutingMode.none,
+        );
+        return;
+      }
+      setState(() {
+        _step = 3;
+      });
       return;
     }
 
-    setState(() {
-      _selectedInventoryId = inventoryId;
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Inventory created and selected.')),
+    if (_selectedRoutingMode == null) {
+      return;
+    }
+    _submit(
+      listType: ShoppingListType.organized,
+      routingMode: _selectedRoutingMode!,
     );
   }
 
-  void _submit() {
+  void _nextFromName() {
     final String name = _controller.text.trim();
     if (name.isEmpty) {
       return;
     }
+
+    setState(() {
+      _step = 2;
+    });
+  }
+
+  void _goBack() {
+    setState(() {
+      _step = _step - 1;
+      if (_step < 1) {
+        _step = 1;
+      }
+    });
+  }
+
+  void _submit({
+    required ShoppingListType listType,
+    required ShoppingListRoutingMode routingMode,
+  }) {
+    final String name = _controller.text.trim();
+    if (name.isEmpty) {
+      return;
+    }
+
     Navigator.of(context).pop(
-      _ListDraft(name: name, inventoryId: _selectedInventoryId),
+      _ListDraft(
+        name: name,
+        listType: listType,
+        routingMode: routingMode,
+      ),
     );
   }
 }
 
-class _InventoryChoiceTile extends StatelessWidget {
-  const _InventoryChoiceTile({
+class _ChoiceTile extends StatelessWidget {
+  const _ChoiceTile({
     required this.label,
     required this.selected,
     required this.onTap,
@@ -529,64 +592,6 @@ class _InventoryChoiceTile extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-class _InventoryNameDialog extends StatefulWidget {
-  const _InventoryNameDialog();
-
-  @override
-  State<_InventoryNameDialog> createState() => _InventoryNameDialogState();
-}
-
-class _InventoryNameDialogState extends State<_InventoryNameDialog> {
-  late final TextEditingController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('New inventory'),
-      content: TextField(
-        controller: _controller,
-        autofocus: true,
-        textInputAction: TextInputAction.done,
-        decoration: const InputDecoration(
-          labelText: 'Inventory name',
-          hintText: 'Example: Pantry, Cleaning, Baby supplies',
-        ),
-        onSubmitted: (_) => _submit(),
-      ),
-      actions: <Widget>[
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
-          onPressed: _submit,
-          child: const Text('Create'),
-        ),
-      ],
-    );
-  }
-
-  void _submit() {
-    final String name = _controller.text.trim();
-    if (name.isEmpty) {
-      return;
-    }
-    Navigator.of(context).pop(name);
   }
 }
 

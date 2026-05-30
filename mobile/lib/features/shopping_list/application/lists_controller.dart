@@ -102,6 +102,9 @@ class ListsController extends Notifier<ListsState> {
           inventoryId: inventoryId,
         );
       }
+      if (listType == ShoppingListType.organized) {
+        await _repository.ensureUncategorizedCategoryForList(list.id);
+      }
       state = state.copyWith(isBusy: false);
       return list.id;
     } catch (_) {

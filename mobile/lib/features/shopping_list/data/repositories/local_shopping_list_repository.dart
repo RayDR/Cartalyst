@@ -207,6 +207,60 @@ class LocalShoppingListRepository implements ShoppingListRepository {
     );
   }
 
+  @override
+  Future<void> ensureUncategorizedCategoryForList(String shoppingListId) async {
+    final List<QueryRow> existing = await _database.customSelect(
+      '''
+      SELECT id
+      FROM shopping_list_categories
+      WHERE shopping_list_id = ?
+        AND deleted_at IS NULL
+      LIMIT 1
+      ''',
+      variables: <Variable<Object>>[
+        Variable<String>(shoppingListId),
+      ],
+    ).get();
+    if (existing.isNotEmpty) {
+      return;
+    }
+
+    final DateTime now = DateTime.now();
+    final String categoryId = '$shoppingListId::uncategorized';
+
+    await _database.customStatement(
+      '''
+      INSERT OR IGNORE INTO categories (
+        id,
+        name,
+        color,
+        icon,
+        created_at,
+        updated_at,
+        deleted_at,
+        sync_status,
+        version
+      ) VALUES (?, 'Uncategorized', NULL, NULL, ?, ?, NULL, 'pending_sync', 1)
+      ''',
+      <Object>[
+        categoryId,
+        now.toIso8601String(),
+        now.toIso8601String(),
+      ],
+    );
+
+    await _database.shoppingListsDao.upsertShoppingListCategory(
+      ShoppingListCategoriesCompanion.insert(
+        id: _uuid.v4(),
+        shoppingListId: shoppingListId,
+        categoryId: categoryId,
+        sortOrder: const Value(0),
+        createdAt: Value(now),
+        updatedAt: Value(now),
+      ),
+    );
+  }
+
   Map<String, Object?> _draftItemToJson(domain.ShoppingListItem item) {
     return <String, Object?>{
       'id': item.id,

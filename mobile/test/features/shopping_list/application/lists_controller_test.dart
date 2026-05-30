@@ -89,6 +89,20 @@ void main() {
           state.lists.firstWhere((ShoppingList item) => item.id == newId);
       expect(list.listType, ShoppingListType.organized);
       expect(list.routingMode, ShoppingListRoutingMode.inventoryCategories);
+      expect(
+        repository.uncategorizedEnsuredForListIds,
+        contains(list.id),
+      );
+    });
+
+    test('createList simple does not seed uncategorized category', () async {
+      final ListsController controller =
+          container.read(listsControllerProvider.notifier);
+
+      final String? newId = await controller.createList('Simple list');
+
+      expect(newId, isNotNull);
+      expect(repository.uncategorizedEnsuredForListIds, isEmpty);
     });
 
     test('createList trims whitespace', () async {
@@ -442,6 +456,7 @@ class FakeShoppingListRepository extends ShoppingListRepository {
   final Map<String, ShoppingListDraft> _drafts = <String, ShoppingListDraft>{};
   final Map<String, Set<String>> _inventoryLinksByList =
       <String, Set<String>>{};
+  final List<String> uncategorizedEnsuredForListIds = <String>[];
 
   Set<String> linkedInventoryIdsForList(String listId) {
     return Set<String>.from(_inventoryLinksByList[listId] ?? <String>{});
@@ -599,6 +614,11 @@ class FakeShoppingListRepository extends ShoppingListRepository {
   @override
   Future<void> deleteDraft(String shoppingListId) async {
     _drafts.remove(shoppingListId);
+  }
+
+  @override
+  Future<void> ensureUncategorizedCategoryForList(String shoppingListId) async {
+    uncategorizedEnsuredForListIds.add(shoppingListId);
   }
 
   void _emitAllLists() {

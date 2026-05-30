@@ -1,6 +1,6 @@
 import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory.dart';
-import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list_category.dart';
 import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list.dart';
+import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list_category.dart';
 import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list_item.dart';
 
 class ShoppingListDraft {
@@ -58,5 +58,9 @@ abstract class ShoppingListRepository {
 
   Future<void> saveShoppingListCategory(ShoppingListCategory category) {
     throw UnsupportedError('saveShoppingListCategory is not implemented.');
+  }
+
+  Future<void> ensureUncategorizedCategoryForList(String shoppingListId) {
+    return Future<void>.value();
   }
 }
