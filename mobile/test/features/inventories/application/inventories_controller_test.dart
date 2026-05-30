@@ -28,7 +28,8 @@ void main() {
 
   Future<void> waitForInventories(int count) async {
     for (int i = 0; i < 50; i++) {
-      final InventoriesState state = container.read(inventoriesControllerProvider);
+      final InventoriesState state =
+          container.read(inventoriesControllerProvider);
       if (state.inventories.length == count) return;
       await Future<void>.delayed(const Duration(milliseconds: 10));
     }
@@ -59,7 +60,10 @@ void main() {
 
       final String? id = await controller.createInventory('   ');
       expect(id, isNull);
-      expect(container.read(inventoriesControllerProvider).inventories, isEmpty);
+      expect(
+        container.read(inventoriesControllerProvider).inventories,
+        isEmpty,
+      );
     });
 
     test('renameInventory updates name', () async {
@@ -104,7 +108,7 @@ void main() {
       final InventoriesController controller =
           container.read(inventoriesControllerProvider.notifier);
 
-      await controller.createInventory('Despensa');
+      await controller.createInventory('Pantry');
       await waitForInventories(1);
 
       final Inventory created =
@@ -119,39 +123,45 @@ void main() {
       final InventoriesState state =
           container.read(inventoriesControllerProvider);
       expect(state.inventories.length, 1);
-      expect(state.inventories.first.name, 'Despensa');
+      expect(state.inventories.first.name, 'Pantry');
       expect(state.lastDeletedInventory, isNull);
     });
 
     test('inventories are sorted by updatedAt desc', () async {
-      final DateTime t1 = DateTime(2026, 1, 1);
+      final DateTime t1 = DateTime(2026);
       final DateTime t2 = DateTime(2026, 1, 2);
       final DateTime t3 = DateTime(2026, 1, 3);
 
-      repository.seedInventory(Inventory(
-        id: 'inv-a',
-        name: 'Alpha',
-        createdAt: t1,
-        updatedAt: t1,
-        syncStatus: 'synced',
-        version: 1,
-      ));
-      repository.seedInventory(Inventory(
-        id: 'inv-c',
-        name: 'Charlie',
-        createdAt: t3,
-        updatedAt: t3,
-        syncStatus: 'synced',
-        version: 1,
-      ));
-      repository.seedInventory(Inventory(
-        id: 'inv-b',
-        name: 'Bravo',
-        createdAt: t2,
-        updatedAt: t2,
-        syncStatus: 'synced',
-        version: 1,
-      ));
+      repository.seedInventory(
+        Inventory(
+          id: 'inv-a',
+          name: 'Alpha',
+          createdAt: t1,
+          updatedAt: t1,
+          syncStatus: 'synced',
+          version: 1,
+        ),
+      );
+      repository.seedInventory(
+        Inventory(
+          id: 'inv-c',
+          name: 'Charlie',
+          createdAt: t3,
+          updatedAt: t3,
+          syncStatus: 'synced',
+          version: 1,
+        ),
+      );
+      repository.seedInventory(
+        Inventory(
+          id: 'inv-b',
+          name: 'Bravo',
+          createdAt: t2,
+          updatedAt: t2,
+          syncStatus: 'synced',
+          version: 1,
+        ),
+      );
       repository.emitInventories();
 
       // trigger subscription
@@ -250,8 +260,7 @@ class FakeInventoryRepository implements InventoryRepository {
 
   @override
   Future<void> saveInventoryItem(InventoryItem item) async {
-    final int index =
-        _items.indexWhere((InventoryItem e) => e.id == item.id);
+    final int index = _items.indexWhere((InventoryItem e) => e.id == item.id);
     if (index >= 0) {
       _items[index] = item;
     } else {
@@ -277,8 +286,7 @@ class FakeInventoryRepository implements InventoryRepository {
   }
 
   void _emitInventories() {
-    _inventoriesController
-        .add(_sortedActiveInventories());
+    _inventoriesController.add(_sortedActiveInventories());
   }
 
   void _emitActiveInventories() {

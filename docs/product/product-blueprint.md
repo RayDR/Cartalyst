@@ -34,7 +34,7 @@ Cartalyst solves this with fast local interactions and practical grocery intelli
 
 - Users can create and manage multiple shopping lists.
 - Users can compare up to 5 options by unit price confidently.
-- Users can create and manage multiple inventories, including a user-created "Pantry" or "Despensa" inventory.
+- Users can create and manage multiple inventories, including an inventory they may name "Pantry".
 - Users can safely edit lists with draft and undo support.
 - Users can trust the app even without connectivity.
 
@@ -43,6 +43,7 @@ Cartalyst solves this with fast local interactions and practical grocery intelli
 - Multiple shopping lists
 - Multiple inventories
 - Optional shopping list to inventory linking
+- Pantry is no longer a fixed app section and is represented as user-defined inventory naming
 - Home focused on creating lists and showing recently modified lists
 - Bottom navigation: Home, Lists, Inventories, Compare, Settings
 - Price comparison with up to 5 options
@@ -64,7 +65,28 @@ Cartalyst solves this with fast local interactions and practical grocery intelli
 
 - Inventory is the primary concept.
 - Pantry is not a fixed app concept anymore.
-- A pantry is simply an inventory named "Pantry" or "Despensa" if the user creates it.
+- A pantry is simply an inventory named "Pantry" if the user creates it.
+
+## V1.1 Delivery Phases
+
+1. Organized Lists and Inventories
+	- Multi-list and multi-inventory foundations
+	- Pantry moved from fixed section to user naming
+2. Focused Navigation and Home
+	- Home simplification and bottom-nav restructure
+3. Safe Editing and Review
+	- Gesture-assisted list review with undo
+	- Draft editing for full-list changes
+4. Compare Expansion and Polish
+	- 2-5 option price compare
+	- Regression and UX polish pass
+
+## V1.1 Data Model Impact
+
+- `shopping_lists` supports many concurrent lists and optional inventory references
+- `inventories` is fully user-defined without fixed semantic coupling
+- Draft records are persisted for full-list edit sessions
+- Compare output shifts to ranked multi-option result shape with normalized unit pricing
 
 ## Future Scope
 
@@ -91,6 +113,8 @@ Cartalyst solves this with fast local interactions and practical grocery intelli
 - Show clear empty states.
 - Maintain a friendly and polished UI.
 - Provide fast feedback on every key action.
+- Keep destructive or status-changing actions reversible where practical.
+- Keep primary actions visible and reachable above bottom navigation constraints.
 
 ## Release Intent For First Deliverable
 

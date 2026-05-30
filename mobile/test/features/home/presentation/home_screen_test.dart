@@ -32,27 +32,31 @@ void main() {
   }
 
   group('HomeScreen', () {
-    testWidgets('shows empty state when there are no lists', (WidgetTester tester) async {
+    testWidgets('shows empty state when there are no lists',
+        (WidgetTester tester) async {
       await tester.pumpWidget(buildApp());
       await tester.pumpAndSettle();
 
       expect(find.text('Cartalyst'), findsOneWidget);
       expect(find.text('Create shopping list'), findsOneWidget);
       expect(
-        find.text('Keep your shopping lists local, organized, and ready whenever you are.'),
+        find.text(
+          'Keep your shopping lists local, organized, and ready whenever you are.',
+        ),
         findsOneWidget,
       );
       expect(find.text('Recent lists'), findsNothing);
       expect(find.text('Compare package value'), findsNothing);
     });
 
-    testWidgets('shows recent lists when data exists', (WidgetTester tester) async {
+    testWidgets('shows recent lists when data exists',
+        (WidgetTester tester) async {
       repository.seedList(
         ShoppingList(
           id: 'list-1',
           name: 'Weekend groceries',
           status: ShoppingListStatus.active,
-          createdAt: DateTime(2026, 1, 1),
+          createdAt: DateTime(2026),
           updatedAt: DateTime(2026, 1, 1, 10),
           syncStatus: 'local_only',
           version: 1,
@@ -106,8 +110,9 @@ class FakeShoppingListRepository implements ShoppingListRepository {
   final StreamController<List<ShoppingList>> _activeListsController =
       StreamController<List<ShoppingList>>.broadcast();
 
-  final Map<String, StreamController<List<ShoppingListItem>>> _itemsControllers =
-      <String, StreamController<List<ShoppingListItem>>>{};
+  final Map<String, StreamController<List<ShoppingListItem>>>
+      _itemsControllers = <String, StreamController<List<ShoppingListItem>>>{};
+  final Map<String, ShoppingListDraft> _drafts = <String, ShoppingListDraft>{};
 
   final List<ShoppingList> _lists = <ShoppingList>[];
 
@@ -140,7 +145,8 @@ class FakeShoppingListRepository implements ShoppingListRepository {
 
   @override
   Future<void> saveShoppingList(ShoppingList shoppingList) async {
-    final int index = _lists.indexWhere((ShoppingList item) => item.id == shoppingList.id);
+    final int index =
+        _lists.indexWhere((ShoppingList item) => item.id == shoppingList.id);
     if (index >= 0) {
       _lists[index] = shoppingList;
     } else {
@@ -160,28 +166,50 @@ class FakeShoppingListRepository implements ShoppingListRepository {
     _emitActiveLists();
   }
 
+  @override
+  Future<ShoppingListDraft?> readDraft(String shoppingListId) async {
+    return _drafts[shoppingListId];
+  }
+
+  @override
+  Future<void> saveDraft(ShoppingListDraft draft) async {
+    _drafts[draft.shoppingListId] = draft;
+  }
+
+  @override
+  Future<void> deleteDraft(String shoppingListId) async {
+    _drafts.remove(shoppingListId);
+  }
+
   void _emitAllLists() {
     final List<ShoppingList> lists = _lists
         .where((ShoppingList item) => item.deletedAt == null)
         .toList(growable: false)
-      ..sort((ShoppingList a, ShoppingList b) => b.updatedAt.compareTo(a.updatedAt));
+      ..sort(
+        (ShoppingList a, ShoppingList b) => b.updatedAt.compareTo(a.updatedAt),
+      );
     _allListsController.add(lists);
   }
 
   void _emitActiveLists() {
     final List<ShoppingList> lists = _lists
         .where(
-          (ShoppingList item) => item.deletedAt == null && item.status == ShoppingListStatus.active,
+          (ShoppingList item) =>
+              item.deletedAt == null &&
+              item.status == ShoppingListStatus.active,
         )
         .toList(growable: false)
-      ..sort((ShoppingList a, ShoppingList b) => b.updatedAt.compareTo(a.updatedAt));
+      ..sort(
+        (ShoppingList a, ShoppingList b) => b.updatedAt.compareTo(a.updatedAt),
+      );
     _activeListsController.add(lists);
   }
 
   Future<void> dispose() async {
     await _allListsController.close();
     await _activeListsController.close();
-    for (final StreamController<List<ShoppingListItem>> controller in _itemsControllers.values) {
+    for (final StreamController<List<ShoppingListItem>> controller
+        in _itemsControllers.values) {
       await controller.close();
     }
   }

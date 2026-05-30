@@ -4,7 +4,7 @@ A feature is done for V1 when all items below are satisfied.
 
 ## Product Fit
 
-- Solves a clear V1 user task in shopping list, pantry, or price compare.
+- Solves a clear V1 user task in shopping list, inventories, or price compare.
 - Does not add V2/V3 capabilities.
 
 ## Architecture
@@ -19,12 +19,15 @@ A feature is done for V1 when all items below are satisfied.
 - Uses Cartalyst design-system components and tokens.
 - Provides clear empty states where data may be absent.
 - Supports quick scanning and simple actions on mobile.
+- Keeps primary actions visible above bottom navigation constraints.
+- Keeps destructive/status-changing list review actions reversible where specified.
 
 ## Data and Reliability
 
 - Changes persist locally when applicable.
 - Error states are handled with user-friendly feedback.
 - No misleading AI claims or fabricated insights.
+- Full-list edit drafts are isolated from committed list data until apply.
 
 ## Quality
 

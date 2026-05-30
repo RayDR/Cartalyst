@@ -48,8 +48,7 @@ class InventoriesScreen extends ConsumerWidget {
                     final Inventory inventory = state.inventories[index];
                     return _InventoryCard(
                       inventory: inventory,
-                      onTap: () =>
-                          context.go('/inventories/${inventory.id}'),
+                      onTap: () => context.go('/inventories/${inventory.id}'),
                       onRename: () =>
                           _showRenameDialog(context, controller, inventory),
                       onDelete: () =>
@@ -70,7 +69,7 @@ class InventoriesScreen extends ConsumerWidget {
       context,
       title: 'New inventory',
       initialValue: '',
-      hint: 'Example: Pantry, Almacén, Baby supplies',
+      hint: 'Example: Pantry, Hall closet, Baby supplies',
     );
     if (name == null || !context.mounted) return;
     final String? newId = await controller.createInventory(name);
@@ -88,7 +87,7 @@ class InventoriesScreen extends ConsumerWidget {
       context,
       title: 'Rename inventory',
       initialValue: inventory.name,
-      hint: 'Example: Pantry, Despensa, Cleaning',
+      hint: 'Example: Pantry, Kitchen storage, Cleaning',
     );
     if (newName == null) return;
     await controller.renameInventory(inventory, newName);

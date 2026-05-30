@@ -198,7 +198,8 @@ class FakeInventoryRepository implements InventoryRepository {
   @override
   Stream<List<Inventory>> watchAllInventories() {
     Future<void>.microtask(
-      () => _inventoriesController.add(List<Inventory>.unmodifiable(_inventories)),
+      () => _inventoriesController
+          .add(List<Inventory>.unmodifiable(_inventories)),
     );
     return _inventoriesController.stream;
   }
@@ -236,8 +237,7 @@ class FakeInventoryRepository implements InventoryRepository {
 
   @override
   Future<void> saveInventoryItem(InventoryItem item) async {
-    final int index =
-        _items.indexWhere((InventoryItem e) => e.id == item.id);
+    final int index = _items.indexWhere((InventoryItem e) => e.id == item.id);
     if (index >= 0) {
       _items[index] = item;
     } else {
@@ -294,7 +294,8 @@ class FakeProductRepository implements ProductRepository {
 
   @override
   Future<List<ProductAlias>> findAliasesForProducts(
-      List<String> productIds) async {
+    List<String> productIds,
+  ) async {
     return const <ProductAlias>[];
   }
 

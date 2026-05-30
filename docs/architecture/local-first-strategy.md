@@ -14,8 +14,9 @@ Local-first ensures:
 
 - Instant list editing
 - Immediate product add and updates
-- Reliable pantry checks while shopping
+- Reliable inventory checks while shopping
 - Responsive unit price comparisons
+- Safe draft editing for full-list changes before apply
 
 ## Data Ownership Model
 
@@ -24,6 +25,12 @@ In V1, the device is the source of truth.
 - Primary writes happen locally.
 - Reads are served from local storage.
 - No backend dependency is required for core workflows.
+
+V1.1 implications:
+- Multiple shopping lists and inventories are fully local-first entities.
+- Pantry behavior is represented by user-created inventory naming, not fixed app sections.
+- Optional list-to-inventory links are local-first references.
+- Draft list edits persist locally and survive app restarts until applied or discarded.
 
 ## Local Persistence Foundation
 
@@ -59,6 +66,7 @@ This allows preserving offline-first behavior while adding cloud capabilities sa
 - Reads should be local and indexed for common queries
 - Writes should complete quickly for in-store interactions
 - UI updates should happen immediately after successful local commits
+- Draft writes should be cheap and frequent to protect in-progress full-list edits
 
 ## Failure Handling Principles
 

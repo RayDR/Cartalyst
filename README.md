@@ -59,12 +59,38 @@ Cartalyst should feel:
 
 - Multiple shopping lists
 - Multiple inventories
+- Pantry is no longer a fixed app section; pantry is an inventory name users may create
 - Optional list-to-inventory linking
+- Home is clean and list-focused
+- Bottom navigation: Home, Lists, Inventories, Compare, Settings
 - Quick product add and suggestions
 - Price comparison with up to 5 options
 - Local persistence
-- Safe editing with undo and draft behavior for list edits
+- Gesture-based list review with reversible actions
+- Safe full-list editing with draft and apply/discard behavior
 - Polished mobile UX
+
+## V1.1 Delivery Phases
+
+1. Foundation
+	- Multiple lists and multiple inventories as first-class entities
+	- Home simplification and bottom navigation restructure
+2. Structured Shopping
+	- Optional list-to-inventory linking
+	- Improved gesture and undo review flows
+3. Safe Editing and Compare
+	- Draft editing for full-list changes
+	- Price compare expansion from 2 fixed options to 2-5 options
+4. Polish and Regression
+	- Empty-state quality, layout safety, and full regression validation
+
+## V1.1 Data Model Impact
+
+- `shopping_lists` remains first-class and supports many concurrent lists
+- `inventories` is first-class and user-defined; no hardcoded pantry section behavior
+- `shopping_lists.inventory_id` is optional to support standalone or inventory-linked lists
+- Draft editing for list detail is persisted locally in a dedicated draft record structure
+- Price compare supports multi-option input and ranked normalized results (2-5 options)
 
 ## V1.1 Out Of Scope
 

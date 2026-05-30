@@ -37,6 +37,27 @@ Define a production-quality mobile architecture that supports fast iteration in 
 - Price comparison supports up to 5 options in a single comparison flow.
 - List editing supports draft state and undo-friendly operations.
 
+## V1.1 Architecture Phases
+
+1. Foundation
+  - Multi-list and multi-inventory domain boundaries
+  - Route topology aligned to Home, Lists, Inventories, Compare, Settings
+2. Structured Relationships
+  - Optional list-to-inventory linking through nullable references and repository contracts
+3. Safe Editing
+  - Draft persistence and explicit apply/discard transitions in application/domain flows
+  - Reversible interaction pathways for list review actions
+4. Compare Expansion
+  - Comparison services generalized from pairwise to ranked multi-option evaluation
+
+## Data Model Impact (V1.1)
+
+- `shopping_lists` remains the list aggregate root and supports many active lists
+- `inventories` replaces fixed pantry assumptions with user-defined inventory records
+- `shopping_lists.inventory_id` remains optional, enforcing link flexibility at domain boundaries
+- Draft state for full-list editing is persisted in the data layer and mapped to domain/application models
+- Price comparison result model supports ranked outputs across 2-5 options, including tie handling and normalized unit price reporting
+
 ## Architectural Style
 
 Cartalyst follows a feature-first modular structure with clear boundaries between presentation, domain, and data concerns.
@@ -73,6 +94,7 @@ Guidelines:
 - UI should consume prepared state, not execute business logic.
 - For list editing, keep draft state isolated from committed state and expose explicit commit or discard transitions.
 - For undo support, controllers should emit reversible actions where applicable.
+- For comparison workflows, keep validation and ranking logic in pure Dart services, not widgets.
 
 ## Routing
 
