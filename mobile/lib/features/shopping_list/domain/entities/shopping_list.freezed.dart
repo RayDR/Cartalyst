@@ -21,6 +21,7 @@ ShoppingList _$ShoppingListFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$ShoppingList {
   String get id => throw _privateConstructorUsedError;
+  @Deprecated('Use shopping_list_inventory_links for list-inventory relations.')
   String? get inventoryId => throw _privateConstructorUsedError;
   String get name => throw _privateConstructorUsedError;
   ShoppingListStatus get status => throw _privateConstructorUsedError;
@@ -48,6 +49,8 @@ abstract class $ShoppingListCopyWith<$Res> {
   @useResult
   $Res call(
       {String id,
+      @Deprecated(
+          'Use shopping_list_inventory_links for list-inventory relations.')
       String? inventoryId,
       String name,
       ShoppingListStatus status,
@@ -134,6 +137,8 @@ abstract class _$$ShoppingListImplCopyWith<$Res>
   @useResult
   $Res call(
       {String id,
+      @Deprecated(
+          'Use shopping_list_inventory_links for list-inventory relations.')
       String? inventoryId,
       String name,
       ShoppingListStatus status,
@@ -213,6 +218,8 @@ class __$$ShoppingListImplCopyWithImpl<$Res>
 class _$ShoppingListImpl implements _ShoppingList {
   const _$ShoppingListImpl(
       {required this.id,
+      @Deprecated(
+          'Use shopping_list_inventory_links for list-inventory relations.')
       this.inventoryId,
       required this.name,
       required this.status,
@@ -228,6 +235,7 @@ class _$ShoppingListImpl implements _ShoppingList {
   @override
   final String id;
   @override
+  @Deprecated('Use shopping_list_inventory_links for list-inventory relations.')
   final String? inventoryId;
   @override
   final String name;
@@ -294,6 +302,8 @@ class _$ShoppingListImpl implements _ShoppingList {
 abstract class _ShoppingList implements ShoppingList {
   const factory _ShoppingList(
       {required final String id,
+      @Deprecated(
+          'Use shopping_list_inventory_links for list-inventory relations.')
       final String? inventoryId,
       required final String name,
       required final ShoppingListStatus status,
@@ -309,6 +319,7 @@ abstract class _ShoppingList implements ShoppingList {
   @override
   String get id;
   @override
+  @Deprecated('Use shopping_list_inventory_links for list-inventory relations.')
   String? get inventoryId;
   @override
   String get name;

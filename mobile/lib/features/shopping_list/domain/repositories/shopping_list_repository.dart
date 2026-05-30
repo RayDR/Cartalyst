@@ -1,5 +1,6 @@
 import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list.dart';
 import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list_item.dart';
+import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory.dart';
 
 class ShoppingListDraft {
   const ShoppingListDraft({
@@ -25,6 +26,20 @@ abstract interface class ShoppingListRepository {
   Future<void> saveShoppingList(ShoppingList shoppingList);
 
   Future<void> saveShoppingListItem(ShoppingListItem item);
+
+  Future<void> linkListToInventory({
+    required String shoppingListId,
+    required String inventoryId,
+  });
+
+  Future<void> unlinkListFromInventory({
+    required String shoppingListId,
+    required String inventoryId,
+  });
+
+  Stream<List<Inventory>> watchInventoriesForList(String shoppingListId);
+
+  Stream<List<ShoppingList>> watchListsForInventory(String inventoryId);
 
   Future<void> deleteShoppingList(String id);
 

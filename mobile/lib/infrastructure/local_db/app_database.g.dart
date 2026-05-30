@@ -2569,6 +2569,419 @@ class ShoppingListsCompanion extends UpdateCompanion<ShoppingList> {
   }
 }
 
+class $ShoppingListInventoryLinksTable extends ShoppingListInventoryLinks
+    with
+        TableInfo<$ShoppingListInventoryLinksTable, ShoppingListInventoryLink> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ShoppingListInventoryLinksTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _shoppingListIdMeta =
+      const VerificationMeta('shoppingListId');
+  @override
+  late final GeneratedColumn<String> shoppingListId = GeneratedColumn<String>(
+      'shopping_list_id', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: true,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES shopping_lists (id) ON DELETE CASCADE'));
+  static const VerificationMeta _inventoryIdMeta =
+      const VerificationMeta('inventoryId');
+  @override
+  late final GeneratedColumn<String> inventoryId = GeneratedColumn<String>(
+      'inventory_id', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: true,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES inventories (id) ON DELETE CASCADE'));
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  static const VerificationMeta _deletedAtMeta =
+      const VerificationMeta('deletedAt');
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+      'deleted_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _syncStatusMeta =
+      const VerificationMeta('syncStatus');
+  @override
+  late final GeneratedColumn<String> syncStatus = GeneratedColumn<String>(
+      'sync_status', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      $customConstraints:
+          'NOT NULL DEFAULT \'local_only\' CHECK (sync_status IN (\'local_only\', \'pending_sync\', \'synced\', \'sync_error\'))',
+      defaultValue: const CustomExpression('\'local_only\''));
+  static const VerificationMeta _versionMeta =
+      const VerificationMeta('version');
+  @override
+  late final GeneratedColumn<int> version = GeneratedColumn<int>(
+      'version', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(1));
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        shoppingListId,
+        inventoryId,
+        createdAt,
+        deletedAt,
+        syncStatus,
+        version
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'shopping_list_inventory_links';
+  @override
+  VerificationContext validateIntegrity(
+      Insertable<ShoppingListInventoryLink> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('shopping_list_id')) {
+      context.handle(
+          _shoppingListIdMeta,
+          shoppingListId.isAcceptableOrUnknown(
+              data['shopping_list_id']!, _shoppingListIdMeta));
+    } else if (isInserting) {
+      context.missing(_shoppingListIdMeta);
+    }
+    if (data.containsKey('inventory_id')) {
+      context.handle(
+          _inventoryIdMeta,
+          inventoryId.isAcceptableOrUnknown(
+              data['inventory_id']!, _inventoryIdMeta));
+    } else if (isInserting) {
+      context.missing(_inventoryIdMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(_deletedAtMeta,
+          deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta));
+    }
+    if (data.containsKey('sync_status')) {
+      context.handle(
+          _syncStatusMeta,
+          syncStatus.isAcceptableOrUnknown(
+              data['sync_status']!, _syncStatusMeta));
+    }
+    if (data.containsKey('version')) {
+      context.handle(_versionMeta,
+          version.isAcceptableOrUnknown(data['version']!, _versionMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ShoppingListInventoryLink map(Map<String, dynamic> data,
+      {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ShoppingListInventoryLink(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      shoppingListId: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}shopping_list_id'])!,
+      inventoryId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}inventory_id'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      deletedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}deleted_at']),
+      syncStatus: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}sync_status'])!,
+      version: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}version'])!,
+    );
+  }
+
+  @override
+  $ShoppingListInventoryLinksTable createAlias(String alias) {
+    return $ShoppingListInventoryLinksTable(attachedDatabase, alias);
+  }
+}
+
+class ShoppingListInventoryLink extends DataClass
+    implements Insertable<ShoppingListInventoryLink> {
+  final String id;
+  final String shoppingListId;
+  final String inventoryId;
+  final DateTime createdAt;
+  final DateTime? deletedAt;
+  final String syncStatus;
+  final int version;
+  const ShoppingListInventoryLink(
+      {required this.id,
+      required this.shoppingListId,
+      required this.inventoryId,
+      required this.createdAt,
+      this.deletedAt,
+      required this.syncStatus,
+      required this.version});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['shopping_list_id'] = Variable<String>(shoppingListId);
+    map['inventory_id'] = Variable<String>(inventoryId);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    map['sync_status'] = Variable<String>(syncStatus);
+    map['version'] = Variable<int>(version);
+    return map;
+  }
+
+  ShoppingListInventoryLinksCompanion toCompanion(bool nullToAbsent) {
+    return ShoppingListInventoryLinksCompanion(
+      id: Value(id),
+      shoppingListId: Value(shoppingListId),
+      inventoryId: Value(inventoryId),
+      createdAt: Value(createdAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      syncStatus: Value(syncStatus),
+      version: Value(version),
+    );
+  }
+
+  factory ShoppingListInventoryLink.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ShoppingListInventoryLink(
+      id: serializer.fromJson<String>(json['id']),
+      shoppingListId: serializer.fromJson<String>(json['shoppingListId']),
+      inventoryId: serializer.fromJson<String>(json['inventoryId']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      syncStatus: serializer.fromJson<String>(json['syncStatus']),
+      version: serializer.fromJson<int>(json['version']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'shoppingListId': serializer.toJson<String>(shoppingListId),
+      'inventoryId': serializer.toJson<String>(inventoryId),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'syncStatus': serializer.toJson<String>(syncStatus),
+      'version': serializer.toJson<int>(version),
+    };
+  }
+
+  ShoppingListInventoryLink copyWith(
+          {String? id,
+          String? shoppingListId,
+          String? inventoryId,
+          DateTime? createdAt,
+          Value<DateTime?> deletedAt = const Value.absent(),
+          String? syncStatus,
+          int? version}) =>
+      ShoppingListInventoryLink(
+        id: id ?? this.id,
+        shoppingListId: shoppingListId ?? this.shoppingListId,
+        inventoryId: inventoryId ?? this.inventoryId,
+        createdAt: createdAt ?? this.createdAt,
+        deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+        syncStatus: syncStatus ?? this.syncStatus,
+        version: version ?? this.version,
+      );
+  ShoppingListInventoryLink copyWithCompanion(
+      ShoppingListInventoryLinksCompanion data) {
+    return ShoppingListInventoryLink(
+      id: data.id.present ? data.id.value : this.id,
+      shoppingListId: data.shoppingListId.present
+          ? data.shoppingListId.value
+          : this.shoppingListId,
+      inventoryId:
+          data.inventoryId.present ? data.inventoryId.value : this.inventoryId,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      syncStatus:
+          data.syncStatus.present ? data.syncStatus.value : this.syncStatus,
+      version: data.version.present ? data.version.value : this.version,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ShoppingListInventoryLink(')
+          ..write('id: $id, ')
+          ..write('shoppingListId: $shoppingListId, ')
+          ..write('inventoryId: $inventoryId, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('version: $version')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, shoppingListId, inventoryId, createdAt,
+      deletedAt, syncStatus, version);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ShoppingListInventoryLink &&
+          other.id == this.id &&
+          other.shoppingListId == this.shoppingListId &&
+          other.inventoryId == this.inventoryId &&
+          other.createdAt == this.createdAt &&
+          other.deletedAt == this.deletedAt &&
+          other.syncStatus == this.syncStatus &&
+          other.version == this.version);
+}
+
+class ShoppingListInventoryLinksCompanion
+    extends UpdateCompanion<ShoppingListInventoryLink> {
+  final Value<String> id;
+  final Value<String> shoppingListId;
+  final Value<String> inventoryId;
+  final Value<DateTime> createdAt;
+  final Value<DateTime?> deletedAt;
+  final Value<String> syncStatus;
+  final Value<int> version;
+  final Value<int> rowid;
+  const ShoppingListInventoryLinksCompanion({
+    this.id = const Value.absent(),
+    this.shoppingListId = const Value.absent(),
+    this.inventoryId = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+    this.version = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ShoppingListInventoryLinksCompanion.insert({
+    required String id,
+    required String shoppingListId,
+    required String inventoryId,
+    this.createdAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+    this.version = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        shoppingListId = Value(shoppingListId),
+        inventoryId = Value(inventoryId);
+  static Insertable<ShoppingListInventoryLink> custom({
+    Expression<String>? id,
+    Expression<String>? shoppingListId,
+    Expression<String>? inventoryId,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? deletedAt,
+    Expression<String>? syncStatus,
+    Expression<int>? version,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (shoppingListId != null) 'shopping_list_id': shoppingListId,
+      if (inventoryId != null) 'inventory_id': inventoryId,
+      if (createdAt != null) 'created_at': createdAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (syncStatus != null) 'sync_status': syncStatus,
+      if (version != null) 'version': version,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ShoppingListInventoryLinksCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? shoppingListId,
+      Value<String>? inventoryId,
+      Value<DateTime>? createdAt,
+      Value<DateTime?>? deletedAt,
+      Value<String>? syncStatus,
+      Value<int>? version,
+      Value<int>? rowid}) {
+    return ShoppingListInventoryLinksCompanion(
+      id: id ?? this.id,
+      shoppingListId: shoppingListId ?? this.shoppingListId,
+      inventoryId: inventoryId ?? this.inventoryId,
+      createdAt: createdAt ?? this.createdAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      syncStatus: syncStatus ?? this.syncStatus,
+      version: version ?? this.version,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (shoppingListId.present) {
+      map['shopping_list_id'] = Variable<String>(shoppingListId.value);
+    }
+    if (inventoryId.present) {
+      map['inventory_id'] = Variable<String>(inventoryId.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (syncStatus.present) {
+      map['sync_status'] = Variable<String>(syncStatus.value);
+    }
+    if (version.present) {
+      map['version'] = Variable<int>(version.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ShoppingListInventoryLinksCompanion(')
+          ..write('id: $id, ')
+          ..write('shoppingListId: $shoppingListId, ')
+          ..write('inventoryId: $inventoryId, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('version: $version, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $ShoppingListItemsTable extends ShoppingListItems
     with TableInfo<$ShoppingListItemsTable, ShoppingListItem> {
   @override
@@ -4328,6 +4741,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $InventoriesTable inventories = $InventoriesTable(this);
   late final $InventoryItemsTable inventoryItems = $InventoryItemsTable(this);
   late final $ShoppingListsTable shoppingLists = $ShoppingListsTable(this);
+  late final $ShoppingListInventoryLinksTable shoppingListInventoryLinks =
+      $ShoppingListInventoryLinksTable(this);
   late final $ShoppingListItemsTable shoppingListItems =
       $ShoppingListItemsTable(this);
   late final $InventoryEventsTable inventoryEvents =
@@ -4350,10 +4765,32 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         inventories,
         inventoryItems,
         shoppingLists,
+        shoppingListInventoryLinks,
         shoppingListItems,
         inventoryEvents,
         priceObservations
       ];
+  @override
+  StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules(
+        [
+          WritePropagation(
+            on: TableUpdateQuery.onTableName('shopping_lists',
+                limitUpdateKind: UpdateKind.delete),
+            result: [
+              TableUpdate('shopping_list_inventory_links',
+                  kind: UpdateKind.delete),
+            ],
+          ),
+          WritePropagation(
+            on: TableUpdateQuery.onTableName('inventories',
+                limitUpdateKind: UpdateKind.delete),
+            result: [
+              TableUpdate('shopping_list_inventory_links',
+                  kind: UpdateKind.delete),
+            ],
+          ),
+        ],
+      );
 }
 
 typedef $$ProductsTableCreateCompanionBuilder = ProductsCompanion Function({
@@ -5361,6 +5798,25 @@ final class $$InventoriesTableReferences
         manager.$state.copyWith(prefetchedData: cache));
   }
 
+  static MultiTypedResultKey<$ShoppingListInventoryLinksTable,
+      List<ShoppingListInventoryLink>> _shoppingListInventoryLinksRefsTable(
+          _$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(db.shoppingListInventoryLinks,
+          aliasName: $_aliasNameGenerator(
+              db.inventories.id, db.shoppingListInventoryLinks.inventoryId));
+
+  $$ShoppingListInventoryLinksTableProcessedTableManager
+      get shoppingListInventoryLinksRefs {
+    final manager = $$ShoppingListInventoryLinksTableTableManager(
+            $_db, $_db.shoppingListInventoryLinks)
+        .filter((f) => f.inventoryId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult
+        .readTableOrNull(_shoppingListInventoryLinksRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
+
   static MultiTypedResultKey<$InventoryEventsTable, List<InventoryEvent>>
       _inventoryEventsRefsTable(_$AppDatabase db) =>
           MultiTypedResultKey.fromTable(db.inventoryEvents,
@@ -5451,6 +5907,30 @@ class $$InventoriesTableFilterComposer
               $removeJoinBuilderFromRootComposer:
                   $removeJoinBuilderFromRootComposer,
             ));
+    return f(composer);
+  }
+
+  Expression<bool> shoppingListInventoryLinksRefs(
+      Expression<bool> Function(
+              $$ShoppingListInventoryLinksTableFilterComposer f)
+          f) {
+    final $$ShoppingListInventoryLinksTableFilterComposer composer =
+        $composerBuilder(
+            composer: this,
+            getCurrentColumn: (t) => t.id,
+            referencedTable: $db.shoppingListInventoryLinks,
+            getReferencedColumn: (t) => t.inventoryId,
+            builder: (joinBuilder,
+                    {$addJoinBuilderToRootComposer,
+                    $removeJoinBuilderFromRootComposer}) =>
+                $$ShoppingListInventoryLinksTableFilterComposer(
+                  $db: $db,
+                  $table: $db.shoppingListInventoryLinks,
+                  $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                  joinBuilder: joinBuilder,
+                  $removeJoinBuilderFromRootComposer:
+                      $removeJoinBuilderFromRootComposer,
+                ));
     return f(composer);
   }
 
@@ -5585,6 +6065,30 @@ class $$InventoriesTableAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> shoppingListInventoryLinksRefs<T extends Object>(
+      Expression<T> Function(
+              $$ShoppingListInventoryLinksTableAnnotationComposer a)
+          f) {
+    final $$ShoppingListInventoryLinksTableAnnotationComposer composer =
+        $composerBuilder(
+            composer: this,
+            getCurrentColumn: (t) => t.id,
+            referencedTable: $db.shoppingListInventoryLinks,
+            getReferencedColumn: (t) => t.inventoryId,
+            builder: (joinBuilder,
+                    {$addJoinBuilderToRootComposer,
+                    $removeJoinBuilderFromRootComposer}) =>
+                $$ShoppingListInventoryLinksTableAnnotationComposer(
+                  $db: $db,
+                  $table: $db.shoppingListInventoryLinks,
+                  $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                  joinBuilder: joinBuilder,
+                  $removeJoinBuilderFromRootComposer:
+                      $removeJoinBuilderFromRootComposer,
+                ));
+    return f(composer);
+  }
+
   Expression<T> inventoryEventsRefs<T extends Object>(
       Expression<T> Function($$InventoryEventsTableAnnotationComposer a) f) {
     final $$InventoryEventsTableAnnotationComposer composer = $composerBuilder(
@@ -5621,6 +6125,7 @@ class $$InventoriesTableTableManager extends RootTableManager<
     PrefetchHooks Function(
         {bool inventoryItemsRefs,
         bool shoppingListsRefs,
+        bool shoppingListInventoryLinksRefs,
         bool inventoryEventsRefs})> {
   $$InventoriesTableTableManager(_$AppDatabase db, $InventoriesTable table)
       : super(TableManagerState(
@@ -5685,12 +6190,15 @@ class $$InventoriesTableTableManager extends RootTableManager<
           prefetchHooksCallback: (
               {inventoryItemsRefs = false,
               shoppingListsRefs = false,
+              shoppingListInventoryLinksRefs = false,
               inventoryEventsRefs = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [
                 if (inventoryItemsRefs) db.inventoryItems,
                 if (shoppingListsRefs) db.shoppingLists,
+                if (shoppingListInventoryLinksRefs)
+                  db.shoppingListInventoryLinks,
                 if (inventoryEventsRefs) db.inventoryEvents
               ],
               addJoins: null,
@@ -5718,6 +6226,19 @@ class $$InventoriesTableTableManager extends RootTableManager<
                         managerFromTypedResult: (p0) =>
                             $$InventoriesTableReferences(db, table, p0)
                                 .shoppingListsRefs,
+                        referencedItemsForCurrentItem:
+                            (item, referencedItems) => referencedItems
+                                .where((e) => e.inventoryId == item.id),
+                        typedResults: items),
+                  if (shoppingListInventoryLinksRefs)
+                    await $_getPrefetchedData<Inventory, $InventoriesTable,
+                            ShoppingListInventoryLink>(
+                        currentTable: table,
+                        referencedTable: $$InventoriesTableReferences
+                            ._shoppingListInventoryLinksRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$InventoriesTableReferences(db, table, p0)
+                                .shoppingListInventoryLinksRefs,
                         referencedItemsForCurrentItem:
                             (item, referencedItems) => referencedItems
                                 .where((e) => e.inventoryId == item.id),
@@ -5756,6 +6277,7 @@ typedef $$InventoriesTableProcessedTableManager = ProcessedTableManager<
     PrefetchHooks Function(
         {bool inventoryItemsRefs,
         bool shoppingListsRefs,
+        bool shoppingListInventoryLinksRefs,
         bool inventoryEventsRefs})>;
 typedef $$InventoryItemsTableCreateCompanionBuilder = InventoryItemsCompanion
     Function({
@@ -6379,6 +6901,26 @@ final class $$ShoppingListsTableReferences
         manager.$state.copyWith(prefetchedData: [item]));
   }
 
+  static MultiTypedResultKey<$ShoppingListInventoryLinksTable,
+      List<ShoppingListInventoryLink>> _shoppingListInventoryLinksRefsTable(
+          _$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(db.shoppingListInventoryLinks,
+          aliasName: $_aliasNameGenerator(db.shoppingLists.id,
+              db.shoppingListInventoryLinks.shoppingListId));
+
+  $$ShoppingListInventoryLinksTableProcessedTableManager
+      get shoppingListInventoryLinksRefs {
+    final manager = $$ShoppingListInventoryLinksTableTableManager(
+            $_db, $_db.shoppingListInventoryLinks)
+        .filter(
+            (f) => f.shoppingListId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult
+        .readTableOrNull(_shoppingListInventoryLinksRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
+
   static MultiTypedResultKey<$ShoppingListItemsTable, List<ShoppingListItem>>
       _shoppingListItemsRefsTable(_$AppDatabase db) =>
           MultiTypedResultKey.fromTable(db.shoppingListItems,
@@ -6449,6 +6991,30 @@ class $$ShoppingListsTableFilterComposer
                   $removeJoinBuilderFromRootComposer,
             ));
     return composer;
+  }
+
+  Expression<bool> shoppingListInventoryLinksRefs(
+      Expression<bool> Function(
+              $$ShoppingListInventoryLinksTableFilterComposer f)
+          f) {
+    final $$ShoppingListInventoryLinksTableFilterComposer composer =
+        $composerBuilder(
+            composer: this,
+            getCurrentColumn: (t) => t.id,
+            referencedTable: $db.shoppingListInventoryLinks,
+            getReferencedColumn: (t) => t.shoppingListId,
+            builder: (joinBuilder,
+                    {$addJoinBuilderToRootComposer,
+                    $removeJoinBuilderFromRootComposer}) =>
+                $$ShoppingListInventoryLinksTableFilterComposer(
+                  $db: $db,
+                  $table: $db.shoppingListInventoryLinks,
+                  $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                  joinBuilder: joinBuilder,
+                  $removeJoinBuilderFromRootComposer:
+                      $removeJoinBuilderFromRootComposer,
+                ));
+    return f(composer);
   }
 
   Expression<bool> shoppingListItemsRefs(
@@ -6580,6 +7146,30 @@ class $$ShoppingListsTableAnnotationComposer
     return composer;
   }
 
+  Expression<T> shoppingListInventoryLinksRefs<T extends Object>(
+      Expression<T> Function(
+              $$ShoppingListInventoryLinksTableAnnotationComposer a)
+          f) {
+    final $$ShoppingListInventoryLinksTableAnnotationComposer composer =
+        $composerBuilder(
+            composer: this,
+            getCurrentColumn: (t) => t.id,
+            referencedTable: $db.shoppingListInventoryLinks,
+            getReferencedColumn: (t) => t.shoppingListId,
+            builder: (joinBuilder,
+                    {$addJoinBuilderToRootComposer,
+                    $removeJoinBuilderFromRootComposer}) =>
+                $$ShoppingListInventoryLinksTableAnnotationComposer(
+                  $db: $db,
+                  $table: $db.shoppingListInventoryLinks,
+                  $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                  joinBuilder: joinBuilder,
+                  $removeJoinBuilderFromRootComposer:
+                      $removeJoinBuilderFromRootComposer,
+                ));
+    return f(composer);
+  }
+
   Expression<T> shoppingListItemsRefs<T extends Object>(
       Expression<T> Function($$ShoppingListItemsTableAnnotationComposer a) f) {
     final $$ShoppingListItemsTableAnnotationComposer composer =
@@ -6614,7 +7204,10 @@ class $$ShoppingListsTableTableManager extends RootTableManager<
     $$ShoppingListsTableUpdateCompanionBuilder,
     (ShoppingList, $$ShoppingListsTableReferences),
     ShoppingList,
-    PrefetchHooks Function({bool inventoryId, bool shoppingListItemsRefs})> {
+    PrefetchHooks Function(
+        {bool inventoryId,
+        bool shoppingListInventoryLinksRefs,
+        bool shoppingListItemsRefs})> {
   $$ShoppingListsTableTableManager(_$AppDatabase db, $ShoppingListsTable table)
       : super(TableManagerState(
           db: db,
@@ -6680,10 +7273,14 @@ class $$ShoppingListsTableTableManager extends RootTableManager<
                   ))
               .toList(),
           prefetchHooksCallback: (
-              {inventoryId = false, shoppingListItemsRefs = false}) {
+              {inventoryId = false,
+              shoppingListInventoryLinksRefs = false,
+              shoppingListItemsRefs = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [
+                if (shoppingListInventoryLinksRefs)
+                  db.shoppingListInventoryLinks,
                 if (shoppingListItemsRefs) db.shoppingListItems
               ],
               addJoins: <
@@ -6714,6 +7311,19 @@ class $$ShoppingListsTableTableManager extends RootTableManager<
               },
               getPrefetchedDataCallback: (items) async {
                 return [
+                  if (shoppingListInventoryLinksRefs)
+                    await $_getPrefetchedData<ShoppingList, $ShoppingListsTable,
+                            ShoppingListInventoryLink>(
+                        currentTable: table,
+                        referencedTable: $$ShoppingListsTableReferences
+                            ._shoppingListInventoryLinksRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$ShoppingListsTableReferences(db, table, p0)
+                                .shoppingListInventoryLinksRefs,
+                        referencedItemsForCurrentItem:
+                            (item, referencedItems) => referencedItems
+                                .where((e) => e.shoppingListId == item.id),
+                        typedResults: items),
                   if (shoppingListItemsRefs)
                     await $_getPrefetchedData<ShoppingList, $ShoppingListsTable,
                             ShoppingListItem>(
@@ -6745,7 +7355,407 @@ typedef $$ShoppingListsTableProcessedTableManager = ProcessedTableManager<
     $$ShoppingListsTableUpdateCompanionBuilder,
     (ShoppingList, $$ShoppingListsTableReferences),
     ShoppingList,
-    PrefetchHooks Function({bool inventoryId, bool shoppingListItemsRefs})>;
+    PrefetchHooks Function(
+        {bool inventoryId,
+        bool shoppingListInventoryLinksRefs,
+        bool shoppingListItemsRefs})>;
+typedef $$ShoppingListInventoryLinksTableCreateCompanionBuilder
+    = ShoppingListInventoryLinksCompanion Function({
+  required String id,
+  required String shoppingListId,
+  required String inventoryId,
+  Value<DateTime> createdAt,
+  Value<DateTime?> deletedAt,
+  Value<String> syncStatus,
+  Value<int> version,
+  Value<int> rowid,
+});
+typedef $$ShoppingListInventoryLinksTableUpdateCompanionBuilder
+    = ShoppingListInventoryLinksCompanion Function({
+  Value<String> id,
+  Value<String> shoppingListId,
+  Value<String> inventoryId,
+  Value<DateTime> createdAt,
+  Value<DateTime?> deletedAt,
+  Value<String> syncStatus,
+  Value<int> version,
+  Value<int> rowid,
+});
+
+final class $$ShoppingListInventoryLinksTableReferences extends BaseReferences<
+    _$AppDatabase,
+    $ShoppingListInventoryLinksTable,
+    ShoppingListInventoryLink> {
+  $$ShoppingListInventoryLinksTableReferences(
+      super.$_db, super.$_table, super.$_typedResult);
+
+  static $ShoppingListsTable _shoppingListIdTable(_$AppDatabase db) =>
+      db.shoppingLists.createAlias($_aliasNameGenerator(
+          db.shoppingListInventoryLinks.shoppingListId, db.shoppingLists.id));
+
+  $$ShoppingListsTableProcessedTableManager get shoppingListId {
+    final $_column = $_itemColumn<String>('shopping_list_id')!;
+
+    final manager = $$ShoppingListsTableTableManager($_db, $_db.shoppingLists)
+        .filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_shoppingListIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+
+  static $InventoriesTable _inventoryIdTable(_$AppDatabase db) =>
+      db.inventories.createAlias($_aliasNameGenerator(
+          db.shoppingListInventoryLinks.inventoryId, db.inventories.id));
+
+  $$InventoriesTableProcessedTableManager get inventoryId {
+    final $_column = $_itemColumn<String>('inventory_id')!;
+
+    final manager = $$InventoriesTableTableManager($_db, $_db.inventories)
+        .filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_inventoryIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+}
+
+class $$ShoppingListInventoryLinksTableFilterComposer
+    extends Composer<_$AppDatabase, $ShoppingListInventoryLinksTable> {
+  $$ShoppingListInventoryLinksTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get syncStatus => $composableBuilder(
+      column: $table.syncStatus, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get version => $composableBuilder(
+      column: $table.version, builder: (column) => ColumnFilters(column));
+
+  $$ShoppingListsTableFilterComposer get shoppingListId {
+    final $$ShoppingListsTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.shoppingListId,
+        referencedTable: $db.shoppingLists,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$ShoppingListsTableFilterComposer(
+              $db: $db,
+              $table: $db.shoppingLists,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$InventoriesTableFilterComposer get inventoryId {
+    final $$InventoriesTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.inventoryId,
+        referencedTable: $db.inventories,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$InventoriesTableFilterComposer(
+              $db: $db,
+              $table: $db.inventories,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$ShoppingListInventoryLinksTableOrderingComposer
+    extends Composer<_$AppDatabase, $ShoppingListInventoryLinksTable> {
+  $$ShoppingListInventoryLinksTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get syncStatus => $composableBuilder(
+      column: $table.syncStatus, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get version => $composableBuilder(
+      column: $table.version, builder: (column) => ColumnOrderings(column));
+
+  $$ShoppingListsTableOrderingComposer get shoppingListId {
+    final $$ShoppingListsTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.shoppingListId,
+        referencedTable: $db.shoppingLists,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$ShoppingListsTableOrderingComposer(
+              $db: $db,
+              $table: $db.shoppingLists,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$InventoriesTableOrderingComposer get inventoryId {
+    final $$InventoriesTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.inventoryId,
+        referencedTable: $db.inventories,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$InventoriesTableOrderingComposer(
+              $db: $db,
+              $table: $db.inventories,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$ShoppingListInventoryLinksTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ShoppingListInventoryLinksTable> {
+  $$ShoppingListInventoryLinksTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get syncStatus => $composableBuilder(
+      column: $table.syncStatus, builder: (column) => column);
+
+  GeneratedColumn<int> get version =>
+      $composableBuilder(column: $table.version, builder: (column) => column);
+
+  $$ShoppingListsTableAnnotationComposer get shoppingListId {
+    final $$ShoppingListsTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.shoppingListId,
+        referencedTable: $db.shoppingLists,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$ShoppingListsTableAnnotationComposer(
+              $db: $db,
+              $table: $db.shoppingLists,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$InventoriesTableAnnotationComposer get inventoryId {
+    final $$InventoriesTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.inventoryId,
+        referencedTable: $db.inventories,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$InventoriesTableAnnotationComposer(
+              $db: $db,
+              $table: $db.inventories,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$ShoppingListInventoryLinksTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $ShoppingListInventoryLinksTable,
+    ShoppingListInventoryLink,
+    $$ShoppingListInventoryLinksTableFilterComposer,
+    $$ShoppingListInventoryLinksTableOrderingComposer,
+    $$ShoppingListInventoryLinksTableAnnotationComposer,
+    $$ShoppingListInventoryLinksTableCreateCompanionBuilder,
+    $$ShoppingListInventoryLinksTableUpdateCompanionBuilder,
+    (ShoppingListInventoryLink, $$ShoppingListInventoryLinksTableReferences),
+    ShoppingListInventoryLink,
+    PrefetchHooks Function({bool shoppingListId, bool inventoryId})> {
+  $$ShoppingListInventoryLinksTableTableManager(
+      _$AppDatabase db, $ShoppingListInventoryLinksTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ShoppingListInventoryLinksTableFilterComposer(
+                  $db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ShoppingListInventoryLinksTableOrderingComposer(
+                  $db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ShoppingListInventoryLinksTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> shoppingListId = const Value.absent(),
+            Value<String> inventoryId = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime?> deletedAt = const Value.absent(),
+            Value<String> syncStatus = const Value.absent(),
+            Value<int> version = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              ShoppingListInventoryLinksCompanion(
+            id: id,
+            shoppingListId: shoppingListId,
+            inventoryId: inventoryId,
+            createdAt: createdAt,
+            deletedAt: deletedAt,
+            syncStatus: syncStatus,
+            version: version,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String shoppingListId,
+            required String inventoryId,
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime?> deletedAt = const Value.absent(),
+            Value<String> syncStatus = const Value.absent(),
+            Value<int> version = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              ShoppingListInventoryLinksCompanion.insert(
+            id: id,
+            shoppingListId: shoppingListId,
+            inventoryId: inventoryId,
+            createdAt: createdAt,
+            deletedAt: deletedAt,
+            syncStatus: syncStatus,
+            version: version,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable(table),
+                    $$ShoppingListInventoryLinksTableReferences(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: (
+              {shoppingListId = false, inventoryId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins: <
+                  T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic>>(state) {
+                if (shoppingListId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.shoppingListId,
+                    referencedTable: $$ShoppingListInventoryLinksTableReferences
+                        ._shoppingListIdTable(db),
+                    referencedColumn:
+                        $$ShoppingListInventoryLinksTableReferences
+                            ._shoppingListIdTable(db)
+                            .id,
+                  ) as T;
+                }
+                if (inventoryId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.inventoryId,
+                    referencedTable: $$ShoppingListInventoryLinksTableReferences
+                        ._inventoryIdTable(db),
+                    referencedColumn:
+                        $$ShoppingListInventoryLinksTableReferences
+                            ._inventoryIdTable(db)
+                            .id,
+                  ) as T;
+                }
+
+                return state;
+              },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ));
+}
+
+typedef $$ShoppingListInventoryLinksTableProcessedTableManager
+    = ProcessedTableManager<
+        _$AppDatabase,
+        $ShoppingListInventoryLinksTable,
+        ShoppingListInventoryLink,
+        $$ShoppingListInventoryLinksTableFilterComposer,
+        $$ShoppingListInventoryLinksTableOrderingComposer,
+        $$ShoppingListInventoryLinksTableAnnotationComposer,
+        $$ShoppingListInventoryLinksTableCreateCompanionBuilder,
+        $$ShoppingListInventoryLinksTableUpdateCompanionBuilder,
+        (
+          ShoppingListInventoryLink,
+          $$ShoppingListInventoryLinksTableReferences
+        ),
+        ShoppingListInventoryLink,
+        PrefetchHooks Function({bool shoppingListId, bool inventoryId})>;
 typedef $$ShoppingListItemsTableCreateCompanionBuilder
     = ShoppingListItemsCompanion Function({
   required String id,
@@ -8119,6 +9129,10 @@ class $AppDatabaseManager {
       $$InventoryItemsTableTableManager(_db, _db.inventoryItems);
   $$ShoppingListsTableTableManager get shoppingLists =>
       $$ShoppingListsTableTableManager(_db, _db.shoppingLists);
+  $$ShoppingListInventoryLinksTableTableManager
+      get shoppingListInventoryLinks =>
+          $$ShoppingListInventoryLinksTableTableManager(
+              _db, _db.shoppingListInventoryLinks);
   $$ShoppingListItemsTableTableManager get shoppingListItems =>
       $$ShoppingListItemsTableTableManager(_db, _db.shoppingListItems);
   $$InventoryEventsTableTableManager get inventoryEvents =>
@@ -8137,6 +9151,8 @@ mixin _$ShoppingListsDaoMixin on DatabaseAccessor<AppDatabase> {
   $ProductsTable get products => attachedDatabase.products;
   $ShoppingListItemsTable get shoppingListItems =>
       attachedDatabase.shoppingListItems;
+  $ShoppingListInventoryLinksTable get shoppingListInventoryLinks =>
+      attachedDatabase.shoppingListInventoryLinks;
 }
 mixin _$PantryDaoMixin on DatabaseAccessor<AppDatabase> {
   $InventoriesTable get inventories => attachedDatabase.inventories;

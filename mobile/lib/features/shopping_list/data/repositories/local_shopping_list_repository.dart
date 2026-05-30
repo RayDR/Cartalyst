@@ -7,12 +7,17 @@ import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping
 import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list_item.dart'
     as domain;
 import 'package:cartalyst_mobile/features/shopping_list/domain/repositories/shopping_list_repository.dart';
+import 'package:cartalyst_mobile/features/pantry/data/mappers/pantry_mapper.dart';
+import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory.dart'
+    as inventory_domain;
 import 'package:cartalyst_mobile/infrastructure/local_db/app_database.dart';
+import 'package:uuid/uuid.dart';
 
 class LocalShoppingListRepository implements ShoppingListRepository {
   LocalShoppingListRepository(this._database);
 
   final AppDatabase _database;
+  static const Uuid _uuid = Uuid();
 
   @override
   Stream<List<domain.ShoppingList>> watchActiveLists() {
@@ -48,6 +53,53 @@ class LocalShoppingListRepository implements ShoppingListRepository {
     return _database.shoppingListsDao.upsertListItem(
       toShoppingListItemCompanion(item),
     );
+  }
+
+  @override
+  Future<void> linkListToInventory({
+    required String shoppingListId,
+    required String inventoryId,
+  }) {
+    final DateTime now = DateTime.now();
+    return _database.shoppingListsDao.linkListToInventory(
+      id: _uuid.v4(),
+      shoppingListId: shoppingListId,
+      inventoryId: inventoryId,
+      createdAt: now,
+      syncStatus: 'pending_sync',
+      version: 1,
+    );
+  }
+
+  @override
+  Future<void> unlinkListFromInventory({
+    required String shoppingListId,
+    required String inventoryId,
+  }) {
+    return _database.shoppingListsDao.unlinkListFromInventory(
+      shoppingListId: shoppingListId,
+      inventoryId: inventoryId,
+    );
+  }
+
+  @override
+  Stream<List<inventory_domain.Inventory>> watchInventoriesForList(
+    String shoppingListId,
+  ) {
+    return _database.shoppingListsDao
+        .watchInventoriesForList(shoppingListId)
+        .map(
+          (List<Inventory> rows) =>
+              rows.map(toDomainInventory).toList(growable: false),
+        );
+  }
+
+  @override
+  Stream<List<domain.ShoppingList>> watchListsForInventory(String inventoryId) {
+    return _database.shoppingListsDao.watchListsForInventory(inventoryId).map(
+          (List<ShoppingList> rows) =>
+              rows.map(toDomainShoppingList).toList(growable: false),
+        );
   }
 
   @override

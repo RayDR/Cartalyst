@@ -13,6 +13,8 @@ enum ShoppingListStatus {
 class ShoppingList with _$ShoppingList {
   const factory ShoppingList({
     required String id,
+    @Deprecated(
+        'Use shopping_list_inventory_links for list-inventory relations.')
     String? inventoryId,
     required String name,
     required ShoppingListStatus status,

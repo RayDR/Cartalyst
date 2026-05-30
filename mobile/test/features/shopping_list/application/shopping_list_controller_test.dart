@@ -1,6 +1,10 @@
 import 'dart:async';
 
 import 'package:cartalyst_mobile/core/domain/value_objects/unit.dart';
+import 'package:cartalyst_mobile/features/inventories/domain/repositories/inventory_repository.dart';
+import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory.dart';
+import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory_event.dart';
+import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory_item.dart';
 import 'package:cartalyst_mobile/features/products/domain/entities/product.dart';
 import 'package:cartalyst_mobile/features/products/domain/entities/product_alias.dart';
 import 'package:cartalyst_mobile/features/products/domain/repositories/product_repository.dart';
@@ -15,6 +19,7 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   late FakeShoppingListRepository shoppingListRepository;
   late FakeProductRepository productRepository;
+  late FakeInventoryRepository inventoryRepository;
   late ProviderContainer container;
 
   const String testListId = 'test-list-id';
@@ -46,6 +51,8 @@ void main() {
       ],
     );
 
+    inventoryRepository = FakeInventoryRepository();
+
     // Pre-seed a list so the controller has items to work with.
     shoppingListRepository.seedList(
       ShoppingList(
@@ -64,6 +71,8 @@ void main() {
         shoppingListRepositoryProvider
             .overrideWithValue(shoppingListRepository),
         productRepositoryProvider.overrideWithValue(productRepository),
+        shoppingInventoryRepositoryProvider
+            .overrideWithValue(inventoryRepository),
       ],
     );
 
@@ -537,6 +546,8 @@ class FakeShoppingListRepository implements ShoppingListRepository {
   final List<ShoppingList> _lists = <ShoppingList>[];
   final List<ShoppingListItem> _items = <ShoppingListItem>[];
   final Map<String, ShoppingListDraft> _drafts = <String, ShoppingListDraft>{};
+  final Map<String, Set<String>> _inventoryLinksByList =
+      <String, Set<String>>{};
 
   List<ShoppingList> get lists => List<ShoppingList>.unmodifiable(_lists);
 
@@ -554,6 +565,12 @@ class FakeShoppingListRepository implements ShoppingListRepository {
 
   void seedList(ShoppingList list) {
     _lists.add(list);
+    final String? legacyInventoryId = list.inventoryId;
+    if (legacyInventoryId != null && legacyInventoryId.isNotEmpty) {
+      _inventoryLinksByList
+          .putIfAbsent(list.id, () => <String>{})
+          .add(legacyInventoryId);
+    }
   }
 
   @override
@@ -602,6 +619,55 @@ class FakeShoppingListRepository implements ShoppingListRepository {
       _items.add(item);
     }
     _emitItemsForList(item.shoppingListId);
+  }
+
+  @override
+  Future<void> linkListToInventory({
+    required String shoppingListId,
+    required String inventoryId,
+  }) async {
+    _inventoryLinksByList
+        .putIfAbsent(shoppingListId, () => <String>{})
+        .add(inventoryId);
+  }
+
+  @override
+  Future<void> unlinkListFromInventory({
+    required String shoppingListId,
+    required String inventoryId,
+  }) async {
+    _inventoryLinksByList[shoppingListId]?.remove(inventoryId);
+  }
+
+  @override
+  Stream<List<Inventory>> watchInventoriesForList(String shoppingListId) {
+    final Set<String> linked =
+        _inventoryLinksByList[shoppingListId] ?? <String>{};
+    final List<Inventory> inventories = linked
+        .map(
+          (String id) => Inventory(
+            id: id,
+            name: 'Inventory $id',
+            createdAt: DateTime(2026),
+            updatedAt: DateTime(2026),
+            syncStatus: 'local_only',
+            version: 1,
+          ),
+        )
+        .toList(growable: false);
+    return Stream<List<Inventory>>.value(inventories);
+  }
+
+  @override
+  Stream<List<ShoppingList>> watchListsForInventory(String inventoryId) {
+    final List<ShoppingList> linked = _lists
+        .where(
+          (ShoppingList list) =>
+              (_inventoryLinksByList[list.id] ?? const <String>{})
+                  .contains(inventoryId),
+        )
+        .toList(growable: false);
+    return Stream<List<ShoppingList>>.value(linked);
   }
 
   @override
@@ -746,4 +812,31 @@ class FakeProductRepository implements ProductRepository {
   Future<void> dispose() async {
     await _productsController.close();
   }
+}
+
+class FakeInventoryRepository implements InventoryRepository {
+  @override
+  Stream<List<Inventory>> watchAllInventories() {
+    return Stream<List<Inventory>>.value(const <Inventory>[]);
+  }
+
+  @override
+  Stream<List<InventoryItem>> watchInventoryItems(String inventoryId) {
+    return Stream<List<InventoryItem>>.value(const <InventoryItem>[]);
+  }
+
+  @override
+  Future<void> saveInventory(Inventory inventory) async {}
+
+  @override
+  Future<void> deleteInventory(String id) async {}
+
+  @override
+  Future<void> saveInventoryItem(InventoryItem item) async {}
+
+  @override
+  Future<void> deleteInventoryItem(String id) async {}
+
+  @override
+  Future<void> addInventoryEvent(InventoryEvent event) async {}
 }

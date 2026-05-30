@@ -6,6 +6,11 @@ import 'package:cartalyst_mobile/features/products/domain/entities/product.dart'
 import 'package:cartalyst_mobile/features/products/domain/entities/product_alias.dart';
 import 'package:cartalyst_mobile/features/products/domain/repositories/product_repository.dart';
 import 'package:cartalyst_mobile/features/products/domain/services/product_suggestion_service.dart';
+import 'package:cartalyst_mobile/features/inventories/data/repositories/local_inventory_repository.dart';
+import 'package:cartalyst_mobile/features/inventories/domain/repositories/inventory_repository.dart';
+import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory.dart';
+import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory_event.dart';
+import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory_item.dart';
 import 'package:cartalyst_mobile/features/shopping_list/application/shopping_list_state.dart';
 import 'package:cartalyst_mobile/features/shopping_list/data/repositories/local_shopping_list_repository.dart';
 import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list.dart';
@@ -31,6 +36,12 @@ final productRepositoryProvider = Provider<ProductRepository>((Ref ref) {
   return LocalProductRepository(ref.watch(appDatabaseProvider));
 });
 
+final shoppingInventoryRepositoryProvider = Provider<InventoryRepository>(
+  (Ref ref) {
+    return LocalInventoryRepository(ref.watch(appDatabaseProvider));
+  },
+);
+
 final productSuggestionServiceProvider =
     Provider<ProductSuggestionService>((Ref ref) {
   return const ProductSuggestionService();
@@ -48,6 +59,7 @@ final shoppingListControllerProvider =
 class ShoppingListController extends FamilyNotifier<ShoppingListState, String> {
   late final ShoppingListRepository _shoppingListRepository;
   late final ProductRepository _productRepository;
+  late final InventoryRepository _inventoryRepository;
   late final ProductSuggestionService _suggestionService;
   late final Uuid _uuid;
 
@@ -66,6 +78,7 @@ class ShoppingListController extends FamilyNotifier<ShoppingListState, String> {
   ShoppingListState build(String arg) {
     _shoppingListRepository = ref.watch(shoppingListRepositoryProvider);
     _productRepository = ref.watch(productRepositoryProvider);
+    _inventoryRepository = ref.watch(shoppingInventoryRepositoryProvider);
     _suggestionService = ref.watch(productSuggestionServiceProvider);
     _uuid = ref.watch(uuidProvider);
 
@@ -616,6 +629,9 @@ class ShoppingListController extends FamilyNotifier<ShoppingListState, String> {
       await _shoppingListRepository.saveShoppingListItem(
         item,
       );
+      if (item.status == ShoppingListItemStatus.purchased) {
+        await _savePurchasedItemToLinkedInventories(item);
+      }
       if (undoItem != null) {
         _undoStack.add(_ShoppingListUndoEntry(item: undoItem));
       }
@@ -627,6 +643,52 @@ class ShoppingListController extends FamilyNotifier<ShoppingListState, String> {
         errorMessage: 'Unable to update item. Please try again.',
       );
       return false;
+    }
+  }
+
+  Future<void> _savePurchasedItemToLinkedInventories(
+    ShoppingListItem purchased,
+  ) async {
+    final List<Inventory> linkedInventories =
+        await _shoppingListRepository.watchInventoriesForList(arg).first;
+
+    if (linkedInventories.isEmpty) {
+      return;
+    }
+
+    final DateTime now = DateTime.now();
+    for (final Inventory inventory in linkedInventories) {
+      final InventoryItem inventoryItem = InventoryItem(
+        id: _uuid.v4(),
+        inventoryId: inventory.id,
+        productId: purchased.productId,
+        rawName: purchased.productId == null ? purchased.rawText : null,
+        quantityEstimated: purchased.quantity,
+        unit: purchased.unit,
+        status: InventoryItemStatus.inStock,
+        confidenceScore: purchased.productId == null ? 0.6 : 0.95,
+        lastConfirmedAt: now,
+        createdAt: now,
+        updatedAt: now,
+        syncStatus: 'pending_sync',
+        version: 1,
+      );
+
+      final InventoryEvent inventoryEvent = InventoryEvent(
+        id: _uuid.v4(),
+        productId: purchased.productId,
+        inventoryId: inventory.id,
+        inventoryItemId: inventoryItem.id,
+        eventType: InventoryEventType.purchase,
+        quantity: purchased.quantity,
+        unit: purchased.unit,
+        source: InventoryEventSource.system,
+        occurredAt: now,
+        createdAt: now,
+      );
+
+      await _inventoryRepository.saveInventoryItem(inventoryItem);
+      await _inventoryRepository.addInventoryEvent(inventoryEvent);
     }
   }
 

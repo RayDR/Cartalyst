@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cartalyst_mobile/features/shopping_list/application/lists_state.dart';
+import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory.dart';
 import 'package:cartalyst_mobile/features/shopping_list/application/shopping_list_controller.dart'
     show shoppingListRepositoryProvider, uuidProvider;
 import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list.dart';
@@ -10,6 +11,24 @@ import 'package:uuid/uuid.dart';
 
 final listsControllerProvider =
     NotifierProvider<ListsController, ListsState>(ListsController.new);
+
+final linkedInventoriesForListProvider =
+    StreamProvider.family<List<Inventory>, String>((Ref ref, String listId) {
+  final ShoppingListRepository repository = ref.watch(
+    shoppingListRepositoryProvider,
+  );
+  return repository.watchInventoriesForList(listId);
+});
+
+final linkedListsForInventoryProvider =
+    StreamProvider.family<List<ShoppingList>, String>(
+  (Ref ref, String inventoryId) {
+    final ShoppingListRepository repository = ref.watch(
+      shoppingListRepositoryProvider,
+    );
+    return repository.watchListsForInventory(inventoryId);
+  },
+);
 
 class ListsController extends Notifier<ListsState> {
   late final ShoppingListRepository _repository;
@@ -59,7 +78,6 @@ class ListsController extends Notifier<ListsState> {
     final DateTime now = DateTime.now();
     final ShoppingList list = ShoppingList(
       id: _uuid.v4(),
-      inventoryId: inventoryId,
       name: trimmed,
       status: ShoppingListStatus.active,
       createdAt: now,
@@ -71,6 +89,12 @@ class ListsController extends Notifier<ListsState> {
     state = state.copyWith(isBusy: true, clearErrorMessage: true);
     try {
       await _repository.saveShoppingList(list);
+      if (inventoryId != null && inventoryId.trim().isNotEmpty) {
+        await _repository.linkListToInventory(
+          shoppingListId: list.id,
+          inventoryId: inventoryId,
+        );
+      }
       state = state.copyWith(isBusy: false);
       return list.id;
     } catch (_) {
@@ -173,32 +197,44 @@ class ListsController extends Notifier<ListsState> {
   }
 
   Future<bool> linkToInventory(ShoppingList list, String inventoryId) {
-    return updateLinkedInventory(list, inventoryId);
-  }
-
-  Future<bool> unlinkFromInventory(ShoppingList list) {
-    return updateLinkedInventory(list, null);
-  }
-
-  Future<bool> updateLinkedInventory(
-    ShoppingList list,
-    String? inventoryId,
-  ) async {
-    final DateTime now = DateTime.now();
-    final ShoppingList updated = ShoppingList(
-      id: list.id,
+    return _setInventoryLink(
+      list: list,
       inventoryId: inventoryId,
-      name: list.name,
-      status: list.status,
-      createdAt: list.createdAt,
-      updatedAt: now,
-      deletedAt: list.deletedAt,
-      syncStatus: 'pending_sync',
-      version: list.version + 1,
+      shouldLink: true,
     );
+  }
 
+  Future<bool> unlinkFromInventory(
+    ShoppingList list, {
+    required String inventoryId,
+  }) {
+    if (inventoryId.trim().isEmpty) {
+      return Future<bool>.value(false);
+    }
+    return _setInventoryLink(
+      list: list,
+      inventoryId: inventoryId,
+      shouldLink: false,
+    );
+  }
+
+  Future<bool> _setInventoryLink({
+    required ShoppingList list,
+    required String inventoryId,
+    required bool shouldLink,
+  }) async {
     try {
-      await _repository.saveShoppingList(updated);
+      if (shouldLink) {
+        await _repository.linkListToInventory(
+          shoppingListId: list.id,
+          inventoryId: inventoryId,
+        );
+      } else {
+        await _repository.unlinkListFromInventory(
+          shoppingListId: list.id,
+          inventoryId: inventoryId,
+        );
+      }
       return true;
     } catch (_) {
       state = state.copyWith(errorMessage: 'Unable to update list inventory.');

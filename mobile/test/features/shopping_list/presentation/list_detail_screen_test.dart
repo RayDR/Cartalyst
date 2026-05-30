@@ -91,11 +91,12 @@ void main() {
   testWidgets('renders linked inventory in compact chip row', (
     WidgetTester tester,
   ) async {
-    final ShoppingList list = _sampleList(
-      name: 'Linked list',
+    final ShoppingList list = _sampleList(name: 'Linked list');
+    shoppingListRepository.seedList(list);
+    await shoppingListRepository.linkListToInventory(
+      shoppingListId: list.id,
       inventoryId: 'inv-1',
     );
-    shoppingListRepository.seedList(list);
     inventoryRepository.seedInventory(
       Inventory(
         id: 'inv-1',
@@ -115,11 +116,8 @@ void main() {
       inventoryRepository: inventoryRepository,
     );
 
-    expect(find.text('Linked to Pantry'), findsOneWidget);
-    expect(
-      find.textContaining('Link this list to an inventory'),
-      findsNothing,
-    );
+    expect(find.text('Inventory inv-1'), findsOneWidget);
+    expect(find.text('No inventory linked'), findsNothing);
   });
 
   testWidgets('archives list from overflow action',
@@ -241,9 +239,17 @@ class _FakeShoppingListRepository implements ShoppingListRepository {
   final List<ShoppingList> lists = <ShoppingList>[];
   final List<ShoppingListItem> _items = <ShoppingListItem>[];
   final List<String> deletedListIds = <String>[];
+  final Map<String, Set<String>> _inventoryLinksByList =
+      <String, Set<String>>{};
 
   void seedList(ShoppingList list) {
     lists.add(list);
+    final String? legacyInventoryId = list.inventoryId;
+    if (legacyInventoryId != null && legacyInventoryId.isNotEmpty) {
+      _inventoryLinksByList
+          .putIfAbsent(list.id, () => <String>{})
+          .add(legacyInventoryId);
+    }
   }
 
   void seedItem(ShoppingListItem item) {
@@ -296,6 +302,55 @@ class _FakeShoppingListRepository implements ShoppingListRepository {
       _items.add(item);
     }
     _emitItems(item.shoppingListId);
+  }
+
+  @override
+  Future<void> linkListToInventory({
+    required String shoppingListId,
+    required String inventoryId,
+  }) async {
+    _inventoryLinksByList
+        .putIfAbsent(shoppingListId, () => <String>{})
+        .add(inventoryId);
+  }
+
+  @override
+  Future<void> unlinkListFromInventory({
+    required String shoppingListId,
+    required String inventoryId,
+  }) async {
+    _inventoryLinksByList[shoppingListId]?.remove(inventoryId);
+  }
+
+  @override
+  Stream<List<Inventory>> watchInventoriesForList(String shoppingListId) {
+    final Set<String> links =
+        _inventoryLinksByList[shoppingListId] ?? <String>{};
+    final List<Inventory> inventories = links
+        .map(
+          (String id) => Inventory(
+            id: id,
+            name: 'Inventory $id',
+            createdAt: DateTime(2026),
+            updatedAt: DateTime(2026),
+            syncStatus: 'local_only',
+            version: 1,
+          ),
+        )
+        .toList(growable: false);
+    return Stream<List<Inventory>>.value(inventories);
+  }
+
+  @override
+  Stream<List<ShoppingList>> watchListsForInventory(String inventoryId) {
+    final List<ShoppingList> linked = lists
+        .where(
+          (ShoppingList list) =>
+              (_inventoryLinksByList[list.id] ?? const <String>{})
+                  .contains(inventoryId),
+        )
+        .toList(growable: false);
+    return Stream<List<ShoppingList>>.value(linked);
   }
 
   @override

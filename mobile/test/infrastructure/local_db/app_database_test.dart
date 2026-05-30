@@ -20,7 +20,8 @@ void main() {
 
     test('seeds common products and aliases on first create', () async {
       try {
-        final List<Product> products = await database!.select(database!.products).get();
+        final List<Product> products =
+            await database!.select(database!.products).get();
         final aliases = await database!.select(database!.productAliases).get();
 
         expect(products.length, 15);
@@ -51,7 +52,7 @@ void main() {
         final List<Product> products =
             await database!.select(database!.products).get();
         final List<Inventory> inventories =
-          await database!.select(database!.inventories).get();
+            await database!.select(database!.inventories).get();
 
         expect(lists, isEmpty);
         expect(products.length, 15);
@@ -115,7 +116,8 @@ void main() {
         }
         rethrow;
       } finally {
-        drift.driftRuntimeOptions.dontWarnAboutMultipleDatabases = previousWarnValue;
+        drift.driftRuntimeOptions.dontWarnAboutMultipleDatabases =
+            previousWarnValue;
         await first?.close();
         await second?.close();
         if (dbFile.existsSync()) {
@@ -141,7 +143,10 @@ void main() {
 
         final List<Inventory> inventories =
             await database!.select(database!.inventories).get();
-        expect(inventories.any((Inventory inventory) => inventory.name == 'Despensa'), isTrue);
+        expect(
+            inventories
+                .any((Inventory inventory) => inventory.name == 'Despensa'),
+            isTrue);
       } on ArgumentError catch (error) {
         if (_isMissingSqlite(error)) {
           return;
@@ -150,11 +155,12 @@ void main() {
       }
     });
 
-    test('persists shopping list inventory linkage', () async {
+    test('persists shopping list inventory links via link table', () async {
       try {
         final DateTime now = DateTime.now();
         final String inventoryId = const Uuid().v4();
         final String listId = const Uuid().v4();
+        final String linkId = const Uuid().v4();
 
         await database!.into(database!.inventories).insert(
               InventoriesCompanion.insert(
@@ -170,18 +176,30 @@ void main() {
         await database!.into(database!.shoppingLists).insert(
               ShoppingListsCompanion.insert(
                 id: listId,
-                inventoryId: drift.Value(inventoryId),
                 name: 'Weekly list',
                 createdAt: drift.Value(now),
                 updatedAt: drift.Value(now),
               ),
             );
 
-        final ShoppingList list = await (database!.select(database!.shoppingLists)
-              ..where((tbl) => tbl.id.equals(listId)))
-            .getSingle();
+        await database!.into(database!.shoppingListInventoryLinks).insert(
+              ShoppingListInventoryLinksCompanion.insert(
+                id: linkId,
+                shoppingListId: listId,
+                inventoryId: inventoryId,
+                createdAt: drift.Value(now),
+                syncStatus: const drift.Value('pending_sync'),
+                version: const drift.Value(1),
+              ),
+            );
 
-        expect(list.inventoryId, inventoryId);
+        final ShoppingListInventoryLink link =
+            await (database!.select(database!.shoppingListInventoryLinks)
+                  ..where((tbl) => tbl.id.equals(linkId)))
+                .getSingle();
+
+        expect(link.shoppingListId, listId);
+        expect(link.inventoryId, inventoryId);
       } on ArgumentError catch (error) {
         if (_isMissingSqlite(error)) {
           return;

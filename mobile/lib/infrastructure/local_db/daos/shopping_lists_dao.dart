@@ -1,6 +1,13 @@
 part of '../app_database.dart';
 
-@DriftAccessor(tables: <Type>[ShoppingLists, ShoppingListItems])
+@DriftAccessor(
+  tables: <Type>[
+    ShoppingLists,
+    ShoppingListItems,
+    ShoppingListInventoryLinks,
+    Inventories,
+  ],
+)
 class ShoppingListsDao extends DatabaseAccessor<AppDatabase>
     with _$ShoppingListsDaoMixin {
   ShoppingListsDao(super.db);
@@ -90,5 +97,87 @@ class ShoppingListsDao extends DatabaseAccessor<AppDatabase>
       'DELETE FROM shopping_list_drafts WHERE shopping_list_id = ?',
       <Object>[shoppingListId],
     );
+  }
+
+  Future<void> linkListToInventory({
+    required String id,
+    required String shoppingListId,
+    required String inventoryId,
+    required DateTime createdAt,
+    required String syncStatus,
+    required int version,
+  }) {
+    return into(shoppingListInventoryLinks).insertOnConflictUpdate(
+      ShoppingListInventoryLinksCompanion.insert(
+        id: id,
+        shoppingListId: shoppingListId,
+        inventoryId: inventoryId,
+        createdAt: Value(createdAt),
+        deletedAt: const Value(null),
+        syncStatus: Value(syncStatus),
+        version: Value(version),
+      ),
+    );
+  }
+
+  Future<void> unlinkListFromInventory({
+    required String shoppingListId,
+    required String inventoryId,
+  }) {
+    final DateTime now = DateTime.now();
+    return customStatement(
+      '''
+      UPDATE shopping_list_inventory_links
+      SET deleted_at = ?,
+          sync_status = 'pending_sync',
+          version = version + 1
+      WHERE shopping_list_id = ?
+        AND inventory_id = ?
+        AND deleted_at IS NULL
+      ''',
+      <Object>[now.toIso8601String(), shoppingListId, inventoryId],
+    );
+  }
+
+  Stream<List<Inventory>> watchInventoriesForList(String shoppingListId) {
+    final query = select(inventories).join([
+      innerJoin(
+        shoppingListInventoryLinks,
+        shoppingListInventoryLinks.inventoryId.equalsExp(inventories.id) &
+            shoppingListInventoryLinks.shoppingListId.equals(shoppingListId) &
+            shoppingListInventoryLinks.deletedAt.isNull(),
+      ),
+    ])
+      ..where(inventories.deletedAt.isNull())
+      ..orderBy(<OrderingTerm>[
+        OrderingTerm.asc(inventories.name),
+      ]);
+
+    return query.watch().map(
+          (List<TypedResult> rows) => rows
+              .map((TypedResult row) => row.readTable(inventories))
+              .toList(growable: false),
+        );
+  }
+
+  Stream<List<ShoppingList>> watchListsForInventory(String inventoryId) {
+    final query = select(shoppingLists).join([
+      innerJoin(
+        shoppingListInventoryLinks,
+        shoppingListInventoryLinks.shoppingListId.equalsExp(shoppingLists.id) &
+            shoppingListInventoryLinks.inventoryId.equals(inventoryId) &
+            shoppingListInventoryLinks.deletedAt.isNull(),
+      ),
+    ])
+      ..where(shoppingLists.deletedAt.isNull())
+      ..orderBy(<OrderingTerm>[
+        OrderingTerm.desc(shoppingLists.updatedAt),
+      ]);
+
+    return query.watch().map(
+          (List<TypedResult> rows) => rows
+              .map((TypedResult row) => row.readTable(shoppingLists))
+              .toList(growable: false),
+        );
   }
 }

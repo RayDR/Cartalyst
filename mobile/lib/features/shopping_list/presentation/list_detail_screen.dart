@@ -50,8 +50,10 @@ class _ListDetailScreenState extends ConsumerState<ListDetailScreen> {
     final ListsState listsState = ref.watch(listsControllerProvider);
     final ShoppingList? currentList =
         _findList(listsState.lists, widget.listId);
-    final List<Inventory> inventories =
-        ref.watch(inventoriesControllerProvider).inventories;
+    final List<Inventory> linkedInventories = ref
+            .watch(linkedInventoriesForListProvider(widget.listId))
+            .valueOrNull ??
+        const <Inventory>[];
 
     final ShoppingListState state =
         ref.watch(shoppingListControllerProvider(widget.listId));
@@ -115,7 +117,9 @@ class _ListDetailScreenState extends ConsumerState<ListDetailScreen> {
                 action,
                 list: currentList,
                 listsController: listsController,
-                linkedInventoryId: currentList.inventoryId,
+                linkedInventoryIds: linkedInventories
+                    .map((Inventory inventory) => inventory.id)
+                    .toSet(),
               ),
               itemBuilder: (BuildContext context) =>
                   <PopupMenuEntry<_ListOverflowAction>>[
@@ -135,7 +139,7 @@ class _ListDetailScreenState extends ConsumerState<ListDetailScreen> {
                 ),
                 PopupMenuItem<_ListOverflowAction>(
                   value: _ListOverflowAction.manageLink,
-                  enabled: currentList.inventoryId != null,
+                  enabled: linkedInventories.isNotEmpty,
                   child: const ListTile(
                     leading: Icon(Icons.tune_outlined),
                     title: Text('Manage linked inventories'),
@@ -170,18 +174,16 @@ class _ListDetailScreenState extends ConsumerState<ListDetailScreen> {
               children: <Widget>[
                 if (currentList != null)
                   _ListMetaRow(
-                    list: currentList,
-                    linkedInventoryName: _findInventoryName(
-                      inventories,
-                      currentList.inventoryId,
-                    ),
+                    linkedInventories: linkedInventories,
                     hasDraft: state.hasDraft,
                     isEditMode: state.isEditMode,
                     onManageLink: () => _showInventoryPicker(
                       context,
                       list: currentList,
-                      selectedInventoryId: currentList.inventoryId,
-                      allowUnlink: currentList.inventoryId != null,
+                      linkedInventoryIds: linkedInventories
+                          .map((Inventory inventory) => inventory.id)
+                          .toSet(),
+                      allowUnlink: linkedInventories.isNotEmpty,
                     ),
                   ),
                 const SectionHeader(
@@ -190,7 +192,7 @@ class _ListDetailScreenState extends ConsumerState<ListDetailScreen> {
                 ),
                 const SizedBox(height: AppSpacing.md),
                 AppTextField(
-                  label: 'Product',
+                  label: 'Quick add',
                   hint: 'Try: 2 milk, huevos 18, paper towels 12 pack',
                   prefixIcon: Icons.search,
                   controller: _quickAddController,
@@ -303,7 +305,7 @@ class _ListDetailScreenState extends ConsumerState<ListDetailScreen> {
     _ListOverflowAction action, {
     required ShoppingList list,
     required ListsController listsController,
-    required String? linkedInventoryId,
+    required Set<String> linkedInventoryIds,
   }) async {
     switch (action) {
       case _ListOverflowAction.rename:
@@ -313,7 +315,7 @@ class _ListDetailScreenState extends ConsumerState<ListDetailScreen> {
         await _showInventoryPicker(
           context,
           list: list,
-          selectedInventoryId: linkedInventoryId,
+          linkedInventoryIds: linkedInventoryIds,
           allowUnlink: false,
         );
         break;
@@ -321,7 +323,7 @@ class _ListDetailScreenState extends ConsumerState<ListDetailScreen> {
         await _showInventoryPicker(
           context,
           list: list,
-          selectedInventoryId: linkedInventoryId,
+          linkedInventoryIds: linkedInventoryIds,
           allowUnlink: true,
         );
         break;
@@ -389,7 +391,7 @@ class _ListDetailScreenState extends ConsumerState<ListDetailScreen> {
   Future<void> _showInventoryPicker(
     BuildContext context, {
     required ShoppingList list,
-    required String? selectedInventoryId,
+    required Set<String> linkedInventoryIds,
     required bool allowUnlink,
   }) async {
     final _InventorySelectionResult? picked =
@@ -399,7 +401,7 @@ class _ListDetailScreenState extends ConsumerState<ListDetailScreen> {
       useSafeArea: true,
       isScrollControlled: true,
       builder: (BuildContext context) => _InventoryPickerSheet(
-        selectedInventoryId: selectedInventoryId,
+        linkedInventoryIds: linkedInventoryIds,
         allowUnlink: allowUnlink,
       ),
     );
@@ -410,12 +412,19 @@ class _ListDetailScreenState extends ConsumerState<ListDetailScreen> {
 
     final ListsController controller =
         ref.read(listsControllerProvider.notifier);
-    if (picked.inventoryId == null) {
-      await controller.unlinkFromInventory(list);
+    if (picked.inventoryId == null || picked.shouldLink == null) {
       return;
     }
 
-    await controller.linkToInventory(list, picked.inventoryId!);
+    if (picked.shouldLink!) {
+      await controller.linkToInventory(list, picked.inventoryId!);
+      return;
+    }
+
+    await controller.unlinkFromInventory(
+      list,
+      inventoryId: picked.inventoryId!,
+    );
   }
 
   Future<void> _confirmDelete(
@@ -459,18 +468,6 @@ class _ListDetailScreenState extends ConsumerState<ListDetailScreen> {
         ),
       ),
     );
-  }
-
-  String? _findInventoryName(List<Inventory> inventories, String? inventoryId) {
-    if (inventoryId == null) {
-      return null;
-    }
-    for (final Inventory inventory in inventories) {
-      if (inventory.id == inventoryId) {
-        return inventory.name;
-      }
-    }
-    return null;
   }
 
   Future<void> _showDraftChoiceDialog(
@@ -532,23 +529,20 @@ enum _ListOverflowAction {
 
 class _ListMetaRow extends StatelessWidget {
   const _ListMetaRow({
-    required this.list,
-    required this.linkedInventoryName,
+    required this.linkedInventories,
     required this.hasDraft,
     required this.isEditMode,
     required this.onManageLink,
   });
 
-  final ShoppingList list;
-  final String? linkedInventoryName;
+  final List<Inventory> linkedInventories;
   final bool hasDraft;
   final bool isEditMode;
   final VoidCallback onManageLink;
 
   @override
   Widget build(BuildContext context) {
-    final bool isLinked = list.inventoryId != null;
-    final String linkedLabel = linkedInventoryName ?? 'Linked inventory';
+    final bool isLinked = linkedInventories.isNotEmpty;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
@@ -556,17 +550,19 @@ class _ListMetaRow extends StatelessWidget {
         spacing: AppSpacing.xs,
         runSpacing: AppSpacing.xs,
         children: <Widget>[
-          if (isLinked)
-            ActionChip(
-              avatar: const Icon(Icons.inventory_2_outlined),
-              label: Text('Linked to $linkedLabel'),
-              onPressed: onManageLink,
-            )
-          else
+          if (!isLinked)
             ActionChip(
               avatar: const Icon(Icons.link_outlined),
               label: const Text('No inventory linked'),
               onPressed: onManageLink,
+            )
+          else
+            ...linkedInventories.map(
+              (Inventory inventory) => ActionChip(
+                avatar: const Icon(Icons.inventory_2_outlined),
+                label: Text(inventory.name),
+                onPressed: onManageLink,
+              ),
             ),
           if (hasDraft)
             Chip(
@@ -658,18 +654,22 @@ class _RenameListSheetState extends State<_RenameListSheet> {
 }
 
 class _InventorySelectionResult {
-  const _InventorySelectionResult({required this.inventoryId});
+  const _InventorySelectionResult({
+    required this.inventoryId,
+    required this.shouldLink,
+  });
 
   final String? inventoryId;
+  final bool? shouldLink;
 }
 
 class _InventoryPickerSheet extends ConsumerStatefulWidget {
   const _InventoryPickerSheet({
-    required this.selectedInventoryId,
+    required this.linkedInventoryIds,
     required this.allowUnlink,
   });
 
-  final String? selectedInventoryId;
+  final Set<String> linkedInventoryIds;
   final bool allowUnlink;
 
   @override
@@ -700,13 +700,10 @@ class _InventoryPickerSheetState extends ConsumerState<_InventoryPickerSheet> {
           ),
           const SizedBox(height: AppSpacing.sm),
           if (widget.allowUnlink)
-            ListTile(
+            const ListTile(
               leading: const Icon(Icons.link_off_outlined),
               title: const Text('No inventory'),
-              subtitle: const Text('Keep this list standalone.'),
-              onTap: () => Navigator.of(context).pop(
-                const _InventorySelectionResult(inventoryId: null),
-              ),
+              subtitle: const Text('Tap an inventory below to unlink it.'),
             ),
           if (widget.allowUnlink) const Divider(),
           if (inventories.isEmpty)
@@ -720,13 +717,22 @@ class _InventoryPickerSheetState extends ConsumerState<_InventoryPickerSheet> {
             ...inventories.map(
               (Inventory inventory) => ListTile(
                 leading: Icon(
-                  widget.selectedInventoryId == inventory.id
-                      ? Icons.radio_button_checked
+                  widget.linkedInventoryIds.contains(inventory.id)
+                      ? Icons.check_circle
                       : Icons.inventory_2_outlined,
                 ),
                 title: Text(inventory.name),
+                subtitle: Text(
+                  widget.linkedInventoryIds.contains(inventory.id)
+                      ? 'Linked'
+                      : 'Not linked',
+                ),
                 onTap: () => Navigator.of(context).pop(
-                  _InventorySelectionResult(inventoryId: inventory.id),
+                  _InventorySelectionResult(
+                    inventoryId: inventory.id,
+                    shouldLink:
+                        !widget.linkedInventoryIds.contains(inventory.id),
+                  ),
                 ),
               ),
             ),
@@ -762,7 +768,10 @@ class _InventoryPickerSheetState extends ConsumerState<_InventoryPickerSheet> {
     }
 
     navigator.pop(
-      _InventorySelectionResult(inventoryId: inventoryId),
+      _InventorySelectionResult(
+        inventoryId: inventoryId,
+        shouldLink: true,
+      ),
     );
   }
 }

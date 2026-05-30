@@ -1,21 +1,15 @@
 part of '../app_database.dart';
 
-class ShoppingLists extends Table {
+class ShoppingListInventoryLinks extends Table {
   TextColumn get id => text()();
 
-  @Deprecated('Legacy one-to-many relation. Use shopping_list_inventory_links.')
+  TextColumn get shoppingListId =>
+      text().references(ShoppingLists, #id, onDelete: KeyAction.cascade)();
+
   TextColumn get inventoryId =>
-      text().nullable().references(Inventories, #id)();
-
-  TextColumn get name => text().withLength(min: 1, max: 120)();
-
-  TextColumn get status => text().customConstraint(
-        "NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'completed', 'archived'))",
-      )();
+      text().references(Inventories, #id, onDelete: KeyAction.cascade)();
 
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
-
-  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 
   DateTimeColumn get deletedAt => dateTime().nullable()();
 

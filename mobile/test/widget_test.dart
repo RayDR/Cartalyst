@@ -8,6 +8,7 @@ import 'package:cartalyst_mobile/features/shopping_list/application/shopping_lis
 import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list.dart';
 import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list_item.dart';
 import 'package:cartalyst_mobile/features/shopping_list/domain/repositories/shopping_list_repository.dart';
+import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -77,6 +78,28 @@ class _TestShoppingListRepository implements ShoppingListRepository {
 
   @override
   Future<void> saveShoppingListItem(ShoppingListItem item) async {}
+
+  @override
+  Future<void> linkListToInventory({
+    required String shoppingListId,
+    required String inventoryId,
+  }) async {}
+
+  @override
+  Future<void> unlinkListFromInventory({
+    required String shoppingListId,
+    required String inventoryId,
+  }) async {}
+
+  @override
+  Stream<List<Inventory>> watchInventoriesForList(String shoppingListId) {
+    return Stream<List<Inventory>>.value(const <Inventory>[]);
+  }
+
+  @override
+  Stream<List<ShoppingList>> watchListsForInventory(String inventoryId) {
+    return Stream<List<ShoppingList>>.value(const <ShoppingList>[]);
+  }
 
   @override
   Future<void> deleteShoppingList(String id) async {}

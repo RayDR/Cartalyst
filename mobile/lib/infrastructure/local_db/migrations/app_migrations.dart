@@ -114,6 +114,44 @@ MigrationStrategy buildMigrationStrategy(AppDatabase db) {
           )
         ''');
       }
+
+      if (from < 4) {
+        await db.customStatement('''
+          CREATE TABLE IF NOT EXISTS shopping_list_inventory_links (
+            id TEXT NOT NULL PRIMARY KEY,
+            shopping_list_id TEXT NOT NULL REFERENCES shopping_lists(id) ON DELETE CASCADE,
+            inventory_id TEXT NOT NULL REFERENCES inventories(id) ON DELETE CASCADE,
+            created_at TEXT NOT NULL,
+            deleted_at TEXT NULL,
+            sync_status TEXT NOT NULL DEFAULT 'local_only' CHECK (sync_status IN ('local_only', 'pending_sync', 'synced', 'sync_error')),
+            version INTEGER NOT NULL DEFAULT 1
+          )
+        ''');
+
+        await db.customStatement(
+          '''
+          INSERT OR IGNORE INTO shopping_list_inventory_links (
+            id,
+            shopping_list_id,
+            inventory_id,
+            created_at,
+            deleted_at,
+            sync_status,
+            version
+          )
+          SELECT
+            shopping_lists.id || '::' || shopping_lists.inventory_id,
+            shopping_lists.id,
+            shopping_lists.inventory_id,
+            shopping_lists.updated_at,
+            NULL,
+            'pending_sync',
+            1
+          FROM shopping_lists
+          WHERE shopping_lists.inventory_id IS NOT NULL
+          ''',
+        );
+      }
     },
   );
 }

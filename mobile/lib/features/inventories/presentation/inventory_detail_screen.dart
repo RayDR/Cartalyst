@@ -14,6 +14,8 @@ import 'package:cartalyst_mobile/features/inventories/application/inventories_st
 import 'package:cartalyst_mobile/features/inventories/application/inventory_detail_controller.dart';
 import 'package:cartalyst_mobile/features/inventories/application/inventory_detail_state.dart';
 import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory_item.dart';
+import 'package:cartalyst_mobile/features/shopping_list/application/lists_controller.dart';
+import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -56,6 +58,10 @@ class _InventoryDetailScreenState extends ConsumerState<InventoryDetailScreen> {
     final InventoryDetailController controller = ref.read(
       inventoryDetailControllerProvider(widget.inventoryId).notifier,
     );
+    final List<ShoppingList> linkedLists = ref
+            .watch(linkedListsForInventoryProvider(widget.inventoryId))
+            .valueOrNull ??
+        const <ShoppingList>[];
 
     _syncController(_nameController, state.nameInput);
     _syncController(_quantityController, state.quantityInput);
@@ -109,6 +115,23 @@ class _InventoryDetailScreenState extends ConsumerState<InventoryDetailScreen> {
                 ),
               ),
               const SizedBox(height: AppSpacing.sm),
+            ],
+            if (linkedLists.isNotEmpty) ...<Widget>[
+              const SectionHeader(
+                title: 'Linked lists',
+                subtitle: 'Lists that can send purchased items here.',
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              AppCard(
+                child: Wrap(
+                  spacing: AppSpacing.xs,
+                  runSpacing: AppSpacing.xs,
+                  children: linkedLists
+                      .map((ShoppingList list) => Chip(label: Text(list.name)))
+                      .toList(growable: false),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
             ],
             if (state.hasAnyItems)
               _ItemSections(

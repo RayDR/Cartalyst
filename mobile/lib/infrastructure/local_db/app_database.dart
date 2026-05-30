@@ -19,6 +19,7 @@ part 'tables/inventory_items.dart';
 part 'tables/price_observations.dart';
 part 'tables/product_aliases.dart';
 part 'tables/products.dart';
+part 'tables/shopping_list_inventory_links.dart';
 part 'tables/shopping_list_items.dart';
 part 'tables/shopping_lists.dart';
 
@@ -30,6 +31,7 @@ const String defaultInventoryId = 'inventory-default-pantry';
     ProductAliases,
     Inventories,
     InventoryItems,
+    ShoppingListInventoryLinks,
     ShoppingLists,
     ShoppingListItems,
     InventoryEvents,
@@ -46,7 +48,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase({QueryExecutor? executor}) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => buildMigrationStrategy(this);

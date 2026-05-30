@@ -7,6 +7,7 @@ import 'package:cartalyst_mobile/features/shopping_list/application/shopping_lis
 import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list.dart';
 import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list_item.dart';
 import 'package:cartalyst_mobile/features/shopping_list/domain/repositories/shopping_list_repository.dart';
+import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:uuid/uuid.dart';
@@ -85,7 +86,11 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 20));
 
       final ListsState state = container.read(listsControllerProvider);
-      expect(state.lists.first.inventoryId, 'inv-home');
+      expect(state.lists.first.name, 'Weekly groceries');
+      expect(
+        repository.linkedInventoryIdsForList(state.lists.first.id),
+        contains('inv-home'),
+      );
     });
 
     test('createList without inventory keeps list standalone', () async {
@@ -113,7 +118,10 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 20));
 
       final ListsState state = container.read(listsControllerProvider);
-      expect(state.lists.first.inventoryId, newInventoryId);
+      expect(
+        repository.linkedInventoryIdsForList(state.lists.first.id),
+        contains(newInventoryId),
+      );
     });
 
     test('createList returns null for empty name', () async {
@@ -288,7 +296,8 @@ void main() {
       expect(state.lists[2].id, 'a');
     });
 
-    test('linkToInventory sets inventoryId on list', () async {
+    test('linkToInventory creates a link without mutating list ownership',
+        () async {
       final ListsController controller =
           container.read(listsControllerProvider.notifier);
       await controller.createList('Linked list');
@@ -297,17 +306,17 @@ void main() {
 
       final ShoppingList list =
           container.read(listsControllerProvider).lists.first;
-      expect(list.inventoryId, isNull);
+      expect(repository.linkedInventoryIdsForList(list.id), isEmpty);
 
       await controller.linkToInventory(list, 'inv-123');
 
       await Future<void>.delayed(const Duration(milliseconds: 20));
 
-      final ListsState state = container.read(listsControllerProvider);
-      expect(state.lists.first.inventoryId, 'inv-123');
+      expect(
+          repository.linkedInventoryIdsForList(list.id), contains('inv-123'));
     });
 
-    test('linkToInventory can change an existing inventory link', () async {
+    test('linkToInventory supports multiple linked inventories', () async {
       final ListsController controller =
           container.read(listsControllerProvider.notifier);
       await controller.createList('Linked list', inventoryId: 'inv-123');
@@ -316,33 +325,44 @@ void main() {
 
       final ShoppingList list =
           container.read(listsControllerProvider).lists.first;
-      expect(list.inventoryId, 'inv-123');
+      expect(
+          repository.linkedInventoryIdsForList(list.id), contains('inv-123'));
 
       await controller.linkToInventory(list, 'inv-456');
 
       await Future<void>.delayed(const Duration(milliseconds: 20));
 
-      final ListsState state = container.read(listsControllerProvider);
-      expect(state.lists.first.inventoryId, 'inv-456');
+      expect(
+        repository.linkedInventoryIdsForList(list.id),
+        containsAll(<String>['inv-123', 'inv-456']),
+      );
     });
 
-    test('unlinkFromInventory clears inventoryId on list', () async {
+    test('unlinkFromInventory removes only selected link', () async {
       final ListsController controller =
           container.read(listsControllerProvider.notifier);
       await controller.createList('Linked list', inventoryId: 'inv-123');
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+
+      final ShoppingList seeded =
+          container.read(listsControllerProvider).lists.first;
+      await controller.linkToInventory(seeded, 'inv-456');
 
       await waitForLists();
 
       final ShoppingList list =
           container.read(listsControllerProvider).lists.first;
-      expect(list.inventoryId, 'inv-123');
+      expect(
+        repository.linkedInventoryIdsForList(list.id),
+        containsAll(<String>['inv-123', 'inv-456']),
+      );
 
-      await controller.unlinkFromInventory(list);
+      await controller.unlinkFromInventory(list, inventoryId: 'inv-123');
 
       await Future<void>.delayed(const Duration(milliseconds: 20));
 
-      final ListsState state = container.read(listsControllerProvider);
-      expect(state.lists.first.inventoryId, isNull);
+      expect(
+          repository.linkedInventoryIdsForList(list.id), <String>{'inv-456'});
     });
 
     test('recentLists returns at most 5 lists', () async {
@@ -389,9 +409,21 @@ class FakeShoppingListRepository implements ShoppingListRepository {
   final List<ShoppingList> _lists = <ShoppingList>[];
   final List<ShoppingListItem> _items = <ShoppingListItem>[];
   final Map<String, ShoppingListDraft> _drafts = <String, ShoppingListDraft>{};
+  final Map<String, Set<String>> _inventoryLinksByList =
+      <String, Set<String>>{};
+
+  Set<String> linkedInventoryIdsForList(String listId) {
+    return Set<String>.from(_inventoryLinksByList[listId] ?? <String>{});
+  }
 
   void seedList(ShoppingList list) {
     _lists.add(list);
+    final String? legacyInventoryId = list.inventoryId;
+    if (legacyInventoryId != null && legacyInventoryId.isNotEmpty) {
+      _inventoryLinksByList
+          .putIfAbsent(list.id, () => <String>{})
+          .add(legacyInventoryId);
+    }
   }
 
   void emitLists() {
@@ -445,6 +477,55 @@ class FakeShoppingListRepository implements ShoppingListRepository {
       _items.add(item);
     }
     _emitItemsForList(item.shoppingListId);
+  }
+
+  @override
+  Future<void> linkListToInventory({
+    required String shoppingListId,
+    required String inventoryId,
+  }) async {
+    _inventoryLinksByList
+        .putIfAbsent(shoppingListId, () => <String>{})
+        .add(inventoryId);
+  }
+
+  @override
+  Future<void> unlinkListFromInventory({
+    required String shoppingListId,
+    required String inventoryId,
+  }) async {
+    _inventoryLinksByList[shoppingListId]?.remove(inventoryId);
+  }
+
+  @override
+  Stream<List<Inventory>> watchInventoriesForList(String shoppingListId) {
+    final Set<String> links =
+        _inventoryLinksByList[shoppingListId] ?? <String>{};
+    final List<Inventory> inventories = links
+        .map(
+          (String id) => Inventory(
+            id: id,
+            name: 'Inventory $id',
+            createdAt: DateTime(2026),
+            updatedAt: DateTime(2026),
+            syncStatus: 'local_only',
+            version: 1,
+          ),
+        )
+        .toList(growable: false);
+    return Stream<List<Inventory>>.value(inventories);
+  }
+
+  @override
+  Stream<List<ShoppingList>> watchListsForInventory(String inventoryId) {
+    final List<ShoppingList> linked = _lists
+        .where(
+          (ShoppingList list) =>
+              (_inventoryLinksByList[list.id] ?? const <String>{})
+                  .contains(inventoryId),
+        )
+        .toList(growable: false);
+    return Stream<List<ShoppingList>>.value(linked);
   }
 
   @override
