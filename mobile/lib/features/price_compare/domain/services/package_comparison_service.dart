@@ -14,6 +14,9 @@ class PackageOptionInput {
     required this.quantity,
     required this.unit,
     this.productId,
+    this.productName,
+    this.store,
+    this.notes,
   });
 
   final String label;
@@ -21,6 +24,9 @@ class PackageOptionInput {
   final double quantity;
   final String unit;
   final String? productId;
+  final String? productName;
+  final String? store;
+  final String? notes;
 }
 
 class PackageOptionEvaluation {

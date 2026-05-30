@@ -78,7 +78,73 @@ void main() {
       expect(result.convertedQuantity, closeTo(3.785411784, 0.000001));
     });
 
-    test('3 to 5 options rank correctly', () {
+    test('3 options compare and rank correctly', () {
+      final PackageComparisonResult result = comparisonService.compareAll(
+        const <PackageOptionInput>[
+          PackageOptionInput(
+            label: 'Option A',
+            price: 12,
+            quantity: 20,
+            unit: 'piece',
+          ),
+          PackageOptionInput(
+            label: 'Option B',
+            price: 18,
+            quantity: 20,
+            unit: 'piece',
+          ),
+          PackageOptionInput(
+            label: 'Option C',
+            price: 8,
+            quantity: 20,
+            unit: 'piece',
+          ),
+        ],
+      );
+
+      expect(result.isComparable, isTrue);
+      expect(result.options.length, 3);
+      expect(result.recommendedLabel, 'Option C');
+      expect(result.rankedOptions.first.option.label, 'Option C');
+    });
+
+    test('4 options compare and rank correctly', () {
+      final PackageComparisonResult result = comparisonService.compareAll(
+        const <PackageOptionInput>[
+          PackageOptionInput(
+            label: 'Option A',
+            price: 12,
+            quantity: 20,
+            unit: 'piece',
+          ),
+          PackageOptionInput(
+            label: 'Option B',
+            price: 18,
+            quantity: 20,
+            unit: 'piece',
+          ),
+          PackageOptionInput(
+            label: 'Option C',
+            price: 8,
+            quantity: 20,
+            unit: 'piece',
+          ),
+          PackageOptionInput(
+            label: 'Option D',
+            price: 25,
+            quantity: 40,
+            unit: 'piece',
+          ),
+        ],
+      );
+
+      expect(result.isComparable, isTrue);
+      expect(result.options.length, 4);
+      expect(result.recommendedLabel, 'Option C');
+      expect(result.rankedOptions.first.option.label, 'Option C');
+    });
+
+    test('5 options compare and rank correctly', () {
       final PackageComparisonResult result = comparisonService.compareAll(
         const <PackageOptionInput>[
           PackageOptionInput(

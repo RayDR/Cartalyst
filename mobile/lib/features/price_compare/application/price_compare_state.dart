@@ -9,6 +9,9 @@ class PriceCompareOptionDraft {
     required this.quantity,
     required this.unit,
     required this.productId,
+    required this.productName,
+    required this.store,
+    required this.notes,
     required this.isExpanded,
   });
 
@@ -19,7 +22,10 @@ class PriceCompareOptionDraft {
   })  : price = '',
         quantity = '',
         unit = null,
-        productId = null;
+        productId = null,
+        productName = '',
+        store = '',
+        notes = '';
 
   final String id;
   final String label;
@@ -27,6 +33,9 @@ class PriceCompareOptionDraft {
   final String quantity;
   final String? unit;
   final String? productId;
+  final String productName;
+  final String store;
+  final String notes;
   final bool isExpanded;
 
   bool get hasRequiredFields =>
@@ -54,6 +63,9 @@ class PriceCompareOptionDraft {
     bool clearUnit = false,
     String? productId,
     bool clearProductId = false,
+    String? productName,
+    String? store,
+    String? notes,
     bool? isExpanded,
   }) {
     return PriceCompareOptionDraft(
@@ -63,6 +75,9 @@ class PriceCompareOptionDraft {
       quantity: quantity ?? this.quantity,
       unit: clearUnit ? null : (unit ?? this.unit),
       productId: clearProductId ? null : (productId ?? this.productId),
+      productName: productName ?? this.productName,
+      store: store ?? this.store,
+      notes: notes ?? this.notes,
       isExpanded: isExpanded ?? this.isExpanded,
     );
   }

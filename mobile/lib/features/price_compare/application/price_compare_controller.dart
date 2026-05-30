@@ -196,6 +196,27 @@ class PriceCompareController extends Notifier<PriceCompareState> {
     );
   }
 
+  void updateOptionProductName(String optionId, String value) {
+    _updateOption(
+      optionId,
+      (PriceCompareOptionDraft option) => option.copyWith(productName: value),
+    );
+  }
+
+  void updateOptionStore(String optionId, String value) {
+    _updateOption(
+      optionId,
+      (PriceCompareOptionDraft option) => option.copyWith(store: value),
+    );
+  }
+
+  void updateOptionNotes(String optionId, String value) {
+    _updateOption(
+      optionId,
+      (PriceCompareOptionDraft option) => option.copyWith(notes: value),
+    );
+  }
+
   Future<void> compare() async {
     if (state.options.length < minOptions) {
       state = state.copyWith(
@@ -236,6 +257,11 @@ class PriceCompareController extends Notifier<PriceCompareState> {
             quantity: double.tryParse(option.quantity.trim()) ?? double.nan,
             unit: option.unit ?? '',
             productId: option.productId,
+            productName: option.productName.trim().isEmpty
+                ? null
+                : option.productName.trim(),
+            store: option.store.trim().isEmpty ? null : option.store.trim(),
+            notes: option.notes.trim().isEmpty ? null : option.notes.trim(),
           ),
         )
         .toList(growable: false);

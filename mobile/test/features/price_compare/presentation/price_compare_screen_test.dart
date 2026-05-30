@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cartalyst_mobile/features/price_compare/application/price_compare_controller.dart';
+import 'package:cartalyst_mobile/features/price_compare/application/price_compare_state.dart';
 import 'package:cartalyst_mobile/features/price_compare/domain/entities/price_observation.dart';
 import 'package:cartalyst_mobile/features/price_compare/domain/repositories/price_observation_repository.dart';
 import 'package:cartalyst_mobile/features/price_compare/presentation/price_compare_screen.dart';
@@ -12,7 +13,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('renders compare title and default two options', (
+  testWidgets('renders non-blank screen with two default options', (
     WidgetTester tester,
   ) async {
     final _FakeProductRepository productRepository = _FakeProductRepository();
@@ -34,8 +35,102 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Price Compare'), findsOneWidget);
+    expect(find.text('Unit price insights'), findsOneWidget);
+    expect(find.text('Compare'), findsOneWidget);
     expect(find.text('Option A'), findsOneWidget);
     expect(find.text('Option B'), findsOneWidget);
+
+    await productRepository.dispose();
+    await observationRepository.dispose();
+  });
+
+  testWidgets('allows adding options up to five and removing back to two', (
+    WidgetTester tester,
+  ) async {
+    final _FakeProductRepository productRepository = _FakeProductRepository();
+    final _FakePriceObservationRepository observationRepository =
+        _FakePriceObservationRepository();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: <Override>[
+          priceCompareProductRepositoryProvider
+              .overrideWithValue(productRepository),
+          priceObservationRepositoryProvider
+              .overrideWithValue(observationRepository),
+        ],
+        child: const MaterialApp(home: PriceCompareScreen()),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Add option'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Add option'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Add option'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Option E'), findsOneWidget);
+    expect(find.text('Add option'), findsNothing);
+
+    await tester.tap(find.byTooltip('Remove option').first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Remove option').first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Remove option').first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Option A'), findsOneWidget);
+    expect(find.text('Option B'), findsOneWidget);
+    expect(find.text('Option C'), findsNothing);
+
+    await productRepository.dispose();
+    await observationRepository.dispose();
+  });
+
+  testWidgets('completed option renders compact card with unit price and edit',
+      (
+    WidgetTester tester,
+  ) async {
+    final _FakeProductRepository productRepository = _FakeProductRepository();
+    final _FakePriceObservationRepository observationRepository =
+        _FakePriceObservationRepository();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: <Override>[
+          priceCompareProductRepositoryProvider
+              .overrideWithValue(productRepository),
+          priceObservationRepositoryProvider
+              .overrideWithValue(observationRepository),
+        ],
+        child: const MaterialApp(home: PriceCompareScreen()),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    final ProviderContainer container = ProviderScope.containerOf(
+      tester.element(find.byType(PriceCompareScreen)),
+    );
+    final PriceCompareController controller =
+        container.read(priceCompareControllerProvider.notifier);
+    final PriceCompareState stateBefore =
+        container.read(priceCompareControllerProvider);
+    final String firstId = stateBefore.options.first.id;
+
+    controller.updateOptionPrice(firstId, '10');
+    controller.updateOptionQuantity(firstId, '20');
+    controller.updateOptionUnit(firstId, 'piece');
+    controller.collapseOption(firstId);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Price: \$10'), findsOneWidget);
+    expect(find.text('Quantity: 20 piece'), findsOneWidget);
+    expect(find.textContaining('Unit price:'), findsOneWidget);
+    expect(find.byTooltip('Edit option'), findsWidgets);
 
     await productRepository.dispose();
     await observationRepository.dispose();
