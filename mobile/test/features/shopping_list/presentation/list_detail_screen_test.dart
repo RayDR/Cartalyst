@@ -116,6 +116,45 @@ void main() {
     );
   });
 
+  testWidgets('undo after double tap restores pending', (
+    WidgetTester tester,
+  ) async {
+    final ShoppingList list = _sampleList(name: 'Weekly list');
+    shoppingListRepository.seedList(list);
+    shoppingListRepository.seedItem(
+      _sampleItem(
+        id: 'item-1',
+        listId: list.id,
+        name: 'Milk',
+      ),
+    );
+
+    await _pumpListDetail(
+      tester,
+      listId: list.id,
+      shoppingListRepository: shoppingListRepository,
+      productRepository: productRepository,
+      inventoryRepository: inventoryRepository,
+    );
+
+    await tester.tap(find.text('Milk'));
+    await tester.pump(const Duration(milliseconds: 40));
+    await tester.tap(find.text('Milk'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Undo'), findsOneWidget);
+    await tester.tap(find.text('Undo'));
+    await tester.pumpAndSettle();
+
+    expect(
+      shoppingListRepository
+          .itemsForList(list.id)
+          .firstWhere((ShoppingListItem item) => item.id == 'item-1')
+          .status,
+      ShoppingListItemStatus.pending,
+    );
+  });
+
   testWidgets('swipe right marks skipped', (WidgetTester tester) async {
     final ShoppingList list = _sampleList(name: 'Weekly list');
     shoppingListRepository.seedList(list);
@@ -144,6 +183,41 @@ void main() {
           .firstWhere((ShoppingListItem item) => item.id == 'item-1')
           .status,
       ShoppingListItemStatus.skipped,
+    );
+  });
+
+  testWidgets('undo after swipe restores pending', (WidgetTester tester) async {
+    final ShoppingList list = _sampleList(name: 'Weekly list');
+    shoppingListRepository.seedList(list);
+    shoppingListRepository.seedItem(
+      _sampleItem(
+        id: 'item-1',
+        listId: list.id,
+        name: 'Milk',
+      ),
+    );
+
+    await _pumpListDetail(
+      tester,
+      listId: list.id,
+      shoppingListRepository: shoppingListRepository,
+      productRepository: productRepository,
+      inventoryRepository: inventoryRepository,
+    );
+
+    await tester.drag(find.text('Milk').first, const Offset(400, 0));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Undo'), findsOneWidget);
+    await tester.tap(find.text('Undo'));
+    await tester.pumpAndSettle();
+
+    expect(
+      shoppingListRepository
+          .itemsForList(list.id)
+          .firstWhere((ShoppingListItem item) => item.id == 'item-1')
+          .status,
+      ShoppingListItemStatus.pending,
     );
   });
 

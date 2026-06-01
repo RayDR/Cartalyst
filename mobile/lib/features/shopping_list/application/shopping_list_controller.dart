@@ -587,14 +587,6 @@ class ShoppingListController extends FamilyNotifier<ShoppingListState, String> {
     state = state.copyWith(purchasedCollapsed: collapsed);
   }
 
-  void setFocusedItem(String? itemId) {
-    if (itemId == null) {
-      state = state.copyWith(clearFocusedItem: true);
-      return;
-    }
-    state = state.copyWith(focusedItemId: itemId);
-  }
-
   void _subscribeProducts() {
     _productsSubscription?.cancel();
     _productsSubscription = _productRepository
@@ -1163,19 +1155,10 @@ class ShoppingListController extends FamilyNotifier<ShoppingListState, String> {
         )
         .toList(growable: false);
 
-    final String? focusedItemId = state.focusedItemId;
-    final bool focusedStillExists = focusedItemId != null &&
-        source.any((ShoppingListItem item) => item.id == focusedItemId);
-    final String? nextFocusedItemId = focusedStillExists
-        ? focusedItemId
-        : (pending.isNotEmpty ? pending.first.id : null);
-
     state = state.copyWith(
       pendingItems: pending,
       purchasedItems: purchased,
       skippedItems: skipped,
-      focusedItemId: nextFocusedItemId,
-      clearFocusedItem: nextFocusedItemId == null,
     );
   }
 

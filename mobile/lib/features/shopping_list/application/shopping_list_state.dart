@@ -14,7 +14,6 @@ class ShoppingListState {
     required this.purchasedItems,
     required this.skippedItems,
     required this.suggestions,
-    required this.focusedItemId,
     required this.errorMessage,
   });
 
@@ -30,7 +29,6 @@ class ShoppingListState {
         purchasedItems = const <ShoppingListItem>[],
         skippedItems = const <ShoppingListItem>[],
         suggestions = const <ProductSuggestion>[],
-        focusedItemId = null,
         errorMessage = null;
 
   final bool isBusy;
@@ -44,37 +42,12 @@ class ShoppingListState {
   final List<ShoppingListItem> purchasedItems;
   final List<ShoppingListItem> skippedItems;
   final List<ProductSuggestion> suggestions;
-  final String? focusedItemId;
   final String? errorMessage;
 
   bool get hasItems =>
       pendingItems.isNotEmpty ||
       purchasedItems.isNotEmpty ||
       skippedItems.isNotEmpty;
-
-  ShoppingListItem? get focusedItem {
-    if (focusedItemId == null) {
-      return null;
-    }
-
-    for (final ShoppingListItem item in pendingItems) {
-      if (item.id == focusedItemId) {
-        return item;
-      }
-    }
-    for (final ShoppingListItem item in skippedItems) {
-      if (item.id == focusedItemId) {
-        return item;
-      }
-    }
-    for (final ShoppingListItem item in purchasedItems) {
-      if (item.id == focusedItemId) {
-        return item;
-      }
-    }
-
-    return null;
-  }
 
   ShoppingListState copyWith({
     bool? isBusy,
@@ -88,11 +61,9 @@ class ShoppingListState {
     List<ShoppingListItem>? purchasedItems,
     List<ShoppingListItem>? skippedItems,
     List<ProductSuggestion>? suggestions,
-    String? focusedItemId,
     String? errorMessage,
     bool clearDraftName = false,
     bool clearErrorMessage = false,
-    bool clearFocusedItem = false,
   }) {
     return ShoppingListState(
       isBusy: isBusy ?? this.isBusy,
@@ -106,8 +77,6 @@ class ShoppingListState {
       purchasedItems: purchasedItems ?? this.purchasedItems,
       skippedItems: skippedItems ?? this.skippedItems,
       suggestions: suggestions ?? this.suggestions,
-      focusedItemId:
-          clearFocusedItem ? null : (focusedItemId ?? this.focusedItemId),
       errorMessage:
           clearErrorMessage ? null : (errorMessage ?? this.errorMessage),
     );

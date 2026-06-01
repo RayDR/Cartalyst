@@ -1,7 +1,6 @@
 import 'package:cartalyst_mobile/core/design/app_radius.dart';
 import 'package:cartalyst_mobile/core/design/app_spacing.dart';
 import 'package:cartalyst_mobile/core/domain/value_objects/unit.dart';
-import 'package:cartalyst_mobile/core/widgets/app_card.dart';
 import 'package:cartalyst_mobile/core/widgets/app_list_tile.dart';
 import 'package:cartalyst_mobile/core/widgets/empty_state.dart';
 import 'package:cartalyst_mobile/core/widgets/keyboard_aware_scroll_view.dart';
@@ -128,14 +127,14 @@ class _ListDetailScreenState extends ConsumerState<ListDetailScreen> {
                   value: _ListOverflowAction.rename,
                   child: ListTile(
                     leading: Icon(Icons.edit_outlined),
-                    title: Text('Rename list'),
+                    title: Text('Rename'),
                   ),
                 ),
                 PopupMenuItem<_ListOverflowAction>(
                   value: _ListOverflowAction.inventorySettings,
                   child: const ListTile(
                     leading: Icon(Icons.tune_outlined),
-                    title: Text('Inventory settings'),
+                    title: Text('Inventories'),
                   ),
                 ),
                 PopupMenuItem<_ListOverflowAction>(
@@ -143,7 +142,7 @@ class _ListDetailScreenState extends ConsumerState<ListDetailScreen> {
                   enabled: isOrganized,
                   child: const ListTile(
                     leading: Icon(Icons.category_outlined),
-                    title: Text('Category settings'),
+                    title: Text('Categories'),
                   ),
                 ),
                 const PopupMenuDivider(),
@@ -166,84 +165,50 @@ class _ListDetailScreenState extends ConsumerState<ListDetailScreen> {
         ],
       ),
       body: SafeArea(
-        child: Padding(
+        child: ListView(
           padding: const EdgeInsets.all(AppSpacing.md),
-          child: KeyboardAwareScrollView(
-            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                _ListMetaRow(
-                  linkedInventories: linkedInventories,
-                  hasDraft: state.hasDraft,
-                  isEditMode: state.isEditMode,
-                  isOrganized: isOrganized,
-                  categoryCount: listCategories.length,
-                  onManageLink: currentList == null
-                      ? null
-                      : () => _showInventoryPicker(
-                            context,
-                            list: currentList,
-                            linkedInventoryIds: linkedInventories
-                                .map((Inventory inventory) => inventory.id)
-                                .toSet(),
-                            allowUnlink: linkedInventories.isNotEmpty,
-                          ),
+          children: <Widget>[
+            if (state.errorMessage != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                child: Text(
+                  state.errorMessage!,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.error,
+                  ),
                 ),
-                if (state.errorMessage != null) ...<Widget>[
-                  const SizedBox(height: AppSpacing.xs),
-                  AppCard(
-                    child: Row(
-                      children: <Widget>[
-                        const Icon(Icons.error_outline),
-                        const SizedBox(width: AppSpacing.xs),
-                        Expanded(child: Text(state.errorMessage!)),
-                      ],
-                    ),
-                  ),
-                ],
-                const SizedBox(height: AppSpacing.sm),
-                if (state.hasItems)
-                  isOrganized
-                      ? _OrganizedItemsView(
-                          state: state,
-                          controller: controller,
-                          categories: listCategories,
-                          selectedItemIds: _selectedItemIds,
-                          onToggleSelection: _toggleSelection,
-                          onShowUndo: _showUndo,
-                        )
-                      : _ItemsView(
-                          state: state,
-                          controller: controller,
-                          selectedItemIds: _selectedItemIds,
-                          onToggleSelection: _toggleSelection,
-                          onShowUndo: _showUndo,
-                        )
-                else
-                  EmptyState(
-                    title: 'This list is empty',
-                    description:
-                        'Tap + to add your first item to this shopping list.',
-                    icon: Icons.shopping_cart_outlined,
-                    primaryActionLabel: 'Add item',
-                    onPrimaryActionPressed: isOrganized
-                        ? () => _showAddItemSheet(
-                              context,
-                              controller,
-                              listCategories,
-                              linkedInventories,
-                            )
-                        : () => _showAddItemSheet(
-                              context,
-                              controller,
-                              listCategories,
-                              linkedInventories,
-                            ),
-                  ),
-              ],
-            ),
-          ),
+              ),
+            if (state.hasItems)
+              isOrganized
+                  ? _OrganizedItemsView(
+                      state: state,
+                      controller: controller,
+                      categories: listCategories,
+                      selectedItemIds: _selectedItemIds,
+                      onToggleSelection: _toggleSelection,
+                      onShowUndo: _showUndo,
+                    )
+                  : _FlatItemsView(
+                      state: state,
+                      controller: controller,
+                      selectedItemIds: _selectedItemIds,
+                      onToggleSelection: _toggleSelection,
+                      onShowUndo: _showUndo,
+                    )
+            else
+              EmptyState(
+                title: 'This list is empty',
+                description: 'Tap + to add your first item to this shopping list.',
+                icon: Icons.shopping_cart_outlined,
+                primaryActionLabel: 'Add item',
+                onPrimaryActionPressed: () => _showAddItemSheet(
+                  context,
+                  controller,
+                  listCategories,
+                  linkedInventories,
+                ),
+              ),
+          ],
         ),
       ),
       floatingActionButton: FloatingActionButton.small(
@@ -341,7 +306,9 @@ class _ListDetailScreenState extends ConsumerState<ListDetailScreen> {
     if (anyUpdated) {
       _showUndo(
         message,
-        ref.read(shoppingListControllerProvider(widget.listId).notifier).undoLastAction,
+        ref
+            .read(shoppingListControllerProvider(widget.listId).notifier)
+            .undoLastAction,
       );
     }
     _clearSelection();
@@ -924,35 +891,6 @@ class _InventoryNameDialogState extends State<_InventoryNameDialog> {
   }
 }
 
-class _OrganizedActionsBar extends StatelessWidget {
-  const _OrganizedActionsBar({
-    required this.onAddItem,
-    required this.onAddCategory,
-  });
-
-  final VoidCallback onAddItem;
-  final VoidCallback onAddCategory;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: <Widget>[
-        FilledButton.tonalIcon(
-          onPressed: onAddItem,
-          icon: const Icon(Icons.add),
-          label: const Text('+ Item'),
-        ),
-        const SizedBox(width: AppSpacing.xs),
-        FilledButton.tonalIcon(
-          onPressed: onAddCategory,
-          icon: const Icon(Icons.playlist_add),
-          label: const Text('+ Category'),
-        ),
-      ],
-    );
-  }
-}
-
 class _CategoryNameSheet extends StatefulWidget {
   const _CategoryNameSheet();
 
@@ -1316,8 +1254,8 @@ class _OrganizedItemsView extends StatelessWidget {
   }
 }
 
-class _ItemsView extends StatelessWidget {
-  const _ItemsView({
+class _FlatItemsView extends StatelessWidget {
+  const _FlatItemsView({
     required this.state,
     required this.controller,
     required this.selectedItemIds,
@@ -1333,18 +1271,18 @@ class _ItemsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final List<ShoppingListItem> allItems = <ShoppingListItem>[
+      ...state.pendingItems,
+      ...state.skippedItems,
+      ...state.purchasedItems,
+    ];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        if (state.pendingItems.isNotEmpty) ...<Widget>[
-          const SectionHeader(
-            title: 'Pending',
-            subtitle: 'Items to find first.',
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          ...state.pendingItems.map(
+      children: allItems
+          .map(
             (ShoppingListItem item) => Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              padding: const EdgeInsets.only(bottom: AppSpacing.xs),
               child: _MinimalItemRow(
                 item: item,
                 controller: controller,
@@ -1363,57 +1301,8 @@ class _ItemsView extends StatelessWidget {
                 },
               ),
             ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-        ],
-        if (state.skippedItems.isNotEmpty) ...<Widget>[
-          const SectionHeader(
-            title: 'Skipped / Not Found',
-            subtitle: 'Items you can revisit later.',
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          ...state.skippedItems.map(
-            (ShoppingListItem item) => Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-              child: _MinimalItemRow(
-                item: item,
-                controller: controller,
-                selected: selectedItemIds.contains(item.id),
-                selectionMode: selectedItemIds.isNotEmpty,
-                onToggleSelection: () => onToggleSelection(item.id),
-                onShowUndo: onShowUndo,
-                onDoubleTap: () async {
-                  final bool purchased = await controller.markPurchased(item);
-                  if (purchased && context.mounted) {
-                    onShowUndo(
-                      'Marked "${item.rawText}" as purchased',
-                      controller.undoLastAction,
-                    );
-                  }
-                },
-              ),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-        ],
-        if (state.purchasedItems.isNotEmpty) ...<Widget>[
-          SectionHeader(title: 'Purchased (${state.purchasedItems.length})'),
-          const SizedBox(height: AppSpacing.sm),
-          ...state.purchasedItems.map(
-            (ShoppingListItem item) => Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-              child: _MinimalItemRow(
-                item: item,
-                controller: controller,
-                selected: selectedItemIds.contains(item.id),
-                selectionMode: selectedItemIds.isNotEmpty,
-                onToggleSelection: () => onToggleSelection(item.id),
-                onShowUndo: onShowUndo,
-              ),
-            ),
-          ),
-        ],
-      ],
+          )
+          .toList(growable: false),
     );
   }
 }
