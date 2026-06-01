@@ -90,6 +90,7 @@ class PriceCompareState {
     required this.comparisonResult,
     required this.isBusy,
     required this.message,
+    required this.fatalError,
   });
 
   const PriceCompareState.initial()
@@ -100,13 +101,23 @@ class PriceCompareState {
         ],
         comparisonResult = null,
         isBusy = false,
-        message = null;
+        message = null,
+        fatalError = false;
+
+  const PriceCompareState.fatal({required String fatalMessage})
+      : products = const <Product>[],
+        options = const <PriceCompareOptionDraft>[],
+        comparisonResult = null,
+        isBusy = false,
+        message = fatalMessage,
+        fatalError = true;
 
   final List<Product> products;
   final List<PriceCompareOptionDraft> options;
   final PackageComparisonResult? comparisonResult;
   final bool isBusy;
   final String? message;
+  final bool fatalError;
 
   bool get canAddMoreOptions => options.length < 5;
 
@@ -120,6 +131,7 @@ class PriceCompareState {
     bool? isBusy,
     String? message,
     bool clearMessage = false,
+    bool? fatalError,
   }) {
     return PriceCompareState(
       products: products ?? this.products,
@@ -128,6 +140,7 @@ class PriceCompareState {
           clearComparison ? null : (comparisonResult ?? this.comparisonResult),
       isBusy: isBusy ?? this.isBusy,
       message: clearMessage ? null : (message ?? this.message),
+      fatalError: fatalError ?? this.fatalError,
     );
   }
 }

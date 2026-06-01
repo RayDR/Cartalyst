@@ -13,6 +13,7 @@ import 'package:cartalyst_mobile/features/price_compare/domain/services/package_
 import 'package:cartalyst_mobile/features/price_compare/domain/services/unit_conversion_service.dart';
 import 'package:cartalyst_mobile/features/price_compare/domain/services/unit_price_calculation_service.dart';
 import 'package:cartalyst_mobile/features/products/domain/entities/product.dart';
+import 'package:cartalyst_mobile/features/settings/presentation/debug_diagnostics_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -62,6 +63,64 @@ class _PriceCompareScreenState extends ConsumerState<PriceCompareScreen> {
     final PriceCompareState state = ref.watch(priceCompareControllerProvider);
     final PriceCompareController controller =
         ref.read(priceCompareControllerProvider.notifier);
+
+    if (state.fatalError) {
+      return AppScaffold(
+        title: 'Price Compare',
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              AppCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      'Price Compare unavailable',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    const Text(
+                      'Something went wrong while loading the comparison tool.',
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Row(
+                      children: <Widget>[
+                        Expanded(
+                          child: AppButton(
+                            label: 'Reset compare',
+                            onPressed: controller.reset,
+                            icon: Icons.refresh,
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: AppButton(
+                            label: 'Open diagnostics',
+                            onPressed: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                  builder: (_) =>
+                                      const DebugDiagnosticsScreen(),
+                                ),
+                              );
+                            },
+                            icon: Icons.bug_report_outlined,
+                            variant: AppButtonVariant.secondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     final bool hasMinimumOptions = state.options.length >= 2;
     final bool hasOptionCards = state.options.isNotEmpty;
 

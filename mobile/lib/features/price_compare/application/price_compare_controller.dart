@@ -14,7 +14,7 @@ import 'package:cartalyst_mobile/features/products/data/repositories/local_produ
 import 'package:cartalyst_mobile/features/products/domain/entities/product.dart';
 import 'package:cartalyst_mobile/features/products/domain/repositories/product_repository.dart';
 import 'package:cartalyst_mobile/features/shopping_list/application/shopping_list_controller.dart'
-  show appDatabaseProvider, uuidProvider;
+    show appDatabaseProvider, uuidProvider;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
@@ -68,32 +68,54 @@ class PriceCompareController extends Notifier<PriceCompareState> {
   @override
   PriceCompareState build() {
     _logDebug('build started');
-    final Object sharedDatabase = ref.watch(appDatabaseProvider);
-    _logDebug('shared database resolved hash=${sharedDatabase.hashCode}');
-    _productRepository = ref.watch(priceCompareProductRepositoryProvider);
-    _priceObservationRepository = ref.watch(priceObservationRepositoryProvider);
-    _comparisonService = ref.watch(packageComparisonServiceProvider);
-    _conversionService = ref.watch(unitConversionServiceProvider);
-    _uuid = ref.watch(uuidProvider);
 
     ref.onDispose(() {
       _productsSubscription?.cancel();
     });
 
-    _logDebug('product stream subscribed');
-    _productsSubscription = _productRepository
-        .watchActiveProducts()
-        .listen((List<Product> products) {
-      _logDebug('product stream emitted count=${products.length}');
-      state = state.copyWith(products: products);
-    }, onError: (Object error, StackTrace stackTrace) {
+    try {
+      final Object sharedDatabase = ref.watch(appDatabaseProvider);
+      _logDebug('database provider resolved hash=${sharedDatabase.hashCode}');
+      _productRepository = ref.watch(priceCompareProductRepositoryProvider);
+      _priceObservationRepository =
+          ref.watch(priceObservationRepositoryProvider);
+      _comparisonService = ref.watch(packageComparisonServiceProvider);
+      _conversionService = ref.watch(unitConversionServiceProvider);
+      _uuid = ref.watch(uuidProvider);
+    } catch (error, stackTrace) {
       _logDebugError(
-        'product stream error with stack trace',
+        'build failed during dependency resolution',
         error,
         stackTrace,
       );
-      state = state.copyWith(message: 'Unable to load products.');
-    });
+      return const PriceCompareState.fatal(
+        fatalMessage: 'Something went wrong while loading the comparison tool.',
+      );
+    }
+
+    try {
+      _logDebug('product stream subscribed');
+      _productsSubscription = _productRepository.watchActiveProducts().listen(
+        (List<Product> products) {
+          _logDebug('product stream emitted count=${products.length}');
+          state = state.copyWith(products: products);
+        },
+        onError: (Object error, StackTrace stackTrace) {
+          _logDebugError(
+            'product stream error with stack trace',
+            error,
+            stackTrace,
+          );
+          state = state.copyWith(message: 'Unable to load products.');
+        },
+      );
+    } catch (error, stackTrace) {
+      _logDebugError(
+        'product stream subscription failed',
+        error,
+        stackTrace,
+      );
+    }
 
     return const PriceCompareState.initial();
   }
@@ -302,7 +324,11 @@ class PriceCompareController extends Notifier<PriceCompareState> {
         await _saveObservationIfPossible(option);
       }
     } catch (error, stackTrace) {
-      _logDebugError('comparison failed', error, stackTrace);
+      _logDebugError(
+        'compare failed with error and stack trace',
+        error,
+        stackTrace,
+      );
       state = state.copyWith(
         clearComparison: true,
         message: 'Unable to compare options right now. Please try again.',
@@ -311,14 +337,7 @@ class PriceCompareController extends Notifier<PriceCompareState> {
   }
 
   void reset() {
-    state = state.copyWith(
-      options: const <PriceCompareOptionDraft>[
-        PriceCompareOptionDraft.initial(id: 'option-1', label: 'Option A'),
-        PriceCompareOptionDraft.initial(id: 'option-2', label: 'Option B'),
-      ],
-      clearComparison: true,
-      clearMessage: true,
-    );
+    state = const PriceCompareState.initial();
   }
 
   void _updateOption(

@@ -105,7 +105,10 @@ class UnitConversionService {
       return UnitFamily.count;
     }
 
-    if (normalized == 'oz' || normalized == 'lb' || normalized == 'g' || normalized == 'kg') {
+    if (normalized == 'oz' ||
+        normalized == 'lb' ||
+        normalized == 'g' ||
+        normalized == 'kg') {
       return UnitFamily.weight;
     }
 

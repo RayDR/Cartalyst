@@ -1,11 +1,11 @@
 import 'dart:async';
 
+import 'package:cartalyst_mobile/core/widgets/app_button.dart';
 import 'package:cartalyst_mobile/features/price_compare/application/price_compare_controller.dart';
 import 'package:cartalyst_mobile/features/price_compare/application/price_compare_state.dart';
 import 'package:cartalyst_mobile/features/price_compare/domain/entities/price_observation.dart';
 import 'package:cartalyst_mobile/features/price_compare/domain/repositories/price_observation_repository.dart';
 import 'package:cartalyst_mobile/features/price_compare/presentation/price_compare_screen.dart';
-import 'package:cartalyst_mobile/core/widgets/app_button.dart';
 import 'package:cartalyst_mobile/features/products/domain/entities/product.dart';
 import 'package:cartalyst_mobile/features/products/domain/entities/product_alias.dart';
 import 'package:cartalyst_mobile/features/products/domain/repositories/product_repository.dart';
@@ -14,7 +14,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('smoke: title renders, default options render, reset restores defaults', (
+  testWidgets(
+      'smoke: title renders, default options render, reset restores defaults', (
     WidgetTester tester,
   ) async {
     final _FakeProductRepository productRepository = _FakeProductRepository();
@@ -168,6 +169,36 @@ void main() {
     await productRepository.dispose();
     await observationRepository.dispose();
   });
+
+  testWidgets(
+      'controller stream errors are captured without crashing the screen', (
+    WidgetTester tester,
+  ) async {
+    final _FakeErrorProductRepository productRepository =
+        _FakeErrorProductRepository();
+    final _FakePriceObservationRepository observationRepository =
+        _FakePriceObservationRepository();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: <Override>[
+          priceCompareProductRepositoryProvider
+              .overrideWithValue(productRepository),
+          priceObservationRepositoryProvider
+              .overrideWithValue(observationRepository),
+        ],
+        child: const MaterialApp(home: PriceCompareScreen()),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Price Compare'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await productRepository.dispose();
+    await observationRepository.dispose();
+  });
 }
 
 class _FakeProductRepository implements ProductRepository {
@@ -220,5 +251,43 @@ class _FakePriceObservationRepository implements PriceObservationRepository {
 
   Future<void> dispose() async {
     await _observationsController.close();
+  }
+}
+
+class _FakeErrorProductRepository implements ProductRepository {
+  final StreamController<List<Product>> _productsController =
+      StreamController<List<Product>>.broadcast();
+
+  @override
+  Stream<List<Product>> watchActiveProducts() {
+    Future<void>.microtask(
+      () => _productsController.addError(
+        Exception('Simulated products stream error'),
+        StackTrace.empty,
+      ),
+    );
+    return _productsController.stream;
+  }
+
+  @override
+  Future<List<ProductAlias>> findAliasesForProduct(String productId) async {
+    return const <ProductAlias>[];
+  }
+
+  @override
+  Future<List<ProductAlias>> findAliasesForProducts(
+    List<String> productIds,
+  ) async {
+    return const <ProductAlias>[];
+  }
+
+  @override
+  Future<void> saveProduct(Product product) async {}
+
+  @override
+  Future<void> saveAlias(ProductAlias alias) async {}
+
+  Future<void> dispose() async {
+    await _productsController.close();
   }
 }

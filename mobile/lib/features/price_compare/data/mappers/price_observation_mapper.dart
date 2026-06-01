@@ -1,10 +1,14 @@
 import 'package:cartalyst_mobile/core/domain/value_objects/money.dart';
 import 'package:cartalyst_mobile/core/domain/value_objects/unit.dart';
-import 'package:cartalyst_mobile/features/price_compare/domain/entities/price_observation.dart' as domain;
-import 'package:cartalyst_mobile/infrastructure/local_db/app_database.dart' as local_db;
+import 'package:cartalyst_mobile/features/price_compare/domain/entities/price_observation.dart'
+    as domain;
+import 'package:cartalyst_mobile/infrastructure/local_db/app_database.dart'
+    as local_db;
 import 'package:drift/drift.dart';
 
-domain.PriceObservation toDomainPriceObservation(local_db.PriceObservation row) {
+domain.PriceObservation toDomainPriceObservation(
+  local_db.PriceObservation row,
+) {
   return domain.PriceObservation(
     id: row.id,
     productId: row.productId,

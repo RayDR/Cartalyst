@@ -1,5 +1,6 @@
 import 'package:cartalyst_mobile/features/price_compare/data/mappers/price_observation_mapper.dart';
-import 'package:cartalyst_mobile/features/price_compare/domain/entities/price_observation.dart' as domain;
+import 'package:cartalyst_mobile/features/price_compare/domain/entities/price_observation.dart'
+    as domain;
 import 'package:cartalyst_mobile/features/price_compare/domain/repositories/price_observation_repository.dart';
 import 'package:cartalyst_mobile/infrastructure/local_db/app_database.dart';
 
