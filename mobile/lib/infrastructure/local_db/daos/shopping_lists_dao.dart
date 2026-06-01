@@ -162,7 +162,7 @@ class ShoppingListsDao extends DatabaseAccessor<AppDatabase>
         AND inventory_id = ?
         AND deleted_at IS NULL
       ''',
-      <Object>[now.toIso8601String(), shoppingListId, inventoryId],
+      <Object>[now, shoppingListId, inventoryId],
     );
   }
 

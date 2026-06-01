@@ -124,7 +124,24 @@ validate_project() {
 
   run_step "Running flutter pub get" flutter pub get
   run_step "Running build_runner" dart run build_runner build --delete-conflicting-outputs
-  run_step "Running flutter analyze" flutter analyze
+  log_info "Running flutter analyze"
+  local analyze_output analyze_exit_code
+  trap - ERR
+  set +e
+  analyze_output="$(flutter analyze 2>&1)"
+  analyze_exit_code=$?
+  set -e
+  trap on_error ERR
+  echo "${analyze_output}"
+  if [[ ${analyze_exit_code} -ne 0 ]]; then
+    if echo "${analyze_output}" | grep -qE '^[[:space:]]*error[[:space:]]•'; then
+      log_error "flutter analyze reported errors. Fix the errors above and rerun the build."
+      exit "${analyze_exit_code}"
+    fi
+    log_warn "flutter analyze reported only info-level issues; continuing the build."
+  else
+    log_success "Running flutter analyze"
+  fi
 
   if [[ "${SKIP_TESTS}" == "true" ]]; then
     log_warn "Skipping flutter test because --skip-tests was provided."

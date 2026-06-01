@@ -1,5 +1,8 @@
 import 'dart:io';
 
+import 'package:cartalyst_mobile/features/inventories/data/repositories/local_inventory_repository.dart';
+import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory.dart'
+  as inventory_domain;
 import 'package:cartalyst_mobile/infrastructure/local_db/app_database.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:drift/native.dart';
@@ -205,6 +208,154 @@ void main() {
           return;
         }
         rethrow;
+      }
+    });
+
+    test(
+      'creates and reads inventory uncategorized category without FormatException',
+      () async {
+        try {
+          final LocalInventoryRepository repository =
+              LocalInventoryRepository(database!);
+          final DateTime now = DateTime.now();
+          final String inventoryId = const Uuid().v4();
+
+          await repository.saveInventory(
+            inventory_domain.Inventory(
+              id: inventoryId,
+              name: 'Pantry shelf',
+              createdAt: now,
+              updatedAt: now,
+              syncStatus: 'pending_sync',
+              version: 1,
+            ),
+          );
+
+          final String uncategorizedId =
+              await repository.ensureUncategorizedInventoryCategory(
+            inventoryId,
+          );
+          final categories =
+              await repository.watchInventoryCategories(inventoryId).first;
+
+          expect(categories, isNotEmpty);
+          expect(categories.first.id, uncategorizedId);
+          expect(categories.first.name, 'Uncategorized');
+        } on ArgumentError catch (error) {
+          if (_isMissingSqlite(error)) {
+            return;
+          }
+          rethrow;
+        }
+      },
+    );
+
+    test('migrates inventory categories with drift DateTime values', () async {
+      final bool previousWarnValue =
+          drift.driftRuntimeOptions.dontWarnAboutMultipleDatabases;
+      drift.driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
+
+      final String filePath =
+          '${Directory.systemTemp.path}/cartalyst_upgrade_${DateTime.now().microsecondsSinceEpoch}.sqlite';
+      final File dbFile = File(filePath);
+      AppDatabase? upgraded;
+
+      try {
+        final int now = DateTime.now().microsecondsSinceEpoch;
+        upgraded = AppDatabase(
+          executor: NativeDatabase(
+            dbFile,
+            setup: (database) {
+              database.execute('PRAGMA user_version = 4');
+              database.execute('''
+                CREATE TABLE IF NOT EXISTS inventories (
+                  id TEXT NOT NULL PRIMARY KEY,
+                  name TEXT NOT NULL,
+                  description TEXT NULL,
+                  created_at INTEGER NOT NULL,
+                  updated_at INTEGER NOT NULL,
+                  deleted_at INTEGER NULL,
+                  sync_status TEXT NOT NULL,
+                  version INTEGER NOT NULL
+                )
+              ''');
+              database.execute('''
+                CREATE TABLE IF NOT EXISTS shopping_lists (
+                  id TEXT NOT NULL PRIMARY KEY,
+                  inventory_id TEXT NULL,
+                  name TEXT NOT NULL,
+                  status TEXT NOT NULL DEFAULT 'active',
+                  created_at INTEGER NOT NULL,
+                  updated_at INTEGER NOT NULL,
+                  deleted_at INTEGER NULL,
+                  sync_status TEXT NOT NULL,
+                  version INTEGER NOT NULL
+                )
+              ''');
+              database.execute('''
+                CREATE TABLE IF NOT EXISTS shopping_list_items (
+                  id TEXT NOT NULL PRIMARY KEY,
+                  shopping_list_id TEXT NOT NULL,
+                  product_id TEXT NULL,
+                  raw_text TEXT NOT NULL,
+                  quantity REAL NULL,
+                  unit TEXT NULL,
+                  status TEXT NOT NULL DEFAULT 'pending',
+                  source TEXT NOT NULL DEFAULT 'manual',
+                  priority_score REAL NOT NULL DEFAULT 0.0,
+                  created_at INTEGER NOT NULL,
+                  updated_at INTEGER NOT NULL,
+                  purchased_at INTEGER NULL,
+                  deleted_at INTEGER NULL,
+                  sync_status TEXT NOT NULL,
+                  version INTEGER NOT NULL
+                )
+              ''');
+              database.execute('''
+                CREATE TABLE IF NOT EXISTS inventory_items (
+                  id TEXT NOT NULL PRIMARY KEY,
+                  inventory_id TEXT NOT NULL,
+                  product_id TEXT NULL,
+                  raw_name TEXT NULL,
+                  quantity_estimated REAL NULL,
+                  unit TEXT NULL,
+                  status TEXT NOT NULL DEFAULT 'unknown',
+                  confidence_score REAL NOT NULL DEFAULT 0.5,
+                  last_confirmed_at INTEGER NULL,
+                  created_at INTEGER NOT NULL,
+                  updated_at INTEGER NOT NULL,
+                  deleted_at INTEGER NULL,
+                  sync_status TEXT NOT NULL,
+                  version INTEGER NOT NULL
+                )
+              ''');
+              database.execute(
+                'INSERT INTO inventories (id, name, description, created_at, updated_at, deleted_at, sync_status, version) VALUES (?, ?, NULL, ?, ?, NULL, ?, ?)',
+                <Object>['inventory-legacy', 'Legacy pantry', now, now, 'local_only', 1],
+              );
+            },
+          ),
+        );
+
+        final LocalInventoryRepository repository =
+            LocalInventoryRepository(upgraded);
+        final categories =
+            await repository.watchInventoryCategories('inventory-legacy').first;
+
+        expect(categories, hasLength(1));
+        expect(categories.first.name, 'Uncategorized');
+      } on ArgumentError catch (error) {
+        if (_isMissingSqlite(error)) {
+          return;
+        }
+        rethrow;
+      } finally {
+        drift.driftRuntimeOptions.dontWarnAboutMultipleDatabases =
+            previousWarnValue;
+        await upgraded?.close();
+        if (dbFile.existsSync()) {
+          dbFile.deleteSync();
+        }
       }
     });
   });

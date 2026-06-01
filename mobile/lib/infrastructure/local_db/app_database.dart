@@ -102,46 +102,29 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> _ensureUncategorizedForInventory(String inventoryId) async {
     final DateTime now = DateTime.now();
-    await customStatement(
-      '''
-      INSERT OR IGNORE INTO categories (
-        id,
-        name,
-        color,
-        icon,
-        created_at,
-        updated_at,
-        deleted_at,
-        sync_status,
-        version
-      ) VALUES (?, 'Uncategorized', NULL, NULL, ?, ?, NULL, 'pending_sync', 1)
-      ''',
-      <Object>[
-        '$inventoryId::uncategorized',
-        now.toIso8601String(),
-        now.toIso8601String(),
-      ],
+    final String categoryId = '$inventoryId::uncategorized';
+    await into(categories).insert(
+      CategoriesCompanion.insert(
+        id: categoryId,
+        name: 'Uncategorized',
+        createdAt: Value(now),
+        updatedAt: Value(now),
+        syncStatus: const Value('pending_sync'),
+        version: const Value(1),
+      ),
+      mode: InsertMode.insertOrIgnore,
     );
 
-    await customStatement(
-      '''
-      INSERT OR IGNORE INTO inventory_categories (
-        id,
-        inventory_id,
-        category_id,
-        sort_order,
-        created_at,
-        updated_at,
-        deleted_at
-      ) VALUES (?, ?, ?, 0, ?, ?, NULL)
-      ''',
-      <Object>[
-        '$inventoryId::inventory-uncategorized',
-        inventoryId,
-        '$inventoryId::uncategorized',
-        now.toIso8601String(),
-        now.toIso8601String(),
-      ],
+    await into(inventoryCategories).insert(
+      InventoryCategoriesCompanion.insert(
+        id: '$inventoryId::inventory-uncategorized',
+        inventoryId: inventoryId,
+        categoryId: categoryId,
+        sortOrder: const Value(0),
+        createdAt: Value(now),
+        updatedAt: Value(now),
+      ),
+      mode: InsertMode.insertOrIgnore,
     );
   }
 

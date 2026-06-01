@@ -1,5 +1,24 @@
 part of '../app_database.dart';
 
+Future<void> _insertInventoryIfMissing(
+  AppDatabase db, {
+  required String id,
+  required String name,
+  required DateTime now,
+}) {
+  return db.into(db.inventories).insert(
+        InventoriesCompanion.insert(
+          id: id,
+          name: name,
+          createdAt: Value(now),
+          updatedAt: Value(now),
+          syncStatus: const Value('local_only'),
+          version: const Value(1),
+        ),
+        mode: InsertMode.insertOrIgnore,
+      );
+}
+
 MigrationStrategy buildMigrationStrategy(AppDatabase db) {
   return MigrationStrategy(
     onCreate: (Migrator migrator) async {
@@ -44,13 +63,11 @@ MigrationStrategy buildMigrationStrategy(AppDatabase db) {
         );
 
         final DateTime now = DateTime.now();
-        await db.customStatement(
-          "INSERT OR IGNORE INTO inventories (id, name, created_at, updated_at, sync_status, version) VALUES (?, 'Pantry', ?, ?, 'local_only', 1)",
-          <Object>[
-            defaultInventoryId,
-            now.toIso8601String(),
-            now.toIso8601String(),
-          ],
+        await _insertInventoryIfMissing(
+          db,
+          id: defaultInventoryId,
+          name: 'Pantry',
+          now: now,
         );
 
         await db.customStatement(

@@ -5,10 +5,10 @@ import 'package:cartalyst_mobile/features/pantry/data/mappers/pantry_mapper.dart
 import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory.dart'
     as inventory_domain;
 import 'package:cartalyst_mobile/features/shopping_list/data/mappers/shopping_list_mapper.dart';
-import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list_category.dart'
-    as domain_category;
 import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list.dart'
     as domain;
+import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list_category.dart'
+  as domain_category;
 import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list_item.dart'
     as domain;
 import 'package:cartalyst_mobile/features/shopping_list/domain/repositories/shopping_list_repository.dart';
@@ -230,25 +230,15 @@ class LocalShoppingListRepository implements ShoppingListRepository {
     final DateTime now = DateTime.now();
     final String categoryId = '$shoppingListId::uncategorized';
 
-    await _database.customStatement(
-      '''
-      INSERT OR IGNORE INTO categories (
-        id,
-        name,
-        color,
-        icon,
-        created_at,
-        updated_at,
-        deleted_at,
-        sync_status,
-        version
-      ) VALUES (?, 'Uncategorized', NULL, NULL, ?, ?, NULL, 'pending_sync', 1)
-      ''',
-      <Object>[
-        categoryId,
-        now.toIso8601String(),
-        now.toIso8601String(),
-      ],
+    await _database.pantryDao.upsertCategory(
+      CategoriesCompanion.insert(
+        id: categoryId,
+        name: 'Uncategorized',
+        createdAt: Value(now),
+        updatedAt: Value(now),
+        syncStatus: const Value('pending_sync'),
+        version: const Value(1),
+      ),
     );
 
     await _database.shoppingListsDao.upsertShoppingListCategory(
