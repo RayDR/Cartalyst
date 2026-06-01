@@ -6,6 +6,7 @@ import 'package:cartalyst_mobile/features/settings/presentation/settings_screen.
 import 'package:cartalyst_mobile/features/shopping_list/presentation/list_detail_screen.dart';
 import 'package:cartalyst_mobile/features/shopping_list/presentation/lists_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -96,7 +97,7 @@ final GoRouter appRouter = GoRouter(
   ],
 );
 
-class AppNavigationShell extends StatelessWidget {
+class AppNavigationShell extends StatefulWidget {
   const AppNavigationShell({
     required this.navigationShell,
     super.key,
@@ -105,11 +106,53 @@ class AppNavigationShell extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
 
   @override
+  State<AppNavigationShell> createState() => _AppNavigationShellState();
+}
+
+class _AppNavigationShellState extends State<AppNavigationShell> {
+  Future<bool> _showExitConfirmationDialog(BuildContext context) async {
+    final bool? shouldExit = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: const Text('Exit Cartalyst?'),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Exit'),
+          ),
+        ],
+      ),
+    );
+
+    return shouldExit ?? false;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: navigationShell,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: navigationShell.currentIndex,
+    final bool shouldConfirmExit = widget.navigationShell.currentIndex == 0;
+
+    return PopScope<void>(
+      canPop: !shouldConfirmExit,
+      onPopInvokedWithResult: (bool didPop, void result) async {
+        if (didPop || !shouldConfirmExit) {
+          return;
+        }
+
+        final bool shouldExit = await _showExitConfirmationDialog(context);
+        if (!shouldExit) {
+          return;
+        }
+
+        await SystemNavigator.pop();
+      },
+      child: Scaffold(
+        body: widget.navigationShell,
+        bottomNavigationBar: NavigationBar(
+          selectedIndex: widget.navigationShell.currentIndex,
         destinations: const <NavigationDestination>[
           NavigationDestination(
             icon: Icon(Icons.home_outlined),
@@ -138,11 +181,12 @@ class AppNavigationShell extends StatelessWidget {
           ),
         ],
         onDestinationSelected: (int index) {
-          navigationShell.goBranch(
+          widget.navigationShell.goBranch(
             index,
-            initialLocation: index == navigationShell.currentIndex,
+            initialLocation: index == widget.navigationShell.currentIndex,
           );
         },
+      ),
       ),
     );
   }

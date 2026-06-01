@@ -34,6 +34,37 @@ void main() {
     expect(find.text('Compare'), findsOneWidget);
     expect(find.text('Settings'), findsOneWidget);
   });
+
+  testWidgets('shows exit confirmation when back is pressed on Home',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: <Override>[
+          homeDashboardControllerProvider.overrideWith(
+            _TestHomeDashboardController.new,
+          ),
+          listsControllerProvider.overrideWith(_TestListsController.new),
+          inventoriesControllerProvider.overrideWith(
+            _TestInventoriesController.new,
+          ),
+        ],
+        child: const CartalystApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Exit Cartalyst?'), findsOneWidget);
+    expect(find.widgetWithText(TextButton, 'Cancel'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, 'Exit'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Exit Cartalyst?'), findsNothing);
+  });
 }
 
 class _TestHomeDashboardController extends HomeDashboardController {
