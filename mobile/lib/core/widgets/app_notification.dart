@@ -68,7 +68,6 @@ class AppNotification extends StatelessWidget {
 
     return Dismissible(
       key: ValueKey<String>('app-notification-$title-$message'),
-      direction: DismissDirection.horizontal,
       onDismissed: (_) => onDismissed?.call(),
       child: Material(
         color: Colors.transparent,
@@ -80,7 +79,7 @@ class AppNotification extends StatelessWidget {
             borderRadius: BorderRadius.circular(AppRadius.md),
             boxShadow: <BoxShadow>[
               BoxShadow(
-                color: colors.shadow.withOpacity(0.18),
+                color: colors.shadow.withValues(alpha: 0.18),
                 blurRadius: 16,
                 offset: const Offset(0, 8),
               ),
@@ -96,7 +95,6 @@ class AppNotification extends StatelessWidget {
                   AppSpacing.md,
                 ),
                 child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: <Widget>[
                     Expanded(
                       child: Column(
