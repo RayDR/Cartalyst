@@ -1,9 +1,12 @@
 import 'dart:async';
 
 import 'package:cartalyst_mobile/features/shopping_list/application/shopping_list_controller.dart'
-    show appDatabaseProvider;
+    show appDatabaseProvider, shoppingListRepositoryProvider;
 import 'package:cartalyst_mobile/features/home/application/home_dashboard_state.dart';
-import 'package:cartalyst_mobile/infrastructure/local_db/app_database.dart';
+import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list.dart';
+import 'package:cartalyst_mobile/features/shopping_list/domain/repositories/shopping_list_repository.dart';
+import 'package:cartalyst_mobile/infrastructure/local_db/app_database.dart'
+  hide ShoppingList, ShoppingListStatus;
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -13,84 +16,71 @@ final homeDashboardControllerProvider =
     );
 
 class HomeDashboardController extends Notifier<HomeDashboardState> {
+  late final ShoppingListRepository _repository;
   late final AppDatabase _database;
 
   StreamSubscription<List<ShoppingList>>? _listsSubscription;
-  StreamSubscription<List<Inventory>>? _inventoriesSubscription;
-  StreamSubscription<List<Category>>? _categoriesSubscription;
 
   @override
   HomeDashboardState build() {
+    _repository = ref.watch(shoppingListRepositoryProvider);
     _database = ref.watch(appDatabaseProvider);
 
     ref.onDispose(() {
       _listsSubscription?.cancel();
-      _inventoriesSubscription?.cancel();
-      _categoriesSubscription?.cancel();
     });
 
     _subscribeLists();
-    _subscribeInventories();
-    _subscribeCategories();
+    _loadReminders();
 
     return const HomeDashboardState.initial();
   }
 
   void _subscribeLists() {
     _listsSubscription?.cancel();
-    final query = _database.select(_database.shoppingLists)
-      ..where((tbl) => tbl.deletedAt.isNull())
-      ..orderBy(<OrderingTerm Function($ShoppingListsTable)>[
-        (tbl) => OrderingTerm.desc(tbl.updatedAt),
-      ]);
-    _listsSubscription = query.watch().listen((List<ShoppingList> lists) {
-      state = state.copyWith(
-        greeting: _greetingForNow(),
-        lists: lists,
-      );
-    });
+    _listsSubscription = _repository.watchAllLists().listen(
+      (List<ShoppingList> allLists) {
+        final List<ShoppingList> activeLists = allLists
+            .where(
+              (ShoppingList list) =>
+                  list.status == ShoppingListStatus.active,
+            )
+            .toList(growable: false);
+        final List<ShoppingList> completedLists = allLists
+            .where(
+              (ShoppingList list) =>
+                  list.status == ShoppingListStatus.completed,
+            )
+            .toList(growable: false);
+        state = state.copyWith(
+          activeLists: activeLists,
+          completedLists: completedLists,
+        );
+      },
+      onError: (_, __) {},
+      cancelOnError: false,
+    );
   }
 
-  void _subscribeInventories() {
-    _inventoriesSubscription?.cancel();
-    final query = _database.select(_database.inventories)
-      ..where((tbl) => tbl.deletedAt.isNull())
-      ..orderBy(<OrderingTerm Function($InventoriesTable)>[
-        (tbl) => OrderingTerm.asc(tbl.name),
-      ]);
-    _inventoriesSubscription =
-        query.watch().listen((List<Inventory> inventories) {
-      state = state.copyWith(
-        greeting: _greetingForNow(),
-        inventories: inventories,
-      );
-    });
-  }
-
-  void _subscribeCategories() {
-    _categoriesSubscription?.cancel();
-    final query = _database.select(_database.categories)
-      ..where((tbl) => tbl.deletedAt.isNull())
-      ..orderBy(<OrderingTerm Function($CategoriesTable)>[
-        (tbl) => OrderingTerm.asc(tbl.name),
-      ]);
-    _categoriesSubscription =
-        query.watch().listen((List<Category> categories) {
-      state = state.copyWith(
-        greeting: _greetingForNow(),
-        categories: categories,
-      );
-    });
-  }
-
-  String _greetingForNow() {
-    final int hour = DateTime.now().hour;
-    if (hour < 12) {
-      return 'Good morning';
+  Future<void> _loadReminders() async {
+    try {
+      final List<QueryRow> rows = await _database.customSelect(
+        '''
+        SELECT raw_text, COUNT(*) AS freq
+        FROM shopping_list_items
+        WHERE status = 'purchased'
+          AND deleted_at IS NULL
+        GROUP BY LOWER(raw_text)
+        ORDER BY freq DESC
+        LIMIT 5
+        ''',
+      ).get();
+      final List<String> names = rows
+          .map((QueryRow row) => row.read<String>('raw_text'))
+          .toList(growable: false);
+      state = state.copyWith(reminders: names);
+    } catch (_) {
+      // Non-fatal: keep empty reminders
     }
-    if (hour < 18) {
-      return 'Good afternoon';
-    }
-    return 'Good evening';
   }
 }

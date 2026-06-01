@@ -70,4 +70,12 @@ abstract class ShoppingListRepository {
   }) {
     return Future<String?>.value(null);
   }
+
+  Future<void> restartList(String listId) {
+    throw UnsupportedError('restartList is not implemented.');
+  }
+
+  Future<void> markListCompleted(String listId) {
+    return Future<void>.value();
+  }
 }

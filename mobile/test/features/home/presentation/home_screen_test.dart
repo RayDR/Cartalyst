@@ -1,15 +1,31 @@
 import 'package:cartalyst_mobile/features/home/application/home_dashboard_state.dart';
 import 'package:cartalyst_mobile/features/home/application/home_dashboard_controller.dart';
 import 'package:cartalyst_mobile/features/home/presentation/home_screen.dart';
-import 'package:cartalyst_mobile/features/inventories/application/inventories_controller.dart';
-import 'package:cartalyst_mobile/features/inventories/application/inventories_state.dart';
 import 'package:cartalyst_mobile/features/shopping_list/application/lists_controller.dart';
 import 'package:cartalyst_mobile/features/shopping_list/application/lists_state.dart';
-import 'package:cartalyst_mobile/infrastructure/local_db/app_database.dart'
-    as local_db;
+import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+ShoppingList _makeList({
+  required String id,
+  required String name,
+  ShoppingListStatus status = ShoppingListStatus.active,
+  DateTime? createdAt,
+  DateTime? updatedAt,
+}) {
+  final DateTime now = DateTime(2026, 1, 10, 12);
+  return ShoppingList(
+    id: id,
+    name: name,
+    status: status,
+    createdAt: createdAt ?? now.subtract(const Duration(days: 2)),
+    updatedAt: updatedAt ?? now.subtract(const Duration(days: 1)),
+    syncStatus: 'local_only',
+    version: 1,
+  );
+}
 
 void main() {
   Widget buildApp(HomeDashboardState state) {
@@ -19,9 +35,6 @@ void main() {
           () => _TestHomeDashboardController(state),
         ),
         listsControllerProvider.overrideWith(_TestListsController.new),
-        inventoriesControllerProvider.overrideWith(
-          _TestInventoriesController.new,
-        ),
       ],
       child: const MaterialApp(home: HomeScreen()),
     );
@@ -29,121 +42,191 @@ void main() {
 
   group('HomeScreen', () {
     testWidgets(
-      'shows dashboard tabs and empty states when there is no data',
+      'shows empty state with create action when no lists',
       (WidgetTester tester) async {
-      await tester.pumpWidget(
-        buildApp(const HomeDashboardState.initial()),
-      );
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(buildApp(const HomeDashboardState.initial()));
+        await tester.pumpAndSettle();
 
-      expect(find.text('Home'), findsOneWidget);
-      expect(find.text('Lists'), findsOneWidget);
-      expect(find.text('Inventories'), findsOneWidget);
-      expect(find.text('Categories'), findsOneWidget);
-      expect(find.text('No lists yet'), findsOneWidget);
-    },
+        expect(find.text('Home'), findsOneWidget);
+        expect(find.text('No shopping lists yet'), findsOneWidget);
+        expect(find.text('Create list'), findsOneWidget);
+      },
     );
 
     testWidgets(
-      'shows lists inventories and categories with create actions',
+      'shows active lists and reminders section when lists exist',
       (WidgetTester tester) async {
-      final DateTime now = DateTime(2026, 1, 3, 10);
-      final HomeDashboardState state = HomeDashboardState(
-        greeting: 'Hello',
-        identity: 'Your smart shopping analyst',
-        lists: <local_db.ShoppingList>[
-          local_db.ShoppingList(
-            id: 'list-1',
-            name: 'Weekend groceries',
-            listType: 'simple',
-            routingMode: 'none',
-            status: 'active',
-            createdAt: now.subtract(const Duration(days: 2)),
-            updatedAt: now.subtract(const Duration(days: 2)),
-            syncStatus: 'local_only',
-            version: 1,
-          ),
-          local_db.ShoppingList(
-            id: 'list-2',
-            name: 'Party snacks',
-            listType: 'simple',
-            routingMode: 'none',
-            status: 'active',
-            createdAt: now.subtract(const Duration(days: 1)),
-            updatedAt: now.subtract(const Duration(days: 1)),
-            syncStatus: 'local_only',
-            version: 1,
-          ),
-        ],
-        inventories: <local_db.Inventory>[
-          local_db.Inventory(
-            id: 'inventory-1',
-            name: 'Pantry',
-            description: null,
-            createdAt: now,
-            updatedAt: now,
-            syncStatus: 'local_only',
-            version: 1,
-          ),
-        ],
-        categories: <local_db.Category>[
-          local_db.Category(
-            id: 'cat-1',
-            name: 'Fruits',
-            color: null,
-            icon: null,
-            createdAt: now,
-            updatedAt: now,
-            syncStatus: 'local_only',
-            version: 1,
-          ),
-          local_db.Category(
-            id: 'cat-uncategorized',
-            name: 'Uncategorized',
-            color: null,
-            icon: null,
-            createdAt: now,
-            updatedAt: now,
-            syncStatus: 'local_only',
-            version: 1,
-          ),
-        ],
-      );
+        final HomeDashboardState state = HomeDashboardState(
+          activeLists: <ShoppingList>[
+            _makeList(id: 'list-1', name: 'Weekly groceries'),
+            _makeList(id: 'list-2', name: 'Party snacks'),
+          ],
+          completedLists: const <ShoppingList>[],
+          reminders: const <String>[],
+        );
 
-      await tester.pumpWidget(buildApp(state));
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(buildApp(state));
+        await tester.pumpAndSettle();
 
-      expect(find.text('Recent lists'), findsOneWidget);
-      expect(find.widgetWithText(TextButton, 'Create list'), findsWidgets);
-      expect(find.text('Party snacks'), findsOneWidget);
-      expect(find.text('Weekend groceries'), findsOneWidget);
-
-      await tester.tap(find.text('Inventories'));
-      await tester.pumpAndSettle();
-      expect(find.text('Pantry'), findsOneWidget);
-      expect(find.text('Create inventory'), findsOneWidget);
-
-      await tester.tap(find.text('Categories'));
-      await tester.pumpAndSettle();
-      expect(find.text('Uncategorized'), findsOneWidget);
-      expect(find.text('Fruits'), findsOneWidget);
-    },
+        expect(find.text('Weekly groceries'), findsOneWidget);
+        expect(find.text('Party snacks'), findsOneWidget);
+        expect(find.text('Shopping reminders'), findsOneWidget);
+        expect(find.text('Shopping lists'), findsOneWidget);
+      },
     );
 
     testWidgets(
-      'opens create list sheet from home',
+      'shows hint text when reminders are empty',
       (WidgetTester tester) async {
-      await tester.pumpWidget(
-        buildApp(const HomeDashboardState.initial()),
-      );
-      await tester.pumpAndSettle();
+        final HomeDashboardState state = HomeDashboardState(
+          activeLists: <ShoppingList>[
+            _makeList(id: 'list-1', name: 'Groceries'),
+          ],
+          completedLists: const <ShoppingList>[],
+          reminders: const <String>[],
+        );
 
-      await tester.tap(find.text('Create list'));
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(buildApp(state));
+        await tester.pumpAndSettle();
 
-      expect(find.text('New shopping list'), findsOneWidget);
-      expect(find.text('Create list'), findsWidgets);
-    },
+        expect(
+          find.text(
+            'Cartalyst will learn your frequent products as you shop.',
+          ),
+          findsOneWidget,
+        );
+      },
+    );
+
+    testWidgets(
+      'shows reminder chips when purchase history exists',
+      (WidgetTester tester) async {
+        final HomeDashboardState state = HomeDashboardState(
+          activeLists: <ShoppingList>[
+            _makeList(id: 'list-1', name: 'Groceries'),
+          ],
+          completedLists: const <ShoppingList>[],
+          reminders: const <String>['Milk', 'Bread', 'Eggs'],
+        );
+
+        await tester.pumpWidget(buildApp(state));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Milk'), findsOneWidget);
+        expect(find.text('Bread'), findsOneWidget);
+        expect(find.text('Eggs'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'completed lists are hidden from active section',
+      (WidgetTester tester) async {
+        final HomeDashboardState state = HomeDashboardState(
+          activeLists: <ShoppingList>[
+            _makeList(id: 'list-1', name: 'Active list'),
+          ],
+          completedLists: <ShoppingList>[
+            _makeList(
+              id: 'list-2',
+              name: 'Done list',
+              status: ShoppingListStatus.completed,
+            ),
+          ],
+          reminders: const <String>[],
+        );
+
+        await tester.pumpWidget(buildApp(state));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Active list'), findsOneWidget);
+        // Completed section is collapsed by default
+        expect(find.text('Done list'), findsNothing);
+        // But the Completed section header is visible
+        expect(find.text('Completed'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'shows completed lists with Restart when section is expanded',
+      (WidgetTester tester) async {
+        final HomeDashboardState state = HomeDashboardState(
+          activeLists: const <ShoppingList>[],
+          completedLists: <ShoppingList>[
+            _makeList(
+              id: 'list-1',
+              name: 'Done shopping',
+              status: ShoppingListStatus.completed,
+            ),
+          ],
+          reminders: const <String>[],
+        );
+
+        await tester.pumpWidget(buildApp(state));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Done shopping'), findsNothing);
+
+        // Expand completed section
+        await tester.tap(find.widgetWithText(TextButton, 'Show'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Done shopping'), findsOneWidget);
+        expect(find.text('Restart'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'shows New badge for recently created lists',
+      (WidgetTester tester) async {
+        final DateTime now = DateTime.now();
+        final HomeDashboardState state = HomeDashboardState(
+          activeLists: <ShoppingList>[
+            _makeList(
+              id: 'list-new',
+              name: 'Brand new list',
+              createdAt: now.subtract(const Duration(hours: 2)),
+              updatedAt: now.subtract(const Duration(hours: 2)),
+            ),
+            _makeList(
+              id: 'list-old',
+              name: 'Old list',
+              createdAt: now.subtract(const Duration(days: 3)),
+              updatedAt: now.subtract(const Duration(days: 3)),
+            ),
+          ],
+          completedLists: const <ShoppingList>[],
+          reminders: const <String>[],
+        );
+
+        await tester.pumpWidget(buildApp(state));
+        await tester.pumpAndSettle();
+
+        expect(find.text('New'), findsOneWidget);
+        expect(find.text('Brand new list'), findsOneWidget);
+        expect(find.text('Old list'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'opens create list bottom sheet',
+      (WidgetTester tester) async {
+        final HomeDashboardState state = HomeDashboardState(
+          activeLists: <ShoppingList>[
+            _makeList(id: 'list-1', name: 'Existing list'),
+          ],
+          completedLists: const <ShoppingList>[],
+          reminders: const <String>[],
+        );
+
+        await tester.pumpWidget(buildApp(state));
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.widgetWithText(TextButton, 'New list'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('New shopping list'), findsOneWidget);
+        expect(find.text('Create list'), findsOneWidget);
+      },
     );
   });
 }
@@ -162,7 +245,3 @@ class _TestListsController extends ListsController {
   ListsState build() => const ListsState.initial();
 }
 
-class _TestInventoriesController extends InventoriesController {
-  @override
-  InventoriesState build() => const InventoriesState.initial();
-}

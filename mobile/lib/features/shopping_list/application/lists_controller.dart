@@ -210,6 +210,16 @@ class ListsController extends Notifier<ListsState> {
     return undoLastAction();
   }
 
+  Future<bool> restartList(ShoppingList list) async {
+    try {
+      await _repository.restartList(list.id);
+      return true;
+    } catch (_) {
+      state = state.copyWith(errorMessage: 'Unable to restart list.');
+      return false;
+    }
+  }
+
   Future<bool> linkToInventory(ShoppingList list, String inventoryId) {
     return _setInventoryLink(
       list: list,

@@ -1,40 +1,46 @@
-import 'package:cartalyst_mobile/infrastructure/local_db/app_database.dart';
+import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list.dart';
 
 class HomeDashboardState {
   const HomeDashboardState({
-    required this.greeting,
-    required this.identity,
-    required this.lists,
-    required this.inventories,
-    required this.categories,
+    required this.activeLists,
+    required this.completedLists,
+    required this.reminders,
+    this.errorMessage,
   });
 
   const HomeDashboardState.initial()
-      : greeting = 'Hello',
-        identity = 'Your smart shopping analyst',
-        lists = const <ShoppingList>[],
-        inventories = const <Inventory>[],
-        categories = const <Category>[];
+      : activeLists = const <ShoppingList>[],
+        completedLists = const <ShoppingList>[],
+        reminders = const <String>[],
+        errorMessage = null;
 
-  final String greeting;
-  final String identity;
-  final List<ShoppingList> lists;
-  final List<Inventory> inventories;
-  final List<Category> categories;
+  /// Non-deleted lists with status == active, sorted by updatedAt desc.
+  final List<ShoppingList> activeLists;
+
+  /// Non-deleted lists with status == completed, sorted by updatedAt desc.
+  final List<ShoppingList> completedLists;
+
+  /// Top frequently purchased product names from purchase history.
+  /// Empty when not enough data to show meaningful suggestions.
+  final List<String> reminders;
+
+  final String? errorMessage;
+
+  bool get hasAnyLists => activeLists.isNotEmpty || completedLists.isNotEmpty;
 
   HomeDashboardState copyWith({
-    String? greeting,
-    String? identity,
-    List<ShoppingList>? lists,
-    List<Inventory>? inventories,
-    List<Category>? categories,
+    List<ShoppingList>? activeLists,
+    List<ShoppingList>? completedLists,
+    List<String>? reminders,
+    String? errorMessage,
+    bool clearErrorMessage = false,
   }) {
     return HomeDashboardState(
-      greeting: greeting ?? this.greeting,
-      identity: identity ?? this.identity,
-      lists: lists ?? this.lists,
-      inventories: inventories ?? this.inventories,
-      categories: categories ?? this.categories,
+      activeLists: activeLists ?? this.activeLists,
+      completedLists: completedLists ?? this.completedLists,
+      reminders: reminders ?? this.reminders,
+      errorMessage:
+          clearErrorMessage ? null : (errorMessage ?? this.errorMessage),
     );
   }
 }

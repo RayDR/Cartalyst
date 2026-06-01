@@ -848,6 +848,10 @@ class ShoppingListController extends FamilyNotifier<ShoppingListState, String> {
         _undoStack.add(_ShoppingListUndoEntry(item: undoItem));
       }
       state = state.copyWith(isBusy: false);
+      if (item.status == ShoppingListItemStatus.purchased ||
+          item.status == ShoppingListItemStatus.skipped) {
+        _checkAndMarkCompletedAfterTransition(item);
+      }
       return true;
     } catch (_) {
       state = state.copyWith(
@@ -855,6 +859,33 @@ class ShoppingListController extends FamilyNotifier<ShoppingListState, String> {
         errorMessage: 'Unable to update item. Please try again.',
       );
       return false;
+    }
+  }
+
+  void _checkAndMarkCompletedAfterTransition(ShoppingListItem savedItem) {
+    final List<ShoppingListItem> hypothetical = _confirmedItems
+        .map(
+          (ShoppingListItem existing) =>
+              existing.id == savedItem.id ? savedItem : existing,
+        )
+        .toList(growable: false);
+
+    final List<ShoppingListItem> nonDeleted = hypothetical
+        .where((ShoppingListItem i) => i.deletedAt == null)
+        .toList(growable: false);
+
+    if (nonDeleted.isEmpty) {
+      return;
+    }
+
+    final bool allDone = nonDeleted.every(
+      (ShoppingListItem i) =>
+          i.status == ShoppingListItemStatus.purchased ||
+          i.status == ShoppingListItemStatus.skipped,
+    );
+
+    if (allDone) {
+      _shoppingListRepository.markListCompleted(arg).ignore();
     }
   }
 

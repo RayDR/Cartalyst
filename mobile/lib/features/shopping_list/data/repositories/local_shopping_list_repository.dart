@@ -304,6 +304,16 @@ class LocalShoppingListRepository implements ShoppingListRepository {
     return categoryId;
   }
 
+  @override
+  Future<void> restartList(String listId) {
+    return _database.shoppingListsDao.restartList(listId);
+  }
+
+  @override
+  Future<void> markListCompleted(String listId) {
+    return _database.shoppingListsDao.markListCompleted(listId);
+  }
+
   Map<String, Object?> _draftItemToJson(domain.ShoppingListItem item) {
     return <String, Object?>{
       'id': item.id,

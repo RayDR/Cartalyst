@@ -207,4 +207,42 @@ class ShoppingListsDao extends DatabaseAccessor<AppDatabase>
               .toList(growable: false),
         );
   }
+
+  Future<void> restartList(String listId) async {
+    final DateTime now = DateTime.now();
+    await transaction(() async {
+      await (update(shoppingLists)..where((tbl) => tbl.id.equals(listId)))
+          .write(
+        ShoppingListsCompanion(
+          status: const Value('active'),
+          updatedAt: Value(now),
+          syncStatus: const Value('pending_sync'),
+        ),
+      );
+      await (update(shoppingListItems)
+            ..where(
+              (tbl) =>
+                  tbl.shoppingListId.equals(listId) & tbl.deletedAt.isNull(),
+            ))
+          .write(
+        ShoppingListItemsCompanion(
+          status: const Value('pending'),
+          purchasedAt: const Value(null),
+          updatedAt: Value(now),
+          syncStatus: const Value('pending_sync'),
+        ),
+      );
+    });
+  }
+
+  Future<void> markListCompleted(String listId) async {
+    final DateTime now = DateTime.now();
+    await (update(shoppingLists)..where((tbl) => tbl.id.equals(listId))).write(
+      ShoppingListsCompanion(
+        status: const Value('completed'),
+        updatedAt: Value(now),
+        syncStatus: const Value('pending_sync'),
+      ),
+    );
+  }
 }

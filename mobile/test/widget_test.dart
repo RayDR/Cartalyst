@@ -29,8 +29,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Home'), findsWidgets);
-    expect(find.widgetWithText(Tab, 'Lists'), findsOneWidget);
-    expect(find.widgetWithText(Tab, 'Inventories'), findsOneWidget);
+    expect(find.text('No shopping lists yet'), findsOneWidget);
     expect(find.text('Compare'), findsOneWidget);
     expect(find.text('Settings'), findsOneWidget);
   });
