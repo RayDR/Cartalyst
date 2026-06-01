@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cartalyst_mobile/core/debug/debug_diagnostics.dart';
 import 'package:cartalyst_mobile/core/domain/value_objects/money.dart';
 import 'package:cartalyst_mobile/core/domain/value_objects/unit.dart';
 import 'package:cartalyst_mobile/features/price_compare/application/price_compare_state.dart';
@@ -12,26 +13,20 @@ import 'package:cartalyst_mobile/features/price_compare/domain/services/unit_pri
 import 'package:cartalyst_mobile/features/products/data/repositories/local_product_repository.dart';
 import 'package:cartalyst_mobile/features/products/domain/entities/product.dart';
 import 'package:cartalyst_mobile/features/products/domain/repositories/product_repository.dart';
-import 'package:cartalyst_mobile/infrastructure/local_db/app_database.dart'
-    show AppDatabase;
+import 'package:cartalyst_mobile/features/shopping_list/application/shopping_list_controller.dart'
+  show appDatabaseProvider, uuidProvider;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
-final priceCompareDatabaseProvider = Provider<AppDatabase>((Ref ref) {
-  final AppDatabase database = AppDatabase();
-  ref.onDispose(database.close);
-  return database;
-});
-
 final priceCompareProductRepositoryProvider =
     Provider<ProductRepository>((Ref ref) {
-  return LocalProductRepository(ref.watch(priceCompareDatabaseProvider));
+  return LocalProductRepository(ref.watch(appDatabaseProvider));
 });
 
 final priceObservationRepositoryProvider =
     Provider<PriceObservationRepository>((Ref ref) {
   return LocalPriceObservationRepository(
-    ref.watch(priceCompareDatabaseProvider),
+    ref.watch(appDatabaseProvider),
   );
 });
 
@@ -50,10 +45,6 @@ final packageComparisonServiceProvider =
   return PackageComparisonService(
     ref.watch(unitPriceCalculationServiceProvider),
   );
-});
-
-final priceCompareUuidProvider = Provider<Uuid>((Ref ref) {
-  return const Uuid();
 });
 
 final priceCompareControllerProvider =
@@ -80,16 +71,26 @@ class PriceCompareController extends Notifier<PriceCompareState> {
     _priceObservationRepository = ref.watch(priceObservationRepositoryProvider);
     _comparisonService = ref.watch(packageComparisonServiceProvider);
     _conversionService = ref.watch(unitConversionServiceProvider);
-    _uuid = ref.watch(priceCompareUuidProvider);
+    _uuid = ref.watch(uuidProvider);
+    _logDebug('controller initialized');
 
     ref.onDispose(() {
       _productsSubscription?.cancel();
     });
 
+    _logDebug('products stream subscribed');
     _productsSubscription = _productRepository
         .watchActiveProducts()
         .listen((List<Product> products) {
+      _logDebug('products stream emitted count=${products.length}');
       state = state.copyWith(products: products);
+    }, onError: (Object error, StackTrace stackTrace) {
+      _logDebugError(
+        'products stream error',
+        error,
+        stackTrace,
+      );
+      state = state.copyWith(message: 'Unable to load products.');
     });
 
     return const PriceCompareState.initial();
@@ -218,7 +219,12 @@ class PriceCompareController extends Notifier<PriceCompareState> {
   }
 
   Future<void> compare() async {
+    _logDebug('compare started; options=${state.options.length}');
+
     if (state.options.length < minOptions) {
+      _logDebug(
+        'compare missing required option: need at least $minOptions options, found ${state.options.length}',
+      );
       state = state.copyWith(
         clearComparison: true,
         message: 'Add at least two options to compare.',
@@ -234,6 +240,9 @@ class PriceCompareController extends Notifier<PriceCompareState> {
             );
 
     if (missingRequired != null) {
+      _logDebug(
+        'compare missing required option: ${missingRequired.label}',
+      );
       state = state.copyWith(
         clearComparison: true,
         message:
@@ -268,6 +277,10 @@ class PriceCompareController extends Notifier<PriceCompareState> {
 
     final PackageComparisonResult result =
         _comparisonService.compareAll(inputs);
+
+    _logDebug(
+      'comparison result recommendation=${_recommendationLabel(result.recommendation)}',
+    );
 
     state = state.copyWith(
       comparisonResult: result,
@@ -332,6 +345,9 @@ class PriceCompareController extends Notifier<PriceCompareState> {
   Future<void> _saveObservationIfPossible(PackageOptionInput option) async {
     final String? productId = option.productId;
     if (productId == null || productId.trim().isEmpty) {
+      _logDebug(
+        'save observation skipped reason: ${option.label} has no product selected',
+      );
       return;
     }
 
@@ -343,6 +359,9 @@ class PriceCompareController extends Notifier<PriceCompareState> {
             );
 
     if (!unitPrice.isValid || unitPrice.unitPrice == null) {
+      _logDebug(
+        'save observation skipped reason: ${option.label} has invalid unit price (${unitPrice.reason})',
+      );
       return;
     }
 
@@ -354,6 +373,9 @@ class PriceCompareController extends Notifier<PriceCompareState> {
     if (!persistence.isValid ||
         persistence.quantity == null ||
         persistence.unitCode == null) {
+      _logDebug(
+        'save observation skipped reason: ${option.label} cannot be persisted with unit ${option.unit}',
+      );
       return;
     }
 
@@ -374,11 +396,41 @@ class PriceCompareController extends Notifier<PriceCompareState> {
 
     try {
       await _priceObservationRepository.addObservation(observation);
-    } catch (_) {
+    } catch (error, stackTrace) {
+      _logDebugError(
+        'save observation failed',
+        error,
+        stackTrace,
+      );
       state = state.copyWith(
         message: 'Comparison done, but saving observation failed.',
       );
     }
+  }
+
+  void _logDebug(String message) {
+    assert(() {
+      debugDiagnosticsStore.addLog(
+        message: message,
+        source: 'PriceCompareController',
+      );
+      return true;
+    }());
+  }
+
+  void _logDebugError(String message, Object error, StackTrace stackTrace) {
+    assert(() {
+      debugDiagnosticsStore.addError(
+        error: '$message: $error',
+        stackTrace: stackTrace,
+        source: 'PriceCompareController',
+      );
+      return true;
+    }());
+  }
+
+  String _recommendationLabel(PackageRecommendation recommendation) {
+    return recommendation.name;
   }
 
   _PersistenceQuantity _toPersistenceQuantity({

@@ -63,6 +63,7 @@ class _PriceCompareScreenState extends ConsumerState<PriceCompareScreen> {
     final PriceCompareController controller =
         ref.read(priceCompareControllerProvider.notifier);
     final bool hasMinimumOptions = state.options.length >= 2;
+    final bool hasOptionCards = state.options.isNotEmpty;
 
     return AppScaffold(
       title: 'Price Compare',
@@ -95,7 +96,28 @@ class _PriceCompareScreenState extends ConsumerState<PriceCompareScreen> {
               ],
             ),
             const SizedBox(height: AppSpacing.md),
-            if (!hasMinimumOptions)
+            if (!hasOptionCards)
+              AppCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      'Price compare is recovering.',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    const Text('Reset to restore the default comparison form.'),
+                    const SizedBox(height: AppSpacing.sm),
+                    AppButton(
+                      label: 'Reset options',
+                      onPressed: controller.reset,
+                      icon: Icons.refresh,
+                      expanded: false,
+                    ),
+                  ],
+                ),
+              )
+            else if (!hasMinimumOptions)
               AppCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -200,7 +222,7 @@ class _PriceCompareScreenState extends ConsumerState<PriceCompareScreen> {
               AppCard(child: Text(state.message!)),
               const SizedBox(height: AppSpacing.sm),
             ],
-            if (!hasMinimumOptions)
+            if (!hasOptionCards || !hasMinimumOptions)
               EmptyState(
                 title: 'Price compare unavailable',
                 description:

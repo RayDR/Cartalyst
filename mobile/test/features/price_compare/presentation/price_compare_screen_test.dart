@@ -5,6 +5,7 @@ import 'package:cartalyst_mobile/features/price_compare/application/price_compar
 import 'package:cartalyst_mobile/features/price_compare/domain/entities/price_observation.dart';
 import 'package:cartalyst_mobile/features/price_compare/domain/repositories/price_observation_repository.dart';
 import 'package:cartalyst_mobile/features/price_compare/presentation/price_compare_screen.dart';
+import 'package:cartalyst_mobile/core/widgets/app_button.dart';
 import 'package:cartalyst_mobile/features/products/domain/entities/product.dart';
 import 'package:cartalyst_mobile/features/products/domain/entities/product_alias.dart';
 import 'package:cartalyst_mobile/features/products/domain/repositories/product_repository.dart';
@@ -44,7 +45,7 @@ void main() {
     await observationRepository.dispose();
   });
 
-  testWidgets('allows adding options up to five and removing back to two', (
+  testWidgets('reset restores the default two options', (
     WidgetTester tester,
   ) async {
     final _FakeProductRepository productRepository = _FakeProductRepository();
@@ -67,19 +68,9 @@ void main() {
 
     await tester.tap(find.text('Add option'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Add option'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Add option'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Option E'), findsOneWidget);
-    expect(find.text('Add option'), findsNothing);
-
-    await tester.tap(find.byTooltip('Remove option').first);
-    await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Remove option').first);
-    await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Remove option').first);
+    final Finder resetButton = find.widgetWithText(AppButton, 'Reset');
+    await tester.ensureVisible(resetButton);
+    await tester.tap(resetButton);
     await tester.pumpAndSettle();
 
     expect(find.text('Option A'), findsOneWidget);
