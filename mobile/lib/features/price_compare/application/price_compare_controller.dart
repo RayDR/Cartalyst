@@ -67,26 +67,28 @@ class PriceCompareController extends Notifier<PriceCompareState> {
 
   @override
   PriceCompareState build() {
+    _logDebug('build started');
+    final Object sharedDatabase = ref.watch(appDatabaseProvider);
+    _logDebug('shared database resolved hash=${sharedDatabase.hashCode}');
     _productRepository = ref.watch(priceCompareProductRepositoryProvider);
     _priceObservationRepository = ref.watch(priceObservationRepositoryProvider);
     _comparisonService = ref.watch(packageComparisonServiceProvider);
     _conversionService = ref.watch(unitConversionServiceProvider);
     _uuid = ref.watch(uuidProvider);
-    _logDebug('controller initialized');
 
     ref.onDispose(() {
       _productsSubscription?.cancel();
     });
 
-    _logDebug('products stream subscribed');
+    _logDebug('product stream subscribed');
     _productsSubscription = _productRepository
         .watchActiveProducts()
         .listen((List<Product> products) {
-      _logDebug('products stream emitted count=${products.length}');
+      _logDebug('product stream emitted count=${products.length}');
       state = state.copyWith(products: products);
     }, onError: (Object error, StackTrace stackTrace) {
       _logDebugError(
-        'products stream error',
+        'product stream error with stack trace',
         error,
         stackTrace,
       );
@@ -223,7 +225,7 @@ class PriceCompareController extends Notifier<PriceCompareState> {
 
     if (state.options.length < minOptions) {
       _logDebug(
-        'compare missing required option: need at least $minOptions options, found ${state.options.length}',
+        'compare validation failed: need at least $minOptions options, found ${state.options.length}',
       );
       state = state.copyWith(
         clearComparison: true,
@@ -241,7 +243,7 @@ class PriceCompareController extends Notifier<PriceCompareState> {
 
     if (missingRequired != null) {
       _logDebug(
-        'compare missing required option: ${missingRequired.label}',
+        'compare validation failed: ${missingRequired.label} missing required fields',
       );
       state = state.copyWith(
         clearComparison: true,
@@ -280,7 +282,7 @@ class PriceCompareController extends Notifier<PriceCompareState> {
           _comparisonService.compareAll(inputs);
 
       _logDebug(
-        'comparison result recommendation=${_recommendationLabel(result.recommendation)}',
+        'compare result generated recommendation=${_recommendationLabel(result.recommendation)}',
       );
 
       state = state.copyWith(
@@ -355,7 +357,7 @@ class PriceCompareController extends Notifier<PriceCompareState> {
     final String? productId = option.productId;
     if (productId == null || productId.trim().isEmpty) {
       _logDebug(
-        'save observation skipped reason: ${option.label} has no product selected',
+        'save observation skipped with reason: ${option.label} has no product selected',
       );
       return;
     }
@@ -369,7 +371,7 @@ class PriceCompareController extends Notifier<PriceCompareState> {
 
     if (!unitPrice.isValid || unitPrice.unitPrice == null) {
       _logDebug(
-        'save observation skipped reason: ${option.label} has invalid unit price (${unitPrice.reason})',
+        'save observation skipped with reason: ${option.label} has invalid unit price (${unitPrice.reason})',
       );
       return;
     }
@@ -383,7 +385,7 @@ class PriceCompareController extends Notifier<PriceCompareState> {
         persistence.quantity == null ||
         persistence.unitCode == null) {
       _logDebug(
-        'save observation skipped reason: ${option.label} cannot be persisted with unit ${option.unit}',
+        'save observation skipped with reason: ${option.label} cannot be persisted with unit ${option.unit}',
       );
       return;
     }
@@ -407,7 +409,7 @@ class PriceCompareController extends Notifier<PriceCompareState> {
       await _priceObservationRepository.addObservation(observation);
     } catch (error, stackTrace) {
       _logDebugError(
-        'save observation failed',
+        'save observation failed with error and stack trace',
         error,
         stackTrace,
       );

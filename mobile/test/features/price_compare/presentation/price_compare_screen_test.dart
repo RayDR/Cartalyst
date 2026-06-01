@@ -14,6 +14,48 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  testWidgets('smoke: title renders, default options render, reset restores defaults', (
+    WidgetTester tester,
+  ) async {
+    final _FakeProductRepository productRepository = _FakeProductRepository();
+    final _FakePriceObservationRepository observationRepository =
+        _FakePriceObservationRepository();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: <Override>[
+          priceCompareProductRepositoryProvider
+              .overrideWithValue(productRepository),
+          priceObservationRepositoryProvider
+              .overrideWithValue(observationRepository),
+        ],
+        child: const MaterialApp(home: PriceCompareScreen()),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Price Compare'), findsOneWidget);
+    expect(find.text('Option A'), findsOneWidget);
+    expect(find.text('Option B'), findsOneWidget);
+
+    await tester.tap(find.text('Add option'));
+    await tester.pumpAndSettle();
+    expect(find.text('Option C'), findsOneWidget);
+
+    final Finder resetButton = find.widgetWithText(AppButton, 'Reset');
+    await tester.ensureVisible(resetButton);
+    await tester.tap(resetButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Option A'), findsOneWidget);
+    expect(find.text('Option B'), findsOneWidget);
+    expect(find.text('Option C'), findsNothing);
+
+    await productRepository.dispose();
+    await observationRepository.dispose();
+  });
+
   testWidgets('renders non-blank screen with two default options', (
     WidgetTester tester,
   ) async {
