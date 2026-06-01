@@ -29,19 +29,43 @@ flutter test
 Use the helper script to validate the mobile project and then build artifacts.
 
 ```bash
-./scripts/build-mobile.sh
-./scripts/build-mobile.sh android --debug
-./scripts/build-mobile.sh android --release
-./scripts/build-mobile.sh all --release
+./scripts/build-mobile.sh android
+./scripts/build-mobile.sh android --debug-only
+./scripts/build-mobile.sh android --release-only
+./scripts/build-mobile.sh ios
+./scripts/build-mobile.sh ios --debug-only
+./scripts/build-mobile.sh ios --release-only
+./scripts/build-mobile.sh android --skip-tests
+./scripts/build-mobile.sh android --skip-format
+./scripts/build-mobile.sh android --apply-fixes
+./scripts/build-mobile.sh --help
 ```
 
+Platform is required. If you run the script without a platform, it fails with:
+
+`Please specify a platform: android or ios.`
+
+Default build mode behavior:
+- `android` builds both debug and release APKs.
+- `ios` builds both debug and release artifacts.
+- Use `--debug-only` or `--release-only` to limit build mode.
+
 The script runs these validation steps before any build:
+- `flutter --version`
 - `flutter pub get`
 - `dart run build_runner build --delete-conflicting-outputs`
+- `dart format lib test` (unless `--skip-format` is passed)
+- `dart fix --apply` (only when `--apply-fixes` is passed)
 - `flutter analyze`
 - `flutter test` (unless `--skip-tests` is passed)
 
-iOS builds require macOS and Xcode. On Linux and Windows, iOS is skipped for `all` or fails clearly when explicitly requested.
+If `dart format` changes files, the script continues and prints:
+
+`Formatting may have modified files. Review git diff before committing.`
+
+iOS builds require macOS and Xcode.
+- On Linux/Windows, `android` is supported.
+- On Linux/Windows, `ios` fails clearly.
 
 ## Product Vision
 

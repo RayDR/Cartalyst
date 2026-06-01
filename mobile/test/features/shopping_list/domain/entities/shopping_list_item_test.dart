@@ -24,8 +24,10 @@ void main() {
       final ShoppingListItem item = buildItem(ShoppingListItemStatus.pending);
       final DateTime transitionTime = DateTime(2026, 1, 2, 9);
 
-      final ShoppingListItem updated =
-          item.transitionTo(ShoppingListItemStatus.purchased, transitionedAt: transitionTime);
+      final ShoppingListItem updated = item.transitionTo(
+        ShoppingListItemStatus.purchased,
+        transitionedAt: transitionTime,
+      );
 
       expect(updated.status, ShoppingListItemStatus.purchased);
       expect(updated.purchasedAt, transitionTime);
@@ -36,7 +38,8 @@ void main() {
     test('allows purchased -> pending', () {
       final ShoppingListItem item = buildItem(ShoppingListItemStatus.purchased);
 
-      final ShoppingListItem updated = item.transitionTo(ShoppingListItemStatus.pending);
+      final ShoppingListItem updated =
+          item.transitionTo(ShoppingListItemStatus.pending);
 
       expect(updated.status, ShoppingListItemStatus.pending);
       expect(updated.purchasedAt, isNull);

@@ -29,7 +29,8 @@ class AppListTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.md),
         onTap: onTap,
         child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: AppSpacing.xxl + AppSpacing.sm),
+          constraints:
+              const BoxConstraints(minHeight: AppSpacing.xxl + AppSpacing.sm),
           child: Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.sm,

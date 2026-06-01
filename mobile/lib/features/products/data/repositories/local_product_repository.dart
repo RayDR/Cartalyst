@@ -1,6 +1,8 @@
 import 'package:cartalyst_mobile/features/products/data/mappers/product_mapper.dart';
-import 'package:cartalyst_mobile/features/products/domain/entities/product.dart' as domain;
-import 'package:cartalyst_mobile/features/products/domain/entities/product_alias.dart' as domain;
+import 'package:cartalyst_mobile/features/products/domain/entities/product.dart'
+    as domain;
+import 'package:cartalyst_mobile/features/products/domain/entities/product_alias.dart'
+    as domain;
 import 'package:cartalyst_mobile/features/products/domain/repositories/product_repository.dart';
 import 'package:cartalyst_mobile/infrastructure/local_db/app_database.dart';
 
@@ -12,18 +14,22 @@ class LocalProductRepository implements ProductRepository {
   @override
   Stream<List<domain.Product>> watchActiveProducts() {
     return _database.productsDao.watchActiveProducts().map(
-        (rows) => rows.map(toDomainProduct).toList(growable: false),
+          (rows) => rows.map(toDomainProduct).toList(growable: false),
         );
   }
 
   @override
-  Future<List<domain.ProductAlias>> findAliasesForProduct(String productId) async {
+  Future<List<domain.ProductAlias>> findAliasesForProduct(
+    String productId,
+  ) async {
     final rows = await _database.productsDao.findAliasesForProduct(productId);
     return rows.map(toDomainProductAlias).toList(growable: false);
   }
 
   @override
-  Future<List<domain.ProductAlias>> findAliasesForProducts(List<String> productIds) async {
+  Future<List<domain.ProductAlias>> findAliasesForProducts(
+    List<String> productIds,
+  ) async {
     if (productIds.isEmpty) {
       return const <domain.ProductAlias>[];
     }

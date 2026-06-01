@@ -103,15 +103,20 @@ class LocalInventoryRepository implements InventoryRepository {
 
   @override
   Future<String> ensureUncategorizedInventoryCategory(
-      String inventoryId) async {
-    debugPrint('[LocalInventoryRepository] ensureUncategorizedInventoryCategory start inventoryId=$inventoryId');
+    String inventoryId,
+  ) async {
+    debugPrint(
+      '[LocalInventoryRepository] ensureUncategorizedInventoryCategory start inventoryId=$inventoryId',
+    );
     try {
       final String? existing =
           await _database.pantryDao.findUncategorizedInventoryCategoryId(
         inventoryId,
       );
       if (existing != null) {
-        debugPrint('[LocalInventoryRepository] ensureUncategorizedInventoryCategory already exists id=$existing');
+        debugPrint(
+          '[LocalInventoryRepository] ensureUncategorizedInventoryCategory already exists id=$existing',
+        );
         return existing;
       }
 
@@ -145,10 +150,14 @@ class LocalInventoryRepository implements InventoryRepository {
         ),
       );
 
-      debugPrint('[LocalInventoryRepository] ensureUncategorizedInventoryCategory success inventoryCategoryId=$inventoryCategoryId');
+      debugPrint(
+        '[LocalInventoryRepository] ensureUncategorizedInventoryCategory success inventoryCategoryId=$inventoryCategoryId',
+      );
       return inventoryCategoryId;
     } catch (error, stackTrace) {
-      debugPrint('[LocalInventoryRepository] ensureUncategorizedInventoryCategory FAILED inventoryId=$inventoryId error=$error');
+      debugPrint(
+        '[LocalInventoryRepository] ensureUncategorizedInventoryCategory FAILED inventoryId=$inventoryId error=$error',
+      );
       debugPrint(stackTrace.toString());
       rethrow;
     }

@@ -150,8 +150,10 @@ class InventoryDetailScreen extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Text('Linked lists',
-                style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              'Linked lists',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: AppSpacing.sm),
             if (linkedLists.isEmpty)
               const Text('No linked lists yet.')
@@ -172,8 +174,10 @@ class InventoryDetailScreen extends ConsumerWidget {
 enum _InventoryOverflowAction { linkedLists }
 
 class _InventoryActionsBar extends StatelessWidget {
-  const _InventoryActionsBar(
-      {required this.onAddItem, required this.onAddCategory});
+  const _InventoryActionsBar({
+    required this.onAddItem,
+    required this.onAddCategory,
+  });
 
   final VoidCallback onAddItem;
   final VoidCallback onAddCategory;
@@ -336,7 +340,8 @@ class _AddItemSheetState extends State<_AddItemSheet> {
               decoration: const InputDecoration(labelText: 'Unit (optional)'),
               items: <DropdownMenuItem<String?>>[
                 const DropdownMenuItem<String?>(
-                    value: null, child: Text('No unit')),
+                  child: Text('No unit'),
+                ),
                 ...units.map(
                   (String unit) => DropdownMenuItem<String?>(
                     value: unit,
@@ -353,13 +358,15 @@ class _AddItemSheetState extends State<_AddItemSheet> {
                   const InputDecoration(labelText: 'Product link (optional)'),
               items: <DropdownMenuItem<String?>>[
                 const DropdownMenuItem<String?>(
-                    value: null, child: Text('No product link')),
+                  child: Text('No product link'),
+                ),
                 ...widget.state.products
                     .where(
                       (product) => _nameController.text.trim().isEmpty
                           ? false
                           : product.canonicalName.toLowerCase().contains(
-                              _nameController.text.trim().toLowerCase()),
+                                _nameController.text.trim().toLowerCase(),
+                              ),
                     )
                     .take(8)
                     .map(
@@ -379,7 +386,6 @@ class _AddItemSheetState extends State<_AddItemSheet> {
                   const InputDecoration(labelText: 'Category (optional)'),
               items: <DropdownMenuItem<String?>>[
                 const DropdownMenuItem<String?>(
-                  value: null,
                   child: Text('Auto (fallback Uncategorized)'),
                 ),
                 ...widget.state.categories.map(
@@ -455,8 +461,10 @@ class _AddItemSheetState extends State<_AddItemSheet> {
 }
 
 class _CategorizedItemSections extends ConsumerWidget {
-  const _CategorizedItemSections(
-      {required this.state, required this.inventoryId});
+  const _CategorizedItemSections({
+    required this.state,
+    required this.inventoryId,
+  });
 
   final InventoryDetailState state;
   final String inventoryId;
@@ -493,8 +501,10 @@ class _CategorizedItemSections extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: ordered
-          .where((String key) =>
-              (byCategory[key] ?? const <InventoryItem>[]).isNotEmpty)
+          .where(
+            (String key) =>
+                (byCategory[key] ?? const <InventoryItem>[]).isNotEmpty,
+          )
           .map(
             (String key) => Padding(
               padding: const EdgeInsets.only(bottom: AppSpacing.md),
@@ -564,9 +574,13 @@ class _InventoryItemCard extends StatelessWidget {
           },
           itemBuilder: (_) => const <PopupMenuEntry<String>>[
             PopupMenuItem<String>(
-                value: 'in_stock', child: Text('Mark in stock')),
+              value: 'in_stock',
+              child: Text('Mark in stock'),
+            ),
             PopupMenuItem<String>(
-                value: 'low', child: Text('Mark running low')),
+              value: 'low',
+              child: Text('Mark running low'),
+            ),
             PopupMenuItem<String>(value: 'out', child: Text('Mark finished')),
             PopupMenuItem<String>(value: 'move', child: Text('Move category')),
             PopupMenuItem<String>(value: 'delete', child: Text('Delete')),
@@ -591,8 +605,10 @@ class _InventoryItemCard extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Text('Move to category',
-                style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              'Move to category',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: AppSpacing.sm),
             ...categories.map(
               (InventoryCategory category) => ListTile(

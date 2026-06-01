@@ -383,8 +383,10 @@ class _ListComposerSheetState extends State<_ListComposerSheet> {
             children: <Widget>[
               Text('New list', style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: AppSpacing.md),
-              Text('Step $_step of 3',
-                  style: Theme.of(context).textTheme.bodyMedium),
+              Text(
+                'Step $_step of 3',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
               const SizedBox(height: AppSpacing.md),
               if (_step == 1) ...<Widget>[
                 const Text('Name your list.'),

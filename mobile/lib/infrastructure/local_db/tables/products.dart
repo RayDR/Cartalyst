@@ -7,15 +7,13 @@ class Products extends Table {
 
   TextColumn get brand => text().nullable().withLength(min: 1, max: 120)();
 
-  TextColumn get category =>
-    text().customConstraint(
-      "NOT NULL DEFAULT 'other' CHECK (category IN ('produce', 'dairy', 'protein', 'grains', 'bakery', 'household', 'other'))",
-          )();
+  TextColumn get category => text().customConstraint(
+        "NOT NULL DEFAULT 'other' CHECK (category IN ('produce', 'dairy', 'protein', 'grains', 'bakery', 'household', 'other'))",
+      )();
 
-  TextColumn get defaultUnit =>
-    text().customConstraint(
-      "NOT NULL DEFAULT 'unit' CHECK (default_unit IN ('unit', 'kg', 'g', 'liter', 'ml', 'pack'))",
-          )();
+  TextColumn get defaultUnit => text().customConstraint(
+        "NOT NULL DEFAULT 'unit' CHECK (default_unit IN ('unit', 'kg', 'g', 'liter', 'ml', 'pack'))",
+      )();
 
   RealColumn get defaultPackageQuantity => real().nullable()();
 
@@ -25,10 +23,9 @@ class Products extends Table {
 
   DateTimeColumn get deletedAt => dateTime().nullable()();
 
-  TextColumn get syncStatus =>
-    text().customConstraint(
-      "NOT NULL DEFAULT 'local_only' CHECK (sync_status IN ('local_only', 'pending_sync', 'synced', 'sync_error'))",
-        )();
+  TextColumn get syncStatus => text().customConstraint(
+        "NOT NULL DEFAULT 'local_only' CHECK (sync_status IN ('local_only', 'pending_sync', 'synced', 'sync_error'))",
+      )();
 
   IntColumn get version => integer().withDefault(const Constant(1))();
 

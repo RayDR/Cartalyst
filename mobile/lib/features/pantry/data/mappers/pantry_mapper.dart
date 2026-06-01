@@ -71,7 +71,8 @@ local_db.InventoriesCompanion toInventoryCompanion(Inventory entity) {
 }
 
 local_db.InventoryItemsCompanion toInventoryItemCompanion(
-    InventoryItem entity) {
+  InventoryItem entity,
+) {
   return local_db.InventoryItemsCompanion(
     id: Value(entity.id),
     inventoryId: Value(entity.inventoryId),

@@ -3,7 +3,8 @@ import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory.dart'
 import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory_event.dart';
 import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory_item.dart';
 import 'package:cartalyst_mobile/features/pantry/domain/repositories/pantry_repository.dart';
-import 'package:cartalyst_mobile/infrastructure/local_db/app_database.dart' show AppDatabase, defaultInventoryId;
+import 'package:cartalyst_mobile/infrastructure/local_db/app_database.dart'
+    show AppDatabase, defaultInventoryId;
 
 class LocalPantryRepository implements PantryRepository {
   LocalPantryRepository(this._database);
@@ -59,11 +60,13 @@ class LocalPantryRepository implements PantryRepository {
 
   @override
   Future<void> saveInventoryItem(InventoryItem item) {
-    return _database.pantryDao.upsertInventoryItem(toInventoryItemCompanion(item));
+    return _database.pantryDao
+        .upsertInventoryItem(toInventoryItemCompanion(item));
   }
 
   @override
   Future<void> addInventoryEvent(InventoryEvent event) {
-    return _database.pantryDao.addInventoryEvent(toInventoryEventCompanion(event));
+    return _database.pantryDao
+        .addInventoryEvent(toInventoryEventCompanion(event));
   }
 }

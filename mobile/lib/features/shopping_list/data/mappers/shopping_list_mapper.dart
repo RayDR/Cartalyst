@@ -24,7 +24,8 @@ domain.ShoppingList toDomainShoppingList(local_db.ShoppingList row) {
 }
 
 domain.ShoppingListItem toDomainShoppingListItem(
-    local_db.ShoppingListItem row) {
+  local_db.ShoppingListItem row,
+) {
   return domain.ShoppingListItem(
     id: row.id,
     shoppingListId: row.shoppingListId,
@@ -48,7 +49,8 @@ domain.ShoppingListItem toDomainShoppingListItem(
 }
 
 local_db.ShoppingListsCompanion toShoppingListCompanion(
-    domain.ShoppingList entity) {
+  domain.ShoppingList entity,
+) {
   return local_db.ShoppingListsCompanion(
     id: Value(entity.id),
     inventoryId: Value(entity.inventoryId),

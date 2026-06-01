@@ -5,17 +5,25 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
 MOBILE_DIR="${REPO_ROOT}/mobile"
 
-TARGET="all"
-BUILD_MODE="debug"
-SKIP_TESTS="false"
+TARGET=""
 TARGET_SET="false"
+DEBUG_ONLY="false"
+RELEASE_ONLY="false"
+BUILD_DEBUG="true"
+BUILD_RELEASE="true"
+SKIP_TESTS="false"
+SKIP_FORMAT="false"
+APPLY_FIXES="false"
 OS_KIND="unknown"
-RUN_ANDROID="false"
-RUN_IOS="false"
+FORMAT_MAY_HAVE_MODIFIED="false"
+FIXES_REQUESTED="false"
+
 GENERATED_ANDROID_DEBUG="false"
 GENERATED_ANDROID_RELEASE="false"
 GENERATED_IOS_DEBUG="false"
 GENERATED_IOS_RELEASE="false"
+
+declare -a GENERATED_ARTIFACTS=()
 
 log_info() {
   echo "[INFO] $*"
@@ -50,26 +58,30 @@ trap on_error ERR
 print_usage() {
   cat <<'EOF'
 Usage:
-  ./scripts/build-mobile.sh
-  ./scripts/build-mobile.sh all
   ./scripts/build-mobile.sh android
   ./scripts/build-mobile.sh ios
-  ./scripts/build-mobile.sh android --debug
-  ./scripts/build-mobile.sh android --release
-  ./scripts/build-mobile.sh ios --debug
-  ./scripts/build-mobile.sh ios --release
-  ./scripts/build-mobile.sh all --release
+  ./scripts/build-mobile.sh android --debug-only
+  ./scripts/build-mobile.sh android --release-only
+  ./scripts/build-mobile.sh ios --debug-only
+  ./scripts/build-mobile.sh ios --release-only
   ./scripts/build-mobile.sh android --skip-tests
+  ./scripts/build-mobile.sh android --skip-format
+  ./scripts/build-mobile.sh android --apply-fixes
   ./scripts/build-mobile.sh --help
 
 Options:
-  all            Build all supported platforms for the current OS (default)
-  android        Build Android only
-  ios            Build iOS only
-  --debug        Build debug artifacts (default)
-  --release      Build release artifacts
-  --skip-tests   Skip flutter test
-  -h, --help     Show this help message
+  android         Build Android artifacts only
+  ios             Build iOS artifacts only
+  --debug-only    Build debug artifacts only
+  --release-only  Build release artifacts only
+  --skip-tests    Skip flutter test
+  --skip-format   Skip dart format lib test
+  --apply-fixes   Run dart fix --apply before analyze/test/build
+  -h, --help      Show this help message
+
+Default build mode behavior:
+  If no mode flag is provided, the script builds BOTH debug and release
+  artifacts for the selected platform.
 EOF
 }
 
@@ -109,44 +121,77 @@ detect_os() {
   esac
 }
 
-validate_project() {
-  require_command flutter
-  require_command dart
+parse_args() {
+  local arg
+  for arg in "$@"; do
+    case "${arg}" in
+      android|ios)
+        if [[ "${TARGET_SET}" == "true" ]]; then
+          log_error "Multiple platform targets provided. Use one of: android, ios."
+          print_usage
+          exit 1
+        fi
+        TARGET="${arg}"
+        TARGET_SET="true"
+        ;;
+      --debug-only)
+        if [[ "${RELEASE_ONLY}" == "true" ]]; then
+          log_error "Do not use --debug-only and --release-only together."
+          exit 1
+        fi
+        DEBUG_ONLY="true"
+        ;;
+      --release-only)
+        if [[ "${DEBUG_ONLY}" == "true" ]]; then
+          log_error "Do not use --debug-only and --release-only together."
+          exit 1
+        fi
+        RELEASE_ONLY="true"
+        ;;
+      --skip-tests)
+        SKIP_TESTS="true"
+        ;;
+      --skip-format)
+        SKIP_FORMAT="true"
+        ;;
+      --apply-fixes)
+        APPLY_FIXES="true"
+        FIXES_REQUESTED="true"
+        ;;
+      -h|--help)
+        print_usage
+        exit 0
+        ;;
+      *)
+        log_error "Unknown argument: ${arg}"
+        print_usage
+        exit 1
+        ;;
+    esac
+  done
 
-  run_step "Flutter version check" flutter --version
-
-  if [[ ! -d "${MOBILE_DIR}" ]]; then
-    log_error "Mobile directory not found: ${MOBILE_DIR}"
+  if [[ "${TARGET_SET}" != "true" ]]; then
+    log_error "Please specify a platform: android or ios."
+    print_usage
     exit 1
   fi
 
-  cd "${MOBILE_DIR}"
-
-  run_step "Running flutter pub get" flutter pub get
-  run_step "Running build_runner" dart run build_runner build --delete-conflicting-outputs
-  log_info "Running flutter analyze"
-  local analyze_output analyze_exit_code
-  trap - ERR
-  set +e
-  analyze_output="$(flutter analyze 2>&1)"
-  analyze_exit_code=$?
-  set -e
-  trap on_error ERR
-  echo "${analyze_output}"
-  if [[ ${analyze_exit_code} -ne 0 ]]; then
-    if echo "${analyze_output}" | grep -qE '^[[:space:]]*error[[:space:]]•'; then
-      log_error "flutter analyze reported errors. Fix the errors above and rerun the build."
-      exit "${analyze_exit_code}"
-    fi
-    log_warn "flutter analyze reported only info-level issues; continuing the build."
+  if [[ "${DEBUG_ONLY}" == "true" ]]; then
+    BUILD_DEBUG="true"
+    BUILD_RELEASE="false"
+  elif [[ "${RELEASE_ONLY}" == "true" ]]; then
+    BUILD_DEBUG="false"
+    BUILD_RELEASE="true"
   else
-    log_success "Running flutter analyze"
+    BUILD_DEBUG="true"
+    BUILD_RELEASE="true"
   fi
+}
 
-  if [[ "${SKIP_TESTS}" == "true" ]]; then
-    log_warn "Skipping flutter test because --skip-tests was provided."
-  else
-    run_step "Running flutter test" flutter test
+validate_platform_target() {
+  if [[ "${TARGET}" == "ios" && "${OS_KIND}" != "macos" ]]; then
+    log_error "iOS builds require macOS and Xcode."
+    exit 1
   fi
 }
 
@@ -226,12 +271,8 @@ preflight_android() {
 
   if [[ -z "${sdk_path}" ]]; then
     log_error "No valid Android SDK path found."
-    log_error "Next steps:"
-    log_error "1) Run: flutter doctor"
-    log_error "2) Install Android command-line tools"
-    log_error "3) Set: export ANDROID_HOME=\"$HOME/Android/Sdk\""
-    log_error "4) Set: export ANDROID_SDK_ROOT=\"\$ANDROID_HOME\""
-    log_error "5) Run: flutter config --android-sdk \"\$ANDROID_HOME\""
+    log_error "Checked in order: ANDROID_HOME, ANDROID_SDK_ROOT, flutter config android-sdk, \$HOME/Android/Sdk, /opt/android-sdk"
+    log_error "Install Android SDK/command-line tools and rerun."
     exit 1
   fi
 
@@ -252,10 +293,6 @@ preflight_android() {
 
   if echo "${doctor_output}" | grep -q "No Android SDK found"; then
     log_error "Android SDK still not detected by Flutter after configuring this process environment."
-    log_error "Next steps:"
-    log_error "1) Run: flutter doctor"
-    log_error "2) Verify SDK path exists and contains cmdline-tools/platform-tools/platforms"
-    log_error "3) Run: flutter config --android-sdk \"\$ANDROID_HOME\""
     exit 1
   fi
 
@@ -264,14 +301,8 @@ preflight_android() {
 
 preflight_ios() {
   if [[ "${OS_KIND}" != "macos" ]]; then
-    if [[ "${TARGET}" == "ios" ]]; then
-      log_error "iOS builds require macOS with Xcode."
-      exit 1
-    fi
-
-    log_warn "Skipping iOS build: iOS builds require macOS and Xcode."
-    RUN_IOS="false"
-    return
+    log_error "iOS builds require macOS and Xcode."
+    exit 1
   fi
 
   require_command xcodebuild
@@ -286,159 +317,151 @@ preflight_ios() {
   log_success "iOS preflight checks passed."
 }
 
+validate_project() {
+  local format_check_exit=0
+
+  require_command flutter
+  require_command dart
+
+  if [[ ! -d "${MOBILE_DIR}" ]]; then
+    log_error "Mobile directory not found: ${MOBILE_DIR}"
+    exit 1
+  fi
+
+  cd "${MOBILE_DIR}"
+
+  run_step "Flutter version check" flutter --version
+  run_step "Running flutter pub get" flutter pub get
+  run_step "Running build_runner" dart run build_runner build --delete-conflicting-outputs
+
+  if [[ "${SKIP_FORMAT}" == "true" ]]; then
+    log_warn "Skipping dart format because --skip-format was provided."
+  else
+    log_info "Checking if dart format would modify files"
+    trap - ERR
+    set +e
+    dart format --output=none --set-exit-if-changed lib test >/dev/null 2>&1
+    format_check_exit=$?
+    set -e
+    trap on_error ERR
+
+    run_step "Running dart format lib test" dart format lib test
+
+    if [[ ${format_check_exit} -ne 0 ]]; then
+      FORMAT_MAY_HAVE_MODIFIED="true"
+      log_warn "Formatting may have modified files. Review git diff before committing."
+    fi
+  fi
+
+  if [[ "${APPLY_FIXES}" == "true" ]]; then
+    run_step "Running dart fix --apply" dart fix --apply
+  fi
+
+  run_step "Running flutter analyze" flutter analyze
+
+  if [[ "${SKIP_TESTS}" == "true" ]]; then
+    log_warn "Skipping flutter test because --skip-tests was provided."
+  else
+    run_step "Running flutter test" flutter test
+  fi
+}
+
 build_android() {
   local artifact
 
-  if [[ "${BUILD_MODE}" == "release" ]]; then
-    run_step "Building Android release APK" flutter build apk --release
-    artifact="${MOBILE_DIR}/build/app/outputs/flutter-apk/app-release.apk"
-    if [[ ! -f "${artifact}" ]]; then
-      log_error "Expected Android release APK not found: ${artifact}"
-      exit 1
-    fi
-    log_success "Android release APK generated: mobile/build/app/outputs/flutter-apk/app-release.apk"
-    GENERATED_ANDROID_RELEASE="true"
-  else
+  if [[ "${BUILD_DEBUG}" == "true" ]]; then
     run_step "Building Android debug APK" flutter build apk --debug
     artifact="${MOBILE_DIR}/build/app/outputs/flutter-apk/app-debug.apk"
     if [[ ! -f "${artifact}" ]]; then
       log_error "Expected Android debug APK not found: ${artifact}"
       exit 1
     fi
-    log_success "Android debug APK generated: mobile/build/app/outputs/flutter-apk/app-debug.apk"
     GENERATED_ANDROID_DEBUG="true"
+    GENERATED_ARTIFACTS+=("mobile/build/app/outputs/flutter-apk/app-debug.apk")
+    log_success "Android debug APK generated: mobile/build/app/outputs/flutter-apk/app-debug.apk"
+  fi
+
+  if [[ "${BUILD_RELEASE}" == "true" ]]; then
+    run_step "Building Android release APK" flutter build apk --release
+    artifact="${MOBILE_DIR}/build/app/outputs/flutter-apk/app-release.apk"
+    if [[ ! -f "${artifact}" ]]; then
+      log_error "Expected Android release APK not found: ${artifact}"
+      exit 1
+    fi
+    GENERATED_ANDROID_RELEASE="true"
+    GENERATED_ARTIFACTS+=("mobile/build/app/outputs/flutter-apk/app-release.apk")
+    log_success "Android release APK generated: mobile/build/app/outputs/flutter-apk/app-release.apk"
   fi
 }
 
 build_ios() {
   local artifact
 
-  if [[ "${BUILD_MODE}" == "release" ]]; then
-    run_step "Building iOS release IPA" flutter build ipa
-    artifact="${MOBILE_DIR}/build/ios/ipa"
-    if [[ ! -d "${artifact}" ]]; then
-      log_error "Expected iOS release output directory not found: ${artifact}"
-      exit 1
-    fi
-    log_success "iOS release output generated: mobile/build/ios/ipa"
-    GENERATED_IOS_RELEASE="true"
-  else
+  if [[ "${BUILD_DEBUG}" == "true" ]]; then
     run_step "Building iOS debug artifact" flutter build ios --debug --no-codesign
     artifact="${MOBILE_DIR}/build/ios"
     if [[ ! -d "${artifact}" ]]; then
       log_error "Expected iOS debug output directory not found: ${artifact}"
       exit 1
     fi
-    log_success "iOS debug output generated: mobile/build/ios"
     GENERATED_IOS_DEBUG="true"
+    GENERATED_ARTIFACTS+=("mobile/build/ios")
+    log_success "iOS debug output generated: mobile/build/ios"
+  fi
+
+  if [[ "${BUILD_RELEASE}" == "true" ]]; then
+    run_step "Building iOS release IPA" flutter build ipa
+    artifact="${MOBILE_DIR}/build/ios/ipa"
+    if [[ ! -d "${artifact}" ]]; then
+      log_error "Expected iOS release output directory not found: ${artifact}"
+      exit 1
+    fi
+    GENERATED_IOS_RELEASE="true"
+    GENERATED_ARTIFACTS+=("mobile/build/ios/ipa")
+    log_success "iOS release output generated: mobile/build/ios/ipa"
   fi
 }
 
-parse_args() {
-  local arg
-  for arg in "$@"; do
-    case "${arg}" in
-      all|android|ios)
-        if [[ "${TARGET_SET}" == "true" ]]; then
-          log_error "Multiple platform targets provided. Use one of: all, android, ios."
-          print_usage
-          exit 1
-        fi
-        TARGET="${arg}"
-        TARGET_SET="true"
-        ;;
-      --debug)
-        BUILD_MODE="debug"
-        ;;
-      --release)
-        BUILD_MODE="release"
-        ;;
-      --skip-tests)
-        SKIP_TESTS="true"
-        ;;
-      -h|--help)
-        print_usage
-        exit 0
-        ;;
-      *)
-        log_error "Unknown argument: ${arg}"
-        print_usage
-        exit 1
-        ;;
-    esac
-  done
-}
+print_artifacts_summary() {
+  local artifact
 
-configure_targets() {
-  case "${TARGET}" in
-    android)
-      RUN_ANDROID="true"
-      RUN_IOS="false"
-      ;;
-    ios)
-      RUN_ANDROID="false"
-      RUN_IOS="true"
-      ;;
-    all)
-      RUN_ANDROID="true"
-      RUN_IOS="true"
-      ;;
-    *)
-      log_error "Unsupported target: ${TARGET}"
-      exit 1
-      ;;
-  esac
-
-  if [[ "${OS_KIND}" == "linux" || "${OS_KIND}" == "windows" || "${OS_KIND}" == "unknown" ]]; then
-    if [[ "${TARGET}" == "ios" ]]; then
-      log_error "iOS builds require macOS with Xcode."
-      exit 1
-    fi
-    if [[ "${RUN_IOS}" == "true" ]]; then
-      log_warn "Skipping iOS build: iOS builds require macOS and Xcode."
-      RUN_IOS="false"
-    fi
-  fi
-
-  if [[ "${RUN_ANDROID}" != "true" && "${RUN_IOS}" != "true" ]]; then
-    log_error "No supported build targets remain for this OS and selected options."
+  echo
+  log_success "Build flow completed."
+  if [[ ${#GENERATED_ARTIFACTS[@]} -eq 0 ]]; then
+    log_error "No artifacts were generated."
     exit 1
   fi
+
+  echo "Generated artifacts:"
+  for artifact in "${GENERATED_ARTIFACTS[@]}"; do
+    echo "- ${artifact}"
+  done
+
+  echo
+  echo "Review git diff if format or dart fix changed files."
 }
 
 main() {
   parse_args "$@"
   detect_os
-  configure_targets
+  validate_platform_target
 
   validate_project
 
-  if [[ "${RUN_ANDROID}" == "true" ]]; then
-    preflight_android
-    build_android
-  fi
-
-  if [[ "${RUN_IOS}" == "true" ]]; then
-    preflight_ios
-    if [[ "${RUN_IOS}" == "true" ]]; then
-      build_ios
+  if [[ "${TARGET}" == "android" ]]; then
+    if [[ "${OS_KIND}" == "linux" || "${OS_KIND}" == "windows" || "${OS_KIND}" == "macos" || "${OS_KIND}" == "unknown" ]]; then
+      preflight_android
+      build_android
     fi
+  elif [[ "${TARGET}" == "ios" ]]; then
+    preflight_ios
+    build_ios
+  else
+    log_error "Unsupported target: ${TARGET}"
+    exit 1
   fi
 
-  echo
-  log_success "Build flow completed."
-  if [[ "${GENERATED_ANDROID_DEBUG}" == "true" ]]; then
-    echo "Android debug APK: mobile/build/app/outputs/flutter-apk/app-debug.apk"
-  fi
-  if [[ "${GENERATED_ANDROID_RELEASE}" == "true" ]]; then
-    echo "Android release APK: mobile/build/app/outputs/flutter-apk/app-release.apk"
-  fi
-  if [[ "${GENERATED_IOS_DEBUG}" == "true" ]]; then
-    echo "iOS debug output: mobile/build/ios"
-  fi
-  if [[ "${GENERATED_IOS_RELEASE}" == "true" ]]; then
-    echo "iOS release IPA directory: mobile/build/ios/ipa"
-  fi
+  print_artifacts_summary
 }
 
 main "$@"

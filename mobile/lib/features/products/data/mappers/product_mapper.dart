@@ -1,7 +1,10 @@
 import 'package:cartalyst_mobile/core/domain/value_objects/unit.dart';
-import 'package:cartalyst_mobile/features/products/domain/entities/product.dart' as domain;
-import 'package:cartalyst_mobile/features/products/domain/entities/product_alias.dart' as domain;
-import 'package:cartalyst_mobile/infrastructure/local_db/app_database.dart' as local_db;
+import 'package:cartalyst_mobile/features/products/domain/entities/product.dart'
+    as domain;
+import 'package:cartalyst_mobile/features/products/domain/entities/product_alias.dart'
+    as domain;
+import 'package:cartalyst_mobile/infrastructure/local_db/app_database.dart'
+    as local_db;
 import 'package:drift/drift.dart';
 
 domain.Product toDomainProduct(local_db.Product row) {
@@ -47,7 +50,9 @@ local_db.ProductsCompanion toProductCompanion(domain.Product entity) {
   );
 }
 
-local_db.ProductAliasesCompanion toProductAliasCompanion(domain.ProductAlias alias) {
+local_db.ProductAliasesCompanion toProductAliasCompanion(
+  domain.ProductAlias alias,
+) {
   return local_db.ProductAliasesCompanion(
     id: Value(alias.id),
     productId: Value(alias.productId),

@@ -106,7 +106,9 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<void> _ensureUncategorizedForInventory(String inventoryId) async {
-    debugPrint('[AppDatabase] _ensureUncategorizedForInventory start inventoryId=$inventoryId');
+    debugPrint(
+      '[AppDatabase] _ensureUncategorizedForInventory start inventoryId=$inventoryId',
+    );
     try {
       final DateTime now = DateTime.now();
       final String categoryId = '$inventoryId::uncategorized';
@@ -133,9 +135,13 @@ class AppDatabase extends _$AppDatabase {
         ),
         mode: InsertMode.insertOrIgnore,
       );
-      debugPrint('[AppDatabase] _ensureUncategorizedForInventory success inventoryId=$inventoryId');
+      debugPrint(
+        '[AppDatabase] _ensureUncategorizedForInventory success inventoryId=$inventoryId',
+      );
     } catch (error, stackTrace) {
-      debugPrint('[AppDatabase] _ensureUncategorizedForInventory FAILED inventoryId=$inventoryId error=$error');
+      debugPrint(
+        '[AppDatabase] _ensureUncategorizedForInventory FAILED inventoryId=$inventoryId error=$error',
+      );
       debugPrint(stackTrace.toString());
       rethrow;
     }

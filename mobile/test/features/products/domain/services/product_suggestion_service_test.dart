@@ -43,7 +43,8 @@ void main() {
     );
   }
 
-  final Product milk = product(id: 'p1', name: 'milk', category: 'dairy', unitCode: 'liter');
+  final Product milk =
+      product(id: 'p1', name: 'milk', category: 'dairy', unitCode: 'liter');
   final Product eggs = product(id: 'p2', name: 'eggs', category: 'protein');
   final Product bananas = product(id: 'p3', name: 'bananas', unitCode: 'kg');
   final Product paperTowels = product(
@@ -59,7 +60,12 @@ void main() {
     alias(id: 'a1', productId: milk.id, value: 'leche', language: 'es'),
     alias(id: 'a2', productId: eggs.id, value: 'huevos', language: 'es'),
     alias(id: 'a3', productId: bananas.id, value: 'platanos', language: 'es'),
-    alias(id: 'a4', productId: paperTowels.id, value: 'servitoallas', language: 'es'),
+    alias(
+      id: 'a4',
+      productId: paperTowels.id,
+      value: 'servitoallas',
+      language: 'es',
+    ),
   ];
 
   group('ProductSuggestionService', () {
@@ -191,8 +197,18 @@ void main() {
 
     test('ranks by frequency when match tier is equal', () {
       final List<Product> localProducts = <Product>[
-        product(id: 'p10', name: 'milk a', category: 'dairy', unitCode: 'liter'),
-        product(id: 'p11', name: 'milk b', category: 'dairy', unitCode: 'liter'),
+        product(
+          id: 'p10',
+          name: 'milk a',
+          category: 'dairy',
+          unitCode: 'liter',
+        ),
+        product(
+          id: 'p11',
+          name: 'milk b',
+          category: 'dairy',
+          unitCode: 'liter',
+        ),
       ];
 
       final List<ProductSuggestion> result = service.suggest(

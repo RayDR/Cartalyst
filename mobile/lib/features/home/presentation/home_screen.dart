@@ -388,4 +388,3 @@ String _recentActivityLabel(DateTime value) {
   }
   return 'Updated ${diff.inDays}d ago';
 }
-

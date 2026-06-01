@@ -352,16 +352,14 @@ Future<void> _normalizeLegacyDateTimeStorage(AppDatabase db) async {
       }
 
       for (final String column in columns) {
-        final List<QueryRow> rows = await db
-            .customSelect(
-              '''
+        final List<QueryRow> rows = await db.customSelect(
+          '''
               SELECT id, $column AS value
               FROM $table
               WHERE $column IS NOT NULL
                 AND typeof($column) = 'text'
               ''',
-            )
-            .get();
+        ).get();
 
         for (final QueryRow row in rows) {
           final String id = row.read<String>('id');

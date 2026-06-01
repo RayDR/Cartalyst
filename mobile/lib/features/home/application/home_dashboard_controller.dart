@@ -1,19 +1,19 @@
 import 'dart:async';
 
+import 'package:cartalyst_mobile/features/home/application/home_dashboard_state.dart';
 import 'package:cartalyst_mobile/features/shopping_list/application/shopping_list_controller.dart'
     show appDatabaseProvider, shoppingListRepositoryProvider;
-import 'package:cartalyst_mobile/features/home/application/home_dashboard_state.dart';
 import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list.dart';
 import 'package:cartalyst_mobile/features/shopping_list/domain/repositories/shopping_list_repository.dart';
 import 'package:cartalyst_mobile/infrastructure/local_db/app_database.dart'
-  hide ShoppingList, ShoppingListStatus;
+    hide ShoppingList;
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final homeDashboardControllerProvider =
     NotifierProvider<HomeDashboardController, HomeDashboardState>(
-      HomeDashboardController.new,
-    );
+  HomeDashboardController.new,
+);
 
 class HomeDashboardController extends Notifier<HomeDashboardState> {
   late final ShoppingListRepository _repository;
@@ -42,8 +42,7 @@ class HomeDashboardController extends Notifier<HomeDashboardState> {
       (List<ShoppingList> allLists) {
         final List<ShoppingList> activeLists = allLists
             .where(
-              (ShoppingList list) =>
-                  list.status == ShoppingListStatus.active,
+              (ShoppingList list) => list.status == ShoppingListStatus.active,
             )
             .toList(growable: false);
         final List<ShoppingList> completedLists = allLists

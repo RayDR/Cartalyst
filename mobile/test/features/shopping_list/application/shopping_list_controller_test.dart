@@ -10,8 +10,8 @@ import 'package:cartalyst_mobile/features/products/domain/entities/product_alias
 import 'package:cartalyst_mobile/features/products/domain/repositories/product_repository.dart';
 import 'package:cartalyst_mobile/features/shopping_list/application/shopping_list_controller.dart';
 import 'package:cartalyst_mobile/features/shopping_list/application/shopping_list_state.dart';
-import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list_category.dart';
 import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list.dart';
+import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list_category.dart';
 import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list_item.dart';
 import 'package:cartalyst_mobile/features/shopping_list/domain/repositories/shopping_list_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -748,7 +748,9 @@ void main() {
       final ShoppingListController controller =
           container.read(shoppingListControllerProvider(testListId).notifier);
       await controller.addItemWithDetails(
-          name: 'milk', categoryId: 'cat-dairy');
+        name: 'milk',
+        categoryId: 'cat-dairy',
+      );
       await Future<void>.delayed(const Duration(milliseconds: 20));
 
       final ShoppingListState beforePurchase =
@@ -838,7 +840,8 @@ class FakeShoppingListRepository extends ShoppingListRepository {
 
   @override
   Stream<List<ShoppingListCategory>> watchCategoriesForList(
-      String shoppingListId) {
+    String shoppingListId,
+  ) {
     final List<ShoppingListCategory> categories = _categories
         .where((ShoppingListCategory c) => c.shoppingListId == shoppingListId)
         .toList(growable: false);
@@ -1123,7 +1126,8 @@ class FakeInventoryRepository extends InventoryRepository {
 
   @override
   Future<String> ensureUncategorizedInventoryCategory(
-      String inventoryId) async {
+    String inventoryId,
+  ) async {
     return '$inventoryId::inventory-uncategorized';
   }
 }

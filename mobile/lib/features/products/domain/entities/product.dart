@@ -20,5 +20,6 @@ class Product with _$Product {
     required int version,
   }) = _Product;
 
-  factory Product.fromJson(Map<String, Object?> json) => _$ProductFromJson(json);
+  factory Product.fromJson(Map<String, Object?> json) =>
+      _$ProductFromJson(json);
 }

@@ -62,7 +62,8 @@ void main() {
     test('adding pantry item', () async {
       await waitForProducts();
 
-      final PantryController controller = container.read(pantryControllerProvider.notifier);
+      final PantryController controller =
+          container.read(pantryControllerProvider.notifier);
       controller.updateNameInput('Farm eggs');
       controller.updateSelectedProduct('product-eggs');
       controller.updateQuantityInput('2');
@@ -81,7 +82,8 @@ void main() {
     test('marking running low', () async {
       await waitForProducts();
 
-      final PantryController controller = container.read(pantryControllerProvider.notifier);
+      final PantryController controller =
+          container.read(pantryControllerProvider.notifier);
       controller.updateNameInput('Milk');
       controller.updateQuantityInput('1');
       controller.updateUnitCode('liter');
@@ -100,7 +102,8 @@ void main() {
     test('marking finished', () async {
       await waitForProducts();
 
-      final PantryController controller = container.read(pantryControllerProvider.notifier);
+      final PantryController controller =
+          container.read(pantryControllerProvider.notifier);
       controller.updateNameInput('Bread');
       controller.updateQuantityInput('1');
       controller.updateUnitCode('unit');
@@ -120,7 +123,8 @@ void main() {
     test('inventory event creation', () async {
       await waitForProducts();
 
-      final PantryController controller = container.read(pantryControllerProvider.notifier);
+      final PantryController controller =
+          container.read(pantryControllerProvider.notifier);
       controller.updateNameInput('Rice');
       controller.updateQuantityInput('1');
       controller.updateUnitCode('kg');
@@ -132,9 +136,15 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 10));
 
       expect(pantryRepository.events.length, greaterThanOrEqualTo(2));
-      expect(pantryRepository.events.first.eventType, InventoryEventType.purchase);
       expect(
-        pantryRepository.events.any((InventoryEvent event) => event.eventType == InventoryEventType.consume),
+        pantryRepository.events.first.eventType,
+        InventoryEventType.purchase,
+      );
+      expect(
+        pantryRepository.events.any(
+          (InventoryEvent event) =>
+              event.eventType == InventoryEventType.consume,
+        ),
         isTrue,
       );
     });
@@ -142,7 +152,8 @@ void main() {
     test('soft delete', () async {
       await waitForProducts();
 
-      final PantryController controller = container.read(pantryControllerProvider.notifier);
+      final PantryController controller =
+          container.read(pantryControllerProvider.notifier);
       controller.updateNameInput('Beans');
       controller.updateQuantityInput('1');
       controller.updateUnitCode('kg');
@@ -158,7 +169,10 @@ void main() {
       expect(state.inStockItems, isEmpty);
       expect(pantryRepository.deletedItemIds.contains(itemId), isTrue);
       expect(
-        pantryRepository.events.any((InventoryEvent event) => event.eventType == InventoryEventType.discard),
+        pantryRepository.events.any(
+          (InventoryEvent event) =>
+              event.eventType == InventoryEventType.discard,
+        ),
         isTrue,
       );
     });
@@ -205,7 +219,8 @@ class FakePantryRepository implements PantryRepository {
 
   @override
   Future<void> saveInventory(Inventory inventory) async {
-    final int index = _inventories.indexWhere((Inventory element) => element.id == inventory.id);
+    final int index = _inventories
+        .indexWhere((Inventory element) => element.id == inventory.id);
     if (index >= 0) {
       _inventories[index] = inventory;
     } else {
@@ -236,7 +251,8 @@ class FakePantryRepository implements PantryRepository {
 
   @override
   Future<void> saveInventoryItem(PantryItem item) async {
-    final int index = _items.indexWhere((PantryItem element) => element.id == item.id);
+    final int index =
+        _items.indexWhere((PantryItem element) => element.id == item.id);
     if (index >= 0) {
       _items[index] = item;
     } else {
@@ -266,7 +282,8 @@ class FakePantryRepository implements PantryRepository {
 }
 
 class FakeProductRepository implements ProductRepository {
-  FakeProductRepository({required List<Product> products}) : _products = products;
+  FakeProductRepository({required List<Product> products})
+      : _products = products;
 
   final List<Product> _products;
 
@@ -285,7 +302,9 @@ class FakeProductRepository implements ProductRepository {
   }
 
   @override
-  Future<List<ProductAlias>> findAliasesForProducts(List<String> productIds) async {
+  Future<List<ProductAlias>> findAliasesForProducts(
+    List<String> productIds,
+  ) async {
     return const <ProductAlias>[];
   }
 

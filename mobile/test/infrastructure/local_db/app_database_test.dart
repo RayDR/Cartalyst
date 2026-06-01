@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:cartalyst_mobile/features/inventories/data/repositories/local_inventory_repository.dart';
 import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory.dart'
-  as inventory_domain;
+    as inventory_domain;
 import 'package:cartalyst_mobile/infrastructure/local_db/app_database.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:drift/native.dart';
@@ -147,9 +147,10 @@ void main() {
         final List<Inventory> inventories =
             await database!.select(database!.inventories).get();
         expect(
-            inventories
-                .any((Inventory inventory) => inventory.name == 'Despensa'),
-            isTrue,);
+          inventories
+              .any((Inventory inventory) => inventory.name == 'Despensa'),
+          isTrue,
+        );
       } on ArgumentError catch (error) {
         if (_isMissingSqlite(error)) {
           return;
@@ -331,7 +332,14 @@ void main() {
               ''');
               database.execute(
                 'INSERT INTO inventories (id, name, description, created_at, updated_at, deleted_at, sync_status, version) VALUES (?, ?, NULL, ?, ?, NULL, ?, ?)',
-                <Object>['inventory-legacy', 'Legacy pantry', now, now, 'local_only', 1],
+                <Object>[
+                  'inventory-legacy',
+                  'Legacy pantry',
+                  now,
+                  now,
+                  'local_only',
+                  1,
+                ],
               );
             },
           ),
@@ -442,7 +450,8 @@ void main() {
       }
     });
 
-    test('create inventory and ensure Uncategorized category — no FormatException',
+    test(
+        'create inventory and ensure Uncategorized category — no FormatException',
         () async {
       try {
         final LocalInventoryRepository repository =

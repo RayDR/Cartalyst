@@ -1,5 +1,5 @@
-import 'package:cartalyst_mobile/features/home/application/home_dashboard_state.dart';
 import 'package:cartalyst_mobile/features/home/application/home_dashboard_controller.dart';
+import 'package:cartalyst_mobile/features/home/application/home_dashboard_state.dart';
 import 'package:cartalyst_mobile/features/home/presentation/home_screen.dart';
 import 'package:cartalyst_mobile/features/shopping_list/application/lists_controller.dart';
 import 'package:cartalyst_mobile/features/shopping_list/application/lists_state.dart';
@@ -244,4 +244,3 @@ class _TestListsController extends ListsController {
   @override
   ListsState build() => const ListsState.initial();
 }
-

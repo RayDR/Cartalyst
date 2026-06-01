@@ -9,10 +9,9 @@ class PriceObservations extends Table {
 
   RealColumn get packageQuantity => real()();
 
-  TextColumn get packageUnit =>
-    text().customConstraint(
-      "NOT NULL DEFAULT 'unit' CHECK (package_unit IN ('unit', 'kg', 'g', 'liter', 'ml', 'pack'))",
-        )();
+  TextColumn get packageUnit => text().customConstraint(
+        "NOT NULL DEFAULT 'unit' CHECK (package_unit IN ('unit', 'kg', 'g', 'liter', 'ml', 'pack'))",
+      )();
 
   RealColumn get price => real()();
 

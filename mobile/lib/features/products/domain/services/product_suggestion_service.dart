@@ -96,8 +96,10 @@ class ProductSuggestionService {
       ];
     }
 
-    final Map<String, List<String>> aliasesByProduct = _aliasesByProduct(aliases);
-    final Map<String, ProductUsageStat> usageByProduct = <String, ProductUsageStat>{
+    final Map<String, List<String>> aliasesByProduct =
+        _aliasesByProduct(aliases);
+    final Map<String, ProductUsageStat> usageByProduct =
+        <String, ProductUsageStat>{
       for (final ProductUsageStat stat in usageStats) stat.productId: stat,
     };
 
@@ -112,7 +114,10 @@ class ProductSuggestionService {
         )
         .where((_ScoredSuggestion candidate) => candidate.score > 0)
         .toList(growable: false)
-      ..sort((_ScoredSuggestion a, _ScoredSuggestion b) => b.score.compareTo(a.score));
+      ..sort(
+        (_ScoredSuggestion a, _ScoredSuggestion b) =>
+            b.score.compareTo(a.score),
+      );
 
     if (scored.isEmpty) {
       return <ProductSuggestion>[
@@ -150,21 +155,28 @@ class ProductSuggestionService {
     required ProductUsageStat? usage,
   }) {
     final String normalizedName = _normalizeText(product.canonicalName);
-    final List<String> candidates = <String>[normalizedName, ...aliases.map(_normalizeText)];
+    final List<String> candidates = <String>[
+      normalizedName,
+      ...aliases.map(_normalizeText),
+    ];
 
     int matchTier = 0;
     double fuzzyContribution = 0;
 
     if (candidates.any((String value) => value == parsedQuery)) {
       matchTier = 1000;
-    } else if (candidates.any((String value) => value.startsWith(parsedQuery))) {
+    } else if (candidates
+        .any((String value) => value.startsWith(parsedQuery))) {
       matchTier = 800;
     } else if (candidates.any((String value) => value.contains(parsedQuery))) {
       matchTier = 600;
     } else {
       final double bestSimilarity = candidates
           .map((String value) => _similarity(parsedQuery, value))
-          .fold<double>(0, (double best, double current) => current > best ? current : best);
+          .fold<double>(
+            0,
+            (double best, double current) => current > best ? current : best,
+          );
 
       if (bestSimilarity < 0.5) {
         return _ScoredSuggestion.none(product);
@@ -178,10 +190,13 @@ class ProductSuggestionService {
     final double frequencyContribution = frequency.clamp(0, 1000) * 0.9;
 
     final DateTime? lastUsedAt = usage?.lastUsedAt;
-    final double recencyContribution = lastUsedAt == null ? 0 : _recencyScore(lastUsedAt);
+    final double recencyContribution =
+        lastUsedAt == null ? 0 : _recencyScore(lastUsedAt);
 
-    final double totalScore =
-        matchTier + fuzzyContribution + frequencyContribution + recencyContribution;
+    final double totalScore = matchTier +
+        fuzzyContribution +
+        frequencyContribution +
+        recencyContribution;
 
     final SuggestionReasonCode reason = switch (matchTier) {
       1000 => SuggestionReasonCode.exactMatch,
@@ -242,7 +257,11 @@ class ProductSuggestionService {
   _ParsedInput _parseInput(String rawInput) {
     final String normalized = _normalizeText(rawInput);
     if (normalized.isEmpty) {
-      return const _ParsedInput(normalizedQuery: '', quantity: null, unit: null);
+      return const _ParsedInput(
+        normalizedQuery: '',
+        quantity: null,
+        unit: null,
+      );
     }
 
     final List<String> tokens = normalized
@@ -305,26 +324,33 @@ class ProductSuggestionService {
     }
 
     final int distance = _levenshteinDistance(source, target);
-    final int maxLen = source.length > target.length ? source.length : target.length;
+    final int maxLen =
+        source.length > target.length ? source.length : target.length;
     return 1 - (distance / maxLen);
   }
 
   int _levenshteinDistance(String source, String target) {
-    final List<int> previous = List<int>.generate(target.length + 1, (int i) => i);
+    final List<int> previous =
+        List<int>.generate(target.length + 1, (int i) => i);
     final List<int> current = List<int>.filled(target.length + 1, 0);
 
     for (int i = 1; i <= source.length; i++) {
       current[0] = i;
       for (int j = 1; j <= target.length; j++) {
-        final int substitution = source.codeUnitAt(i - 1) == target.codeUnitAt(j - 1) ? 0 : 1;
+        final int substitution =
+            source.codeUnitAt(i - 1) == target.codeUnitAt(j - 1) ? 0 : 1;
 
         final int deletionCost = previous[j] + 1;
         final int insertionCost = current[j - 1] + 1;
         final int substitutionCost = previous[j - 1] + substitution;
 
         current[j] = deletionCost < insertionCost
-            ? (deletionCost < substitutionCost ? deletionCost : substitutionCost)
-            : (insertionCost < substitutionCost ? insertionCost : substitutionCost);
+            ? (deletionCost < substitutionCost
+                ? deletionCost
+                : substitutionCost)
+            : (insertionCost < substitutionCost
+                ? insertionCost
+                : substitutionCost);
       }
 
       for (int j = 0; j <= target.length; j++) {

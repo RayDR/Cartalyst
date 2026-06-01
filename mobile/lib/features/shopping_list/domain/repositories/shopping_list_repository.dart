@@ -68,7 +68,7 @@ abstract class ShoppingListRepository {
     required String shoppingListId,
     required String name,
   }) {
-    return Future<String?>.value(null);
+    return Future<String?>.value();
   }
 
   Future<void> restartList(String listId) {

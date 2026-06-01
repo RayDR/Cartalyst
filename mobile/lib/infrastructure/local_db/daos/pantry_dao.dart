@@ -65,7 +65,8 @@ class PantryDao extends DatabaseAccessor<AppDatabase> with _$PantryDaoMixin {
   }
 
   Future<String?> findUncategorizedInventoryCategoryId(
-      String inventoryId) async {
+    String inventoryId,
+  ) async {
     final query = select(inventoryCategories).join([
       innerJoin(
         categories,

@@ -42,18 +42,19 @@ class _PantryScreenState extends ConsumerState<PantryScreen> {
   @override
   Widget build(BuildContext context) {
     final PantryState state = ref.watch(pantryControllerProvider);
-    final PantryController controller = ref.read(pantryControllerProvider.notifier);
+    final PantryController controller =
+        ref.read(pantryControllerProvider.notifier);
 
     _syncController(_nameController, state.nameInput);
     _syncController(_quantityController, state.quantityInput);
 
     return AppScaffold(
-        title: 'Inventory',
+      title: 'Inventory',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           const SectionHeader(
-              title: 'Inventory overview',
+            title: 'Inventory overview',
             subtitle: 'Track stock, low items, and finished essentials.',
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -69,7 +70,9 @@ class _PantryScreenState extends ConsumerState<PantryScreen> {
                 label: 'Running low ${state.lowItems.length}',
                 tone: StatusChipTone.warning,
               ),
-              StatusChip(label: 'Finished recent ${state.finishedItems.length}'),
+              StatusChip(
+                label: 'Finished recent ${state.finishedItems.length}',
+              ),
             ],
           ),
           const SizedBox(height: AppSpacing.md),
@@ -97,11 +100,11 @@ class _PantryScreenState extends ConsumerState<PantryScreen> {
             child: state.hasAnyItems
                 ? _PantrySections(state: state)
                 : EmptyState(
-                  title: 'No inventory items yet',
+                    title: 'No inventory items yet',
                     description:
-                    'Add inventory items manually and keep your home essentials in sync.',
+                        'Add inventory items manually and keep your home essentials in sync.',
                     icon: Icons.inventory_2_outlined,
-                  primaryActionLabel: 'Add inventory item',
+                    primaryActionLabel: 'Add inventory item',
                     onPrimaryActionPressed: controller.addPantryItem,
                   ),
           ),
@@ -145,18 +148,24 @@ class _AddPantryItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final List<String> units = Unit.supportedCodes.toList(growable: false)..sort();
+    final List<String> units = Unit.supportedCodes.toList(growable: false)
+      ..sort();
 
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Text('Add inventory item', style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            'Add inventory item',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           const SizedBox(height: AppSpacing.sm),
           DropdownButtonFormField<String>(
-            key: ValueKey('pantry-product-${state.selectedProductId ?? 'none'}'),
+            key:
+                ValueKey('pantry-product-${state.selectedProductId ?? 'none'}'),
             initialValue: state.selectedProductId,
-            decoration: const InputDecoration(labelText: 'Link product (optional)'),
+            decoration:
+                const InputDecoration(labelText: 'Link product (optional)'),
             items: <DropdownMenuItem<String>>[
               const DropdownMenuItem<String>(child: Text('No product linked')),
               ...state.products.map(
@@ -224,7 +233,8 @@ class _PantrySections extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final PantryController controller = ref.read(pantryControllerProvider.notifier);
+    final PantryController controller =
+        ref.read(pantryControllerProvider.notifier);
 
     return ListView(
       children: <Widget>[
@@ -240,12 +250,19 @@ class _PantrySections extends ConsumerWidget {
           const SizedBox(height: AppSpacing.sm),
         ],
         if (state.lowItems.isNotEmpty) ...<Widget>[
-          const SectionHeader(title: 'Running low', subtitle: 'Remember to buy soon.'),
+          const SectionHeader(
+            title: 'Running low',
+            subtitle: 'Remember to buy soon.',
+          ),
           const SizedBox(height: AppSpacing.sm),
           ...state.lowItems.map(
             (PantryItem item) => Padding(
               padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-              child: _PantryItemCard(item: item, controller: controller, highlightLow: true),
+              child: _PantryItemCard(
+                item: item,
+                controller: controller,
+                highlightLow: true,
+              ),
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -281,7 +298,8 @@ class _PantryItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String title = item.rawName ?? item.productId ?? 'Unnamed inventory item';
+    final String title =
+        item.rawName ?? item.productId ?? 'Unnamed inventory item';
     final String quantityText = item.quantityEstimated == null
         ? 'Quantity unknown'
         : '${item.quantityEstimated} ${item.unit?.code ?? ''}'.trim();
@@ -299,7 +317,9 @@ class _PantryItemCard extends StatelessWidget {
             ),
             trailing: StatusChip(
               label: _statusLabel(item.status),
-              tone: highlightLow ? StatusChipTone.warning : StatusChipTone.neutral,
+              tone: highlightLow
+                  ? StatusChipTone.warning
+                  : StatusChipTone.neutral,
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -390,7 +410,8 @@ class _AdjustSheetState extends State<_AdjustSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final List<String> units = Unit.supportedCodes.toList(growable: false)..sort();
+    final List<String> units = Unit.supportedCodes.toList(growable: false)
+      ..sort();
 
     return Padding(
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -398,7 +419,10 @@ class _AdjustSheetState extends State<_AdjustSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Text('Adjust inventory quantity', style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            'Adjust inventory quantity',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           const SizedBox(height: AppSpacing.sm),
           AppTextField(
             label: 'Quantity',
@@ -412,7 +436,8 @@ class _AdjustSheetState extends State<_AdjustSheet> {
             decoration: const InputDecoration(labelText: 'Unit'),
             items: units
                 .map(
-                  (String unit) => DropdownMenuItem<String>(value: unit, child: Text(unit)),
+                  (String unit) =>
+                      DropdownMenuItem<String>(value: unit, child: Text(unit)),
                 )
                 .toList(growable: false),
             onChanged: (String? value) {
@@ -428,7 +453,8 @@ class _AdjustSheetState extends State<_AdjustSheet> {
           AppButton(
             label: 'Save adjustment',
             onPressed: () async {
-              final double? quantity = double.tryParse(_quantityController.text.trim());
+              final double? quantity =
+                  double.tryParse(_quantityController.text.trim());
               await widget.controller.adjustItem(
                 item: widget.item,
                 quantity: quantity,
@@ -460,7 +486,8 @@ class _ActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FilledButton.tonalIcon(
-      style: FilledButton.styleFrom(minimumSize: const Size(128, AppSpacing.xxl)),
+      style:
+          FilledButton.styleFrom(minimumSize: const Size(128, AppSpacing.xxl)),
       onPressed: onPressed,
       icon: Icon(icon),
       label: Text(label),

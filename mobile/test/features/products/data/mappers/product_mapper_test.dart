@@ -1,5 +1,6 @@
 import 'package:cartalyst_mobile/features/products/data/mappers/product_mapper.dart';
-import 'package:cartalyst_mobile/infrastructure/local_db/app_database.dart' as local_db;
+import 'package:cartalyst_mobile/infrastructure/local_db/app_database.dart'
+    as local_db;
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

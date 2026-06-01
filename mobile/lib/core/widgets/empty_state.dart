@@ -63,15 +63,15 @@ class EmptyState extends StatelessWidget {
                 color: colors.onSurfaceVariant,
               ),
             ),
-            if (primaryActionLabel != null && onPrimaryActionPressed != null)
-              ...<Widget>[
-                const SizedBox(height: AppSpacing.lg),
-                AppButton(
-                  label: primaryActionLabel!,
-                  onPressed: onPrimaryActionPressed,
-                  icon: Icons.add_circle_outline,
-                ),
-              ],
+            if (primaryActionLabel != null &&
+                onPrimaryActionPressed != null) ...<Widget>[
+              const SizedBox(height: AppSpacing.lg),
+              AppButton(
+                label: primaryActionLabel!,
+                onPressed: onPrimaryActionPressed,
+                icon: Icons.add_circle_outline,
+              ),
+            ],
             if (secondaryActionLabel != null &&
                 onSecondaryActionPressed != null) ...<Widget>[
               const SizedBox(height: AppSpacing.sm),

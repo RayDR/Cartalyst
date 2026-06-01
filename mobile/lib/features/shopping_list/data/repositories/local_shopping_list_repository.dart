@@ -8,7 +8,7 @@ import 'package:cartalyst_mobile/features/shopping_list/data/mappers/shopping_li
 import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list.dart'
     as domain;
 import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list_category.dart'
-  as domain_category;
+    as domain_category;
 import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list_item.dart'
     as domain;
 import 'package:cartalyst_mobile/features/shopping_list/domain/repositories/shopping_list_repository.dart';

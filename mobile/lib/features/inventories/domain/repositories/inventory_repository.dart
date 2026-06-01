@@ -32,7 +32,7 @@ abstract class InventoryRepository {
   }
 
   Future<String?> findUncategorizedInventoryCategoryId(String inventoryId) {
-    return Future<String?>.value(null);
+    return Future<String?>.value();
   }
 
   Future<String> ensureUncategorizedInventoryCategory(String inventoryId) {

@@ -56,7 +56,9 @@ void main() {
     expect(shoppingRepository.savedLists, hasLength(1));
     expect(shoppingRepository.savedLists.first.name, 'Weekend groceries');
     expect(
-        shoppingRepository.savedLists.first.listType, ShoppingListType.simple);
+      shoppingRepository.savedLists.first.listType,
+      ShoppingListType.simple,
+    );
     expect(
       shoppingRepository.savedLists.first.routingMode,
       ShoppingListRoutingMode.none,

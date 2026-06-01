@@ -5,8 +5,8 @@ import 'package:cartalyst_mobile/features/inventories/application/inventories_co
 import 'package:cartalyst_mobile/features/inventories/application/inventory_detail_controller.dart';
 import 'package:cartalyst_mobile/features/inventories/application/inventory_detail_state.dart';
 import 'package:cartalyst_mobile/features/inventories/domain/repositories/inventory_repository.dart';
-import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory.dart';
 import 'package:cartalyst_mobile/features/pantry/domain/entities/category.dart';
+import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory.dart';
 import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory_category.dart';
 import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory_event.dart';
 import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory_item.dart';
@@ -369,8 +369,9 @@ class FakeInventoryRepository extends InventoryRepository {
   Stream<List<InventoryCategory>> watchInventoryCategories(String inventoryId) {
     return Stream<List<InventoryCategory>>.value(
       _inventoryCategories
-          .where((InventoryCategory category) =>
-              category.inventoryId == inventoryId)
+          .where(
+            (InventoryCategory category) => category.inventoryId == inventoryId,
+          )
           .toList(growable: false),
     );
   }
@@ -449,7 +450,8 @@ class FakeInventoryRepository extends InventoryRepository {
 
   @override
   Future<String?> findUncategorizedInventoryCategoryId(
-      String inventoryId) async {
+    String inventoryId,
+  ) async {
     for (final InventoryCategory category in _inventoryCategories) {
       if (category.inventoryId == inventoryId &&
           category.name.toLowerCase() == 'uncategorized') {
@@ -461,7 +463,8 @@ class FakeInventoryRepository extends InventoryRepository {
 
   @override
   Future<String> ensureUncategorizedInventoryCategory(
-      String inventoryId) async {
+    String inventoryId,
+  ) async {
     final String? existing =
         await findUncategorizedInventoryCategoryId(inventoryId);
     if (existing != null) {

@@ -1,7 +1,8 @@
 part of '../app_database.dart';
 
 @DriftAccessor(tables: <Type>[Products, ProductAliases])
-class ProductsDao extends DatabaseAccessor<AppDatabase> with _$ProductsDaoMixin {
+class ProductsDao extends DatabaseAccessor<AppDatabase>
+    with _$ProductsDaoMixin {
   ProductsDao(super.db);
 
   Future<List<Product>> getActiveProducts() {

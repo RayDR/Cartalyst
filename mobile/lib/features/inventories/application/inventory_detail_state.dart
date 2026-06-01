@@ -1,5 +1,5 @@
-import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory_item.dart';
 import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory_category.dart';
+import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory_item.dart';
 import 'package:cartalyst_mobile/features/products/domain/entities/product.dart';
 
 class InventoryNameSuggestion {

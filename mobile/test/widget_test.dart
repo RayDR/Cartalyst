@@ -1,9 +1,8 @@
 import 'package:cartalyst_mobile/app/app.dart';
-import 'package:cartalyst_mobile/features/home/application/home_dashboard_state.dart';
 import 'package:cartalyst_mobile/features/home/application/home_dashboard_controller.dart';
+import 'package:cartalyst_mobile/features/home/application/home_dashboard_state.dart';
 import 'package:cartalyst_mobile/features/inventories/application/inventories_controller.dart';
 import 'package:cartalyst_mobile/features/inventories/application/inventories_state.dart';
-import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory.dart';
 import 'package:cartalyst_mobile/features/shopping_list/application/lists_controller.dart';
 import 'package:cartalyst_mobile/features/shopping_list/application/lists_state.dart';
 import 'package:flutter/material.dart';

@@ -9,7 +9,8 @@ import 'package:cartalyst_mobile/features/pantry/domain/repositories/pantry_repo
 import 'package:cartalyst_mobile/features/products/data/repositories/local_product_repository.dart';
 import 'package:cartalyst_mobile/features/products/domain/entities/product.dart';
 import 'package:cartalyst_mobile/features/products/domain/repositories/product_repository.dart';
-import 'package:cartalyst_mobile/infrastructure/local_db/app_database.dart' show AppDatabase;
+import 'package:cartalyst_mobile/infrastructure/local_db/app_database.dart'
+    show AppDatabase;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
@@ -36,7 +37,8 @@ final pantryItemsStreamProvider = StreamProvider<List<PantryItem>>((Ref ref) {
 });
 
 final runningLowPantryItemsProvider = Provider<List<PantryItem>>((Ref ref) {
-  final AsyncValue<List<PantryItem>> itemsAsync = ref.watch(pantryItemsStreamProvider);
+  final AsyncValue<List<PantryItem>> itemsAsync =
+      ref.watch(pantryItemsStreamProvider);
   return itemsAsync.maybeWhen(
     data: (List<PantryItem> items) => items
         .where((PantryItem item) => item.status == PantryItemStatus.low)
@@ -45,7 +47,8 @@ final runningLowPantryItemsProvider = Provider<List<PantryItem>>((Ref ref) {
   );
 });
 
-final pantryControllerProvider = NotifierProvider<PantryController, PantryState>(PantryController.new);
+final pantryControllerProvider =
+    NotifierProvider<PantryController, PantryState>(PantryController.new);
 
 class PantryController extends Notifier<PantryState> {
   late final PantryRepository _pantryRepository;
@@ -67,8 +70,11 @@ class PantryController extends Notifier<PantryState> {
       _productsSubscription?.cancel();
     });
 
-    _itemsSubscription = _pantryRepository.watchInventoryItems().listen(_onItemsChanged);
-    _productsSubscription = _productRepository.watchActiveProducts().listen((List<Product> products) {
+    _itemsSubscription =
+        _pantryRepository.watchInventoryItems().listen(_onItemsChanged);
+    _productsSubscription = _productRepository
+        .watchActiveProducts()
+        .listen((List<Product> products) {
       state = state.copyWith(products: products);
     });
 
@@ -268,7 +274,8 @@ class PantryController extends Notifier<PantryState> {
   }
 
   void _onItemsChanged(List<PantryItem> items) {
-    final DateTime recentThreshold = DateTime.now().subtract(const Duration(days: 7));
+    final DateTime recentThreshold =
+        DateTime.now().subtract(const Duration(days: 7));
 
     final List<PantryItem> inStock = items
         .where((PantryItem item) => item.status == PantryItemStatus.inStock)
@@ -281,7 +288,8 @@ class PantryController extends Notifier<PantryState> {
     final List<PantryItem> finished = items
         .where(
           (PantryItem item) =>
-              item.status == PantryItemStatus.out && item.updatedAt.isAfter(recentThreshold),
+              item.status == PantryItemStatus.out &&
+              item.updatedAt.isAfter(recentThreshold),
         )
         .toList(growable: false);
 

@@ -130,9 +130,9 @@ class _ListDetailScreenState extends ConsumerState<ListDetailScreen> {
                     title: Text('Rename'),
                   ),
                 ),
-                PopupMenuItem<_ListOverflowAction>(
+                const PopupMenuItem<_ListOverflowAction>(
                   value: _ListOverflowAction.inventorySettings,
-                  child: const ListTile(
+                  child: ListTile(
                     leading: Icon(Icons.tune_outlined),
                     title: Text('Inventories'),
                   ),
@@ -198,7 +198,8 @@ class _ListDetailScreenState extends ConsumerState<ListDetailScreen> {
             else
               EmptyState(
                 title: 'This list is empty',
-                description: 'Tap + to add your first item to this shopping list.',
+                description:
+                    'Tap + to add your first item to this shopping list.',
                 icon: Icons.shopping_cart_outlined,
                 primaryActionLabel: 'Add item',
                 onPrimaryActionPressed: () => _showAddItemSheet(
@@ -574,66 +575,6 @@ enum _ListOverflowAction {
   categorySettings,
   archive,
   delete,
-}
-
-class _ListMetaRow extends StatelessWidget {
-  const _ListMetaRow({
-    required this.linkedInventories,
-    required this.hasDraft,
-    required this.isEditMode,
-    required this.isOrganized,
-    required this.categoryCount,
-    this.onManageLink,
-  });
-
-  final List<Inventory> linkedInventories;
-  final bool hasDraft;
-  final bool isEditMode;
-  final bool isOrganized;
-  final int categoryCount;
-  final VoidCallback? onManageLink;
-
-  @override
-  Widget build(BuildContext context) {
-    final bool hasAnyMeta =
-        linkedInventories.isNotEmpty || hasDraft || isOrganized;
-
-    if (!hasAnyMeta) {
-      return const SizedBox.shrink();
-    }
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: Wrap(
-        spacing: AppSpacing.xs,
-        runSpacing: AppSpacing.xs,
-        children: <Widget>[
-          if (linkedInventories.isNotEmpty)
-            ...linkedInventories.map(
-              (Inventory inventory) => ActionChip(
-                avatar: const Icon(Icons.inventory_2_outlined),
-                label: Text(inventory.name),
-                onPressed: onManageLink,
-              ),
-            ),
-          if (isOrganized)
-            Chip(
-              avatar: const Icon(Icons.category_outlined),
-              label: Text('$categoryCount categories'),
-            ),
-          if (hasDraft)
-            Chip(
-              avatar: Icon(
-                isEditMode ? Icons.edit_note_outlined : Icons.info_outline,
-              ),
-              label: Text(
-                isEditMode ? 'Draft editing enabled' : 'Unsaved draft changes',
-              ),
-            ),
-        ],
-      ),
-    );
-  }
 }
 
 class _RenameListSheet extends StatefulWidget {
@@ -1042,7 +983,6 @@ class _AddItemSheetState extends State<_AddItemSheet> {
                   const InputDecoration(labelText: 'Inventory (optional)'),
               items: <DropdownMenuItem<String?>>[
                 const DropdownMenuItem<String?>(
-                  value: null,
                   child: Text('None'),
                 ),
                 ...widget.linkedInventories.map(
@@ -1064,7 +1004,6 @@ class _AddItemSheetState extends State<_AddItemSheet> {
               decoration: const InputDecoration(labelText: 'Unit (optional)'),
               items: <DropdownMenuItem<String?>>[
                 const DropdownMenuItem<String?>(
-                  value: null,
                   child: Text('No unit'),
                 ),
                 ...units.map(
@@ -1083,10 +1022,10 @@ class _AddItemSheetState extends State<_AddItemSheet> {
             const SizedBox(height: AppSpacing.sm),
             DropdownButtonFormField<String?>(
               initialValue: _selectedCategoryId,
-              decoration: const InputDecoration(labelText: 'Category (optional)'),
+              decoration:
+                  const InputDecoration(labelText: 'Category (optional)'),
               items: <DropdownMenuItem<String?>>[
                 const DropdownMenuItem<String?>(
-                  value: null,
                   child: Text('Auto / none'),
                 ),
                 ...widget.categories.map(
@@ -1206,8 +1145,9 @@ class _OrganizedItemsView extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: orderedKeys
-          .where((String key) =>
-              (grouped[key] ?? const <ShoppingListItem>[]).isNotEmpty)
+          .where(
+        (String key) => (grouped[key] ?? const <ShoppingListItem>[]).isNotEmpty,
+      )
           .map(
         (String key) {
           final List<ShoppingListItem> items = grouped[key]!;

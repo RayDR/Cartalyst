@@ -16,16 +16,16 @@ class PantryState {
   });
 
   const PantryState.initial()
-    : products = const <Product>[],
-      inStockItems = const <PantryItem>[],
-      lowItems = const <PantryItem>[],
-      finishedItems = const <PantryItem>[],
-      nameInput = '',
-      selectedProductId = null,
-      quantityInput = '',
-      unitCode = 'unit',
-      isBusy = false,
-      message = null;
+      : products = const <Product>[],
+        inStockItems = const <PantryItem>[],
+        lowItems = const <PantryItem>[],
+        finishedItems = const <PantryItem>[],
+        nameInput = '',
+        selectedProductId = null,
+        quantityInput = '',
+        unitCode = 'unit',
+        isBusy = false,
+        message = null;
 
   final List<Product> products;
   final List<PantryItem> inStockItems;
@@ -41,7 +41,9 @@ class PantryState {
   final String? message;
 
   bool get hasAnyItems =>
-      inStockItems.isNotEmpty || lowItems.isNotEmpty || finishedItems.isNotEmpty;
+      inStockItems.isNotEmpty ||
+      lowItems.isNotEmpty ||
+      finishedItems.isNotEmpty;
 
   PantryState copyWith({
     List<Product>? products,
@@ -63,7 +65,9 @@ class PantryState {
       lowItems: lowItems ?? this.lowItems,
       finishedItems: finishedItems ?? this.finishedItems,
       nameInput: nameInput ?? this.nameInput,
-      selectedProductId: clearSelectedProduct ? null : (selectedProductId ?? this.selectedProductId),
+      selectedProductId: clearSelectedProduct
+          ? null
+          : (selectedProductId ?? this.selectedProductId),
       quantityInput: quantityInput ?? this.quantityInput,
       unitCode: unitCode ?? this.unitCode,
       isBusy: isBusy ?? this.isBusy,

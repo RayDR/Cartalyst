@@ -23,8 +23,9 @@ class ListsState {
 
   bool get isEmpty => lists.isEmpty;
 
-  List<ShoppingList> get recentLists =>
-      lists.length > 5 ? lists.sublist(0, 5) : List<ShoppingList>.unmodifiable(lists);
+  List<ShoppingList> get recentLists => lists.length > 5
+      ? lists.sublist(0, 5)
+      : List<ShoppingList>.unmodifiable(lists);
 
   ListsState copyWith({
     bool? isBusy,
@@ -37,8 +38,10 @@ class ListsState {
     return ListsState(
       isBusy: isBusy ?? this.isBusy,
       lists: lists ?? this.lists,
-      lastDeletedList: clearLastDeleted ? null : (lastDeletedList ?? this.lastDeletedList),
-      errorMessage: clearErrorMessage ? null : (errorMessage ?? this.errorMessage),
+      lastDeletedList:
+          clearLastDeleted ? null : (lastDeletedList ?? this.lastDeletedList),
+      errorMessage:
+          clearErrorMessage ? null : (errorMessage ?? this.errorMessage),
     );
   }
 }

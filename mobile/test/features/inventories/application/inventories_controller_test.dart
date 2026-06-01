@@ -197,7 +197,9 @@ void main() {
       final List<InventoryCategory> categories =
           await repository.watchInventoryCategories(inventoryId).first;
       expect(
-          categories.any((InventoryCategory c) => c.name == 'Fruits'), isTrue);
+        categories.any((InventoryCategory c) => c.name == 'Fruits'),
+        isTrue,
+      );
     });
 
     test('saveInventoryItem falls back to Uncategorized when category is null',
@@ -211,7 +213,6 @@ void main() {
       final InventoryItem item = InventoryItem(
         id: 'item-1',
         inventoryId: inventoryId!,
-        inventoryCategoryId: null,
         rawName: 'Loose item',
         status: InventoryItemStatus.inStock,
         confidenceScore: 0.8,
@@ -323,11 +324,9 @@ class FakeInventoryRepository extends InventoryRepository {
   @override
   Future<void> saveInventoryItem(InventoryItem item) async {
     String? resolvedCategoryId = item.inventoryCategoryId;
-    if (resolvedCategoryId == null) {
-      resolvedCategoryId = await ensureUncategorizedInventoryCategory(
-        item.inventoryId,
-      );
-    }
+    resolvedCategoryId ??= await ensureUncategorizedInventoryCategory(
+      item.inventoryId,
+    );
 
     final InventoryItem normalized = item.copyWith(
       inventoryCategoryId: resolvedCategoryId,
@@ -397,7 +396,8 @@ class FakeInventoryRepository extends InventoryRepository {
 
   @override
   Future<String?> findUncategorizedInventoryCategoryId(
-      String inventoryId) async {
+    String inventoryId,
+  ) async {
     for (final InventoryCategory category in _inventoryCategories) {
       if (category.inventoryId != inventoryId || category.deletedAt != null) {
         continue;
@@ -411,7 +411,8 @@ class FakeInventoryRepository extends InventoryRepository {
 
   @override
   Future<String> ensureUncategorizedInventoryCategory(
-      String inventoryId) async {
+    String inventoryId,
+  ) async {
     final String? existing =
         await findUncategorizedInventoryCategoryId(inventoryId);
     if (existing != null) {
