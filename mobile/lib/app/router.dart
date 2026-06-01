@@ -10,6 +10,15 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
+final GlobalKey<NavigatorState> _homeNavigatorKey = GlobalKey<NavigatorState>();
+final GlobalKey<NavigatorState> _listsNavigatorKey =
+  GlobalKey<NavigatorState>();
+final GlobalKey<NavigatorState> _inventoriesNavigatorKey =
+  GlobalKey<NavigatorState>();
+final GlobalKey<NavigatorState> _priceCompareNavigatorKey =
+  GlobalKey<NavigatorState>();
+final GlobalKey<NavigatorState> _settingsNavigatorKey =
+  GlobalKey<NavigatorState>();
 
 final GoRouter appRouter = GoRouter(
   navigatorKey: _rootNavigatorKey,
@@ -25,6 +34,7 @@ final GoRouter appRouter = GoRouter(
       },
       branches: <StatefulShellBranch>[
         StatefulShellBranch(
+          navigatorKey: _homeNavigatorKey,
           routes: <RouteBase>[
             GoRoute(
               path: '/home',
@@ -35,6 +45,7 @@ final GoRouter appRouter = GoRouter(
           ],
         ),
         StatefulShellBranch(
+          navigatorKey: _listsNavigatorKey,
           routes: <RouteBase>[
             GoRoute(
               path: '/lists',
@@ -54,6 +65,7 @@ final GoRouter appRouter = GoRouter(
           ],
         ),
         StatefulShellBranch(
+          navigatorKey: _inventoriesNavigatorKey,
           routes: <RouteBase>[
             GoRoute(
               path: '/inventories',
@@ -73,6 +85,7 @@ final GoRouter appRouter = GoRouter(
           ],
         ),
         StatefulShellBranch(
+          navigatorKey: _priceCompareNavigatorKey,
           routes: <RouteBase>[
             GoRoute(
               path: '/price-compare',
@@ -83,6 +96,7 @@ final GoRouter appRouter = GoRouter(
           ],
         ),
         StatefulShellBranch(
+          navigatorKey: _settingsNavigatorKey,
           routes: <RouteBase>[
             GoRoute(
               path: '/settings',
@@ -110,6 +124,23 @@ class AppNavigationShell extends StatefulWidget {
 }
 
 class _AppNavigationShellState extends State<AppNavigationShell> {
+  NavigatorState? _currentBranchNavigator() {
+    switch (widget.navigationShell.currentIndex) {
+      case 0:
+        return _homeNavigatorKey.currentState;
+      case 1:
+        return _listsNavigatorKey.currentState;
+      case 2:
+        return _inventoriesNavigatorKey.currentState;
+      case 3:
+        return _priceCompareNavigatorKey.currentState;
+      case 4:
+        return _settingsNavigatorKey.currentState;
+      default:
+        return null;
+    }
+  }
+
   Future<bool> _showExitConfirmationDialog(BuildContext context) async {
     final bool? shouldExit = await showDialog<bool>(
       context: context,
@@ -133,12 +164,21 @@ class _AppNavigationShellState extends State<AppNavigationShell> {
 
   @override
   Widget build(BuildContext context) {
-    final bool shouldConfirmExit = widget.navigationShell.currentIndex == 0;
-
     return PopScope<void>(
-      canPop: !shouldConfirmExit,
+      canPop: false,
       onPopInvokedWithResult: (bool didPop, void result) async {
-        if (didPop || !shouldConfirmExit) {
+        if (didPop) {
+          return;
+        }
+
+        final NavigatorState? currentNavigator = _currentBranchNavigator();
+        if (currentNavigator != null && currentNavigator.canPop()) {
+          currentNavigator.pop();
+          return;
+        }
+
+        if (widget.navigationShell.currentIndex != 0) {
+          widget.navigationShell.goBranch(0);
           return;
         }
 

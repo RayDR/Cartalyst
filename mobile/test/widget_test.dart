@@ -64,6 +64,34 @@ void main() {
 
     expect(find.text('Exit Cartalyst?'), findsNothing);
   });
+
+  testWidgets('back on non-home tab returns to Home without exit dialog',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: <Override>[
+          homeDashboardControllerProvider.overrideWith(
+            _TestHomeDashboardController.new,
+          ),
+          listsControllerProvider.overrideWith(_TestListsController.new),
+          inventoriesControllerProvider.overrideWith(
+            _TestInventoriesController.new,
+          ),
+        ],
+        child: const CartalystApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Lists'));
+    await tester.pumpAndSettle();
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(find.text('No shopping lists yet'), findsOneWidget);
+    expect(find.text('Exit Cartalyst?'), findsNothing);
+  });
 }
 
 class _TestHomeDashboardController extends HomeDashboardController {
