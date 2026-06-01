@@ -39,7 +39,59 @@ void main() {
         '${container.read(inventoriesControllerProvider).inventories.length}');
   }
 
+  Future<void> waitForLoaded() async {
+    for (int i = 0; i < 50; i++) {
+      final InventoriesState state =
+          container.read(inventoriesControllerProvider);
+      if (state.hasLoadedInventories) return;
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    }
+    fail('Expected inventories state to finish loading.');
+  }
+
+  Future<void> waitForError() async {
+    for (int i = 0; i < 50; i++) {
+      final InventoriesState state =
+          container.read(inventoriesControllerProvider);
+      if (state.hasError) return;
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    }
+    fail('Expected inventories state to report an error.');
+  }
+
   group('InventoriesController', () {
+    test('empty state is only true after a successful empty emission',
+        () async {
+      final InventoriesState initial =
+          container.read(inventoriesControllerProvider);
+
+      expect(initial.hasLoadedInventories, isFalse);
+      expect(initial.isEmpty, isFalse);
+
+      await waitForLoaded();
+
+      final InventoriesState loaded =
+          container.read(inventoriesControllerProvider);
+      expect(loaded.hasLoadedInventories, isTrue);
+      expect(loaded.isEmpty, isTrue);
+      expect(loaded.hasError, isFalse);
+    });
+
+    test('stream error state does not look like an empty inventory list',
+        () async {
+      container.read(inventoriesControllerProvider);
+      await waitForLoaded();
+
+      repository.emitInventoryError(StateError('boom'));
+      await waitForError();
+
+      final InventoriesState state =
+          container.read(inventoriesControllerProvider);
+      expect(state.hasError, isTrue);
+      expect(state.errorMessage, 'Unable to load inventories.');
+      expect(state.isEmpty, isFalse);
+    });
+
     test('createInventory adds inventory and returns id', () async {
       final InventoriesController controller =
           container.read(inventoriesControllerProvider.notifier);
@@ -268,6 +320,10 @@ class FakeInventoryRepository extends InventoryRepository {
 
   void emitInventories() {
     _inventoriesController.add(_sortedActiveInventories());
+  }
+
+  void emitInventoryError(Object error) {
+    _inventoriesController.addError(error, StackTrace.current);
   }
 
   List<Inventory> _sortedActiveInventories() {

@@ -3,6 +3,7 @@ import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory.dart'
 class InventoriesState {
   const InventoriesState({
     required this.isBusy,
+    required this.hasLoadedInventories,
     required this.inventories,
     this.lastDeletedInventory,
     this.errorMessage,
@@ -10,16 +11,20 @@ class InventoriesState {
 
   const InventoriesState.initial()
       : isBusy = false,
+        hasLoadedInventories = false,
         inventories = const <Inventory>[],
         lastDeletedInventory = null,
         errorMessage = null;
 
   final bool isBusy;
+  final bool hasLoadedInventories;
   final List<Inventory> inventories;
   final Inventory? lastDeletedInventory;
   final String? errorMessage;
 
-  bool get isEmpty => inventories.isEmpty;
+  bool get hasError => errorMessage != null;
+
+  bool get isEmpty => hasLoadedInventories && !hasError && inventories.isEmpty;
 
   List<Inventory> get recentInventories => inventories.length > 5
       ? inventories.sublist(0, 5)
@@ -27,6 +32,7 @@ class InventoriesState {
 
   InventoriesState copyWith({
     bool? isBusy,
+    bool? hasLoadedInventories,
     List<Inventory>? inventories,
     Inventory? lastDeletedInventory,
     String? errorMessage,
@@ -35,6 +41,8 @@ class InventoriesState {
   }) {
     return InventoriesState(
       isBusy: isBusy ?? this.isBusy,
+      hasLoadedInventories:
+          hasLoadedInventories ?? this.hasLoadedInventories,
       inventories: inventories ?? this.inventories,
       lastDeletedInventory: clearLastDeleted
           ? null

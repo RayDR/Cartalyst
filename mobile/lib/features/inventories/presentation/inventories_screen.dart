@@ -29,36 +29,52 @@ class InventoriesScreen extends ConsumerWidget {
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.md),
-          child: state.isEmpty
-              ? EmptyState(
-                  title: 'No inventories yet',
-                  description:
-                      'Create an inventory to track what you have at home — '
-                      'pantry, storage, baby supplies, and more.',
-                  icon: Icons.inventory_2_outlined,
-                  primaryActionLabel: 'Create inventory',
-                  onPrimaryActionPressed: () =>
-                      _showCreateDialog(context, controller),
-                )
-              : ListView.separated(
-                  padding: const EdgeInsets.only(bottom: 80),
-                  itemCount: state.inventories.length,
-                  separatorBuilder: (_, __) =>
-                      const SizedBox(height: AppSpacing.xs),
-                  itemBuilder: (BuildContext context, int index) {
-                    final Inventory inventory = state.inventories[index];
-                    return _InventoryCard(
-                      inventory: inventory,
-                      onTap: () => context.go('/inventories/${inventory.id}'),
-                      onRename: () =>
-                          _showRenameDialog(context, controller, inventory),
-                      onDelete: () =>
-                          _confirmDelete(context, controller, inventory),
-                    );
-                  },
-                ),
+          child: _buildBody(context, controller, state),
         ),
       ),
+    );
+  }
+
+  Widget _buildBody(
+    BuildContext context,
+    InventoriesController controller,
+    InventoriesState state,
+  ) {
+    if (state.hasError) {
+      return _InventoryErrorState(
+        message: state.errorMessage!,
+        onRetry: controller.retryLoadingInventories,
+      );
+    }
+
+    if (!state.hasLoadedInventories) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (state.isEmpty) {
+      return EmptyState(
+        title: 'No inventories yet',
+        description: 'Create an inventory to track what you have at home - '
+            'pantry, storage, baby supplies, and more.',
+        icon: Icons.inventory_2_outlined,
+        primaryActionLabel: 'Create inventory',
+        onPrimaryActionPressed: () => _showCreateDialog(context, controller),
+      );
+    }
+
+    return ListView.separated(
+      padding: const EdgeInsets.only(bottom: 80),
+      itemCount: state.inventories.length,
+      separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.xs),
+      itemBuilder: (BuildContext context, int index) {
+        final Inventory inventory = state.inventories[index];
+        return _InventoryCard(
+          inventory: inventory,
+          onTap: () => context.go('/inventories/${inventory.id}'),
+          onRename: () => _showRenameDialog(context, controller, inventory),
+          onDelete: () => _confirmDelete(context, controller, inventory),
+        );
+      },
     );
   }
 
@@ -210,6 +226,38 @@ class _InventoryCard extends StatelessWidget {
 }
 
 enum _InventoryAction { rename, delete }
+
+class _InventoryErrorState extends StatelessWidget {
+  const _InventoryErrorState({
+    required this.message,
+    required this.onRetry,
+  });
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.topCenter,
+      child: AppCard(
+        child: AppListTile(
+          title: 'Inventories could not load',
+          subtitle: message,
+          leading: Icon(
+            Icons.error_outline,
+            color: Theme.of(context).colorScheme.error,
+          ),
+          trailing: TextButton.icon(
+            onPressed: onRetry,
+            icon: const Icon(Icons.refresh),
+            label: const Text('Retry'),
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class _NameSheet extends StatefulWidget {
   const _NameSheet({

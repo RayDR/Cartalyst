@@ -6,7 +6,7 @@ import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory_categ
 import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory_event.dart';
 import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory_item.dart';
 import 'package:cartalyst_mobile/infrastructure/local_db/app_database.dart'
-    hide Category, Inventory, InventoryCategory, InventoryEvent, InventoryItem;
+    as local_db;
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart' hide Category;
 import 'package:uuid/uuid.dart';
@@ -14,14 +14,27 @@ import 'package:uuid/uuid.dart';
 class LocalInventoryRepository implements InventoryRepository {
   LocalInventoryRepository(this._database);
 
-  final AppDatabase _database;
+  final local_db.AppDatabase _database;
   static const Uuid _uuid = Uuid();
 
   @override
-  Stream<List<Inventory>> watchAllInventories() {
-    return _database.pantryDao.watchAllInventoriesByRecent().map(
-          (rows) => rows.map(toDomainInventory).toList(growable: false),
+  Stream<List<Inventory>> watchAllInventories() async* {
+    debugPrint('[LocalInventoryRepository] inventories stream subscribed');
+    try {
+      await for (final List<local_db.Inventory> rows
+          in _database.pantryDao.watchAllInventoriesByRecent()) {
+        debugPrint(
+          '[LocalInventoryRepository] inventory count emitted count=${rows.length}',
         );
+        yield rows.map(toDomainInventory).toList(growable: false);
+      }
+    } catch (error, stackTrace) {
+      debugPrint(
+        '[LocalInventoryRepository] inventories stream error: $error',
+      );
+      debugPrint(stackTrace.toString());
+      rethrow;
+    }
   }
 
   @override
@@ -127,7 +140,7 @@ class LocalInventoryRepository implements InventoryRepository {
           await _database.pantryDao.nextInventoryCategorySortOrder(inventoryId);
 
       await _database.pantryDao.upsertCategory(
-        CategoriesCompanion.insert(
+        local_db.CategoriesCompanion.insert(
           id: categoryId,
           name: 'Uncategorized',
           createdAt: Value(now),
@@ -139,7 +152,7 @@ class LocalInventoryRepository implements InventoryRepository {
       );
 
       await _database.pantryDao.upsertInventoryCategory(
-        InventoryCategoriesCompanion.insert(
+        local_db.InventoryCategoriesCompanion.insert(
           id: inventoryCategoryId,
           inventoryId: inventoryId,
           categoryId: categoryId,

@@ -159,6 +159,96 @@ void main() {
       }
     });
 
+    test('repository watchAllInventories returns created active inventory',
+        () async {
+      try {
+        final LocalInventoryRepository repository =
+            LocalInventoryRepository(database!);
+        final DateTime now = DateTime.now();
+        const String inventoryId = 'inventory-watch-active';
+
+        await repository.saveInventory(
+          inventory_domain.Inventory(
+            id: inventoryId,
+            name: 'Garage shelf',
+            createdAt: now,
+            updatedAt: now,
+            syncStatus: 'pending_sync',
+            version: 1,
+          ),
+        );
+
+        final List<inventory_domain.Inventory> inventories =
+            await repository.watchAllInventories().first;
+
+        expect(
+          inventories.any(
+            (inventory_domain.Inventory inventory) =>
+                inventory.id == inventoryId &&
+                inventory.name == 'Garage shelf',
+          ),
+          isTrue,
+        );
+        expect(
+          inventories.every(
+            (inventory_domain.Inventory inventory) =>
+                inventory.deletedAt == null,
+          ),
+          isTrue,
+        );
+      } on ArgumentError catch (error) {
+        if (_isMissingSqlite(error)) {
+          return;
+        }
+        rethrow;
+      }
+    });
+
+    test('repository watchAllInventories hides soft-deleted inventory',
+        () async {
+      try {
+        final LocalInventoryRepository repository =
+            LocalInventoryRepository(database!);
+        final DateTime now = DateTime.now();
+        const String inventoryId = 'inventory-watch-deleted';
+
+        await repository.saveInventory(
+          inventory_domain.Inventory(
+            id: inventoryId,
+            name: 'Temporary shelf',
+            createdAt: now,
+            updatedAt: now,
+            syncStatus: 'pending_sync',
+            version: 1,
+          ),
+        );
+        await repository.deleteInventory(inventoryId);
+
+        final List<inventory_domain.Inventory> inventories =
+            await repository.watchAllInventories().first;
+
+        expect(
+          inventories.any(
+            (inventory_domain.Inventory inventory) =>
+                inventory.id == inventoryId,
+          ),
+          isFalse,
+        );
+        expect(
+          inventories.every(
+            (inventory_domain.Inventory inventory) =>
+                inventory.deletedAt == null,
+          ),
+          isTrue,
+        );
+      } on ArgumentError catch (error) {
+        if (_isMissingSqlite(error)) {
+          return;
+        }
+        rethrow;
+      }
+    });
+
     test('persists shopping list inventory links via link table', () async {
       try {
         final DateTime now = DateTime.now();
