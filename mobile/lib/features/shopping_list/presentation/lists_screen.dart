@@ -1,6 +1,7 @@
 import 'package:cartalyst_mobile/core/design/app_spacing.dart';
 import 'package:cartalyst_mobile/core/widgets/app_card.dart';
 import 'package:cartalyst_mobile/core/widgets/app_list_tile.dart';
+import 'package:cartalyst_mobile/core/widgets/app_notification.dart';
 import 'package:cartalyst_mobile/core/widgets/empty_state.dart';
 import 'package:cartalyst_mobile/core/widgets/keyboard_aware_scroll_view.dart';
 import 'package:cartalyst_mobile/features/shopping_list/application/lists_controller.dart';
@@ -126,14 +127,18 @@ class ListsScreen extends ConsumerWidget {
       return;
     }
     if (newId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unable to create list. Try again.')),
+      showAppNotification(
+        context,
+        title: 'Unable to create list',
+        message: 'Try again.',
       );
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('List created')),
+    showAppNotification(
+      context,
+      title: 'List created',
+      message: '"${draft.name}" is ready.',
     );
     context.go('/lists/$newId');
   }
@@ -153,14 +158,12 @@ class ListsScreen extends ConsumerWidget {
     }
     final bool renamed = await controller.renameList(list, newName);
     if (renamed && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Renamed "${list.name}"'),
-          action: SnackBarAction(
-            label: 'Undo',
-            onPressed: controller.undoLastAction,
-          ),
-        ),
+      showAppNotification(
+        context,
+        title: 'List renamed',
+        message: 'Renamed "${list.name}".',
+        actionLabel: 'Undo',
+        onAction: controller.undoLastAction,
       );
     }
   }
@@ -198,14 +201,12 @@ class ListsScreen extends ConsumerWidget {
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('"${list.name}" deleted'),
-        action: SnackBarAction(
-          label: 'Undo',
-          onPressed: controller.undoLastAction,
-        ),
-      ),
+    showAppNotification(
+      context,
+      title: 'List deleted',
+      message: '"${list.name}" deleted.',
+      actionLabel: 'Undo',
+      onAction: controller.undoLastAction,
     );
   }
 
@@ -219,14 +220,12 @@ class ListsScreen extends ConsumerWidget {
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('"${list.name}" deleted'),
-        action: SnackBarAction(
-          label: 'Undo',
-          onPressed: controller.undoLastAction,
-        ),
-      ),
+    showAppNotification(
+      context,
+      title: 'List deleted',
+      message: '"${list.name}" deleted.',
+      actionLabel: 'Undo',
+      onAction: controller.undoLastAction,
     );
   }
 

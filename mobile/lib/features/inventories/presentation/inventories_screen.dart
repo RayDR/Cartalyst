@@ -1,6 +1,7 @@
 import 'package:cartalyst_mobile/core/design/app_spacing.dart';
 import 'package:cartalyst_mobile/core/widgets/app_card.dart';
 import 'package:cartalyst_mobile/core/widgets/app_list_tile.dart';
+import 'package:cartalyst_mobile/core/widgets/app_notification.dart';
 import 'package:cartalyst_mobile/core/widgets/empty_state.dart';
 import 'package:cartalyst_mobile/features/inventories/application/inventories_controller.dart';
 import 'package:cartalyst_mobile/features/inventories/application/inventories_state.dart';
@@ -74,6 +75,11 @@ class InventoriesScreen extends ConsumerWidget {
     if (name == null || !context.mounted) return;
     final String? newId = await controller.createInventory(name);
     if (newId != null && context.mounted) {
+      showAppNotification(
+        context,
+        title: 'Inventory created',
+        message: '"$name" is ready.',
+      );
       context.go('/inventories/$newId');
     }
   }
@@ -121,14 +127,12 @@ class InventoriesScreen extends ConsumerWidget {
     await controller.deleteInventory(inventory);
 
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('"${inventory.name}" deleted'),
-          action: SnackBarAction(
-            label: 'Undo',
-            onPressed: controller.restoreLastDeleted,
-          ),
-        ),
+      showAppNotification(
+        context,
+        title: 'Inventory deleted',
+        message: '"${inventory.name}" deleted.',
+        actionLabel: 'Undo',
+        onAction: controller.restoreLastDeleted,
       );
     }
   }
