@@ -8,7 +8,7 @@ import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory.dart'
 import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory_category.dart';
 import 'package:cartalyst_mobile/features/shopping_list/application/shopping_list_controller.dart'
     show appDatabaseProvider, uuidProvider;
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' hide Category;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
@@ -38,24 +38,27 @@ class InventoriesController extends Notifier<InventoriesState> {
   void _subscribe() {
     debugPrint('[InventoriesController] inventories stream subscribed');
     _subscription?.cancel();
-    _subscription = _repository.watchAllInventories().listen((inventories) {
-      debugPrint(
-        '[InventoriesController] inventory count emitted count=${inventories.length}',
-      );
-      state = state.copyWith(
-        inventories: inventories,
-        hasLoadedInventories: true,
-        clearErrorMessage: true,
-      );
-    }, onError: (Object error, StackTrace stackTrace) {
-      debugPrint('[InventoriesController] inventories stream error: $error');
-      debugPrint(stackTrace.toString());
-      state = state.copyWith(
-        isBusy: false,
-        hasLoadedInventories: true,
-        errorMessage: 'Unable to load inventories.',
-      );
-    });
+    _subscription = _repository.watchAllInventories().listen(
+      (inventories) {
+        debugPrint(
+          '[InventoriesController] inventory count emitted count=${inventories.length}',
+        );
+        state = state.copyWith(
+          inventories: inventories,
+          hasLoadedInventories: true,
+          clearErrorMessage: true,
+        );
+      },
+      onError: (Object error, StackTrace stackTrace) {
+        debugPrint('[InventoriesController] inventories stream error: $error');
+        debugPrint(stackTrace.toString());
+        state = state.copyWith(
+          isBusy: false,
+          hasLoadedInventories: true,
+          errorMessage: 'Unable to load inventories.',
+        );
+      },
+    );
   }
 
   void retryLoadingInventories() {

@@ -41,8 +41,7 @@ class InventoriesState {
   }) {
     return InventoriesState(
       isBusy: isBusy ?? this.isBusy,
-      hasLoadedInventories:
-          hasLoadedInventories ?? this.hasLoadedInventories,
+      hasLoadedInventories: hasLoadedInventories ?? this.hasLoadedInventories,
       inventories: inventories ?? this.inventories,
       lastDeletedInventory: clearLastDeleted
           ? null
