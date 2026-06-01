@@ -311,8 +311,101 @@ MigrationStrategy buildMigrationStrategy(AppDatabase db) {
           WHERE inventory_items.inventory_category_id IS NULL
           ''');
       }
+
+      if (from < 6) {
+        await _normalizeLegacyDateTimeStorage(db);
+      }
     },
   );
+}
+
+Future<void> _normalizeLegacyDateTimeStorage(AppDatabase db) async {
+  const List<String> tables = <String>[
+    'products',
+    'product_aliases',
+    'categories',
+    'inventories',
+    'inventory_categories',
+    'inventory_items',
+    'shopping_list_inventory_links',
+    'shopping_lists',
+    'shopping_list_categories',
+    'shopping_list_items',
+    'inventory_events',
+    'price_observations',
+  ];
+
+  await db.transaction(() async {
+    for (final String table in tables) {
+      final List<QueryRow> infoRows =
+          await db.customSelect('PRAGMA table_info($table)').get();
+
+      final List<String> columns = infoRows
+          .map((QueryRow row) => row.read<String>('name'))
+          .where((String name) => name.endsWith('_at'))
+          .toList(growable: false);
+
+      final bool hasId =
+          infoRows.any((QueryRow row) => row.read<String>('name') == 'id');
+      if (!hasId || columns.isEmpty) {
+        continue;
+      }
+
+      for (final String column in columns) {
+        final List<QueryRow> rows = await db
+            .customSelect(
+              '''
+              SELECT id, $column AS value
+              FROM $table
+              WHERE $column IS NOT NULL
+                AND typeof($column) = 'text'
+              ''',
+            )
+            .get();
+
+        for (final QueryRow row in rows) {
+          final String id = row.read<String>('id');
+          final String? rawValue = row.read<String?>('value');
+          if (rawValue == null || rawValue.trim().isEmpty) {
+            continue;
+          }
+
+          final DateTime? parsed = _parseLegacyDateTime(rawValue);
+          if (parsed == null) {
+            continue;
+          }
+
+          await db.customStatement(
+            'UPDATE $table SET $column = ? WHERE id = ?',
+            <Object>[parsed, id],
+          );
+        }
+      }
+    }
+  });
+}
+
+DateTime? _parseLegacyDateTime(String rawValue) {
+  final String trimmed = rawValue.trim();
+  if (trimmed.isEmpty) {
+    return null;
+  }
+
+  final DateTime? parsedIso = DateTime.tryParse(trimmed);
+  if (parsedIso != null) {
+    return parsedIso;
+  }
+
+  final int? numeric = int.tryParse(trimmed);
+  if (numeric == null) {
+    return null;
+  }
+
+  if (trimmed.length <= 10) {
+    return DateTime.fromMillisecondsSinceEpoch(numeric * 1000);
+  }
+
+  return DateTime.fromMillisecondsSinceEpoch(numeric);
 }
 
 Future<void> _addColumnIfMissing(

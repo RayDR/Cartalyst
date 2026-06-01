@@ -275,27 +275,36 @@ class PriceCompareController extends Notifier<PriceCompareState> {
         )
         .toList(growable: false);
 
-    final PackageComparisonResult result =
-        _comparisonService.compareAll(inputs);
+    try {
+      final PackageComparisonResult result =
+          _comparisonService.compareAll(inputs);
 
-    _logDebug(
-      'comparison result recommendation=${_recommendationLabel(result.recommendation)}',
-    );
+      _logDebug(
+        'comparison result recommendation=${_recommendationLabel(result.recommendation)}',
+      );
 
-    state = state.copyWith(
-      comparisonResult: result,
-      message: result.explanation,
-      options: state.options
-          .map(
-            (PriceCompareOptionDraft option) => option.copyWith(
-              isExpanded: option.hasRequiredFields ? false : option.isExpanded,
-            ),
-          )
-          .toList(growable: false),
-    );
+      state = state.copyWith(
+        comparisonResult: result,
+        message: result.explanation,
+        options: state.options
+            .map(
+              (PriceCompareOptionDraft option) => option.copyWith(
+                isExpanded:
+                    option.hasRequiredFields ? false : option.isExpanded,
+              ),
+            )
+            .toList(growable: false),
+      );
 
-    for (final PackageOptionInput option in inputs) {
-      await _saveObservationIfPossible(option);
+      for (final PackageOptionInput option in inputs) {
+        await _saveObservationIfPossible(option);
+      }
+    } catch (error, stackTrace) {
+      _logDebugError('comparison failed', error, stackTrace);
+      state = state.copyWith(
+        clearComparison: true,
+        message: 'Unable to compare options right now. Please try again.',
+      );
     }
   }
 
