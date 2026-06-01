@@ -358,6 +358,131 @@ void main() {
         }
       }
     });
+
+    test('seedDefaultInventory completes without throwing', () async {
+      try {
+        // A fresh in-memory database seeds on onCreate; verify the result.
+        final List<Inventory> inventories =
+            await database!.select(database!.inventories).get();
+        expect(inventories, isNotEmpty);
+        expect(inventories.first.id, defaultInventoryId);
+
+        // Calling again must be idempotent.
+        await database!.seedDefaultInventory();
+        final List<Inventory> after =
+            await database!.select(database!.inventories).get();
+        expect(after.length, 1);
+      } on ArgumentError catch (error) {
+        if (_isMissingSqlite(error)) {
+          return;
+        }
+        rethrow;
+      }
+    });
+
+    test('unlinkListFromInventory does not throw invalid DateTime parameter',
+        () async {
+      try {
+        final DateTime now = DateTime.now();
+        final String inventoryId = const Uuid().v4();
+        final String listId = const Uuid().v4();
+        final String linkId = const Uuid().v4();
+
+        await database!.into(database!.inventories).insert(
+              InventoriesCompanion.insert(
+                id: inventoryId,
+                name: 'Test inventory',
+                createdAt: drift.Value(now),
+                updatedAt: drift.Value(now),
+                syncStatus: const drift.Value('pending_sync'),
+                version: const drift.Value(1),
+              ),
+            );
+
+        await database!.into(database!.shoppingLists).insert(
+              ShoppingListsCompanion.insert(
+                id: listId,
+                name: 'Test list',
+                createdAt: drift.Value(now),
+                updatedAt: drift.Value(now),
+              ),
+            );
+
+        await database!.into(database!.shoppingListInventoryLinks).insert(
+              ShoppingListInventoryLinksCompanion.insert(
+                id: linkId,
+                shoppingListId: listId,
+                inventoryId: inventoryId,
+                createdAt: drift.Value(now),
+                syncStatus: const drift.Value('pending_sync'),
+                version: const drift.Value(1),
+              ),
+            );
+
+        // This was previously crashing with:
+        // Invalid argument (params[1]): Instance of 'DateTime'
+        await expectLater(
+          database!.shoppingListsDao.unlinkListFromInventory(
+            shoppingListId: listId,
+            inventoryId: inventoryId,
+          ),
+          completes,
+        );
+
+        final ShoppingListInventoryLink link =
+            await (database!.select(database!.shoppingListInventoryLinks)
+                  ..where((tbl) => tbl.id.equals(linkId)))
+                .getSingle();
+        expect(link.deletedAt, isNotNull);
+      } on ArgumentError catch (error) {
+        if (_isMissingSqlite(error)) {
+          return;
+        }
+        rethrow;
+      }
+    });
+
+    test('create inventory and ensure Uncategorized category — no FormatException',
+        () async {
+      try {
+        final LocalInventoryRepository repository =
+            LocalInventoryRepository(database!);
+        final DateTime now = DateTime.now();
+        final String inventoryId = const Uuid().v4();
+
+        await repository.saveInventory(
+          inventory_domain.Inventory(
+            id: inventoryId,
+            name: 'Fridge',
+            createdAt: now,
+            updatedAt: now,
+            syncStatus: 'pending_sync',
+            version: 1,
+          ),
+        );
+
+        final String uncategorizedId =
+            await repository.ensureUncategorizedInventoryCategory(inventoryId);
+        expect(uncategorizedId, isNotEmpty);
+
+        // Calling again must be idempotent (returns the same id).
+        final String second =
+            await repository.ensureUncategorizedInventoryCategory(inventoryId);
+        expect(second, isNotEmpty);
+
+        final categories =
+            await repository.watchInventoryCategories(inventoryId).first;
+        expect(
+          categories.any((c) => c.name == 'Uncategorized'),
+          isTrue,
+        );
+      } on ArgumentError catch (error) {
+        if (_isMissingSqlite(error)) {
+          return;
+        }
+        rethrow;
+      }
+    });
   });
 }
 

@@ -28,6 +28,11 @@ part 'tables/shopping_lists.dart';
 
 const String defaultInventoryId = 'inventory-default-pantry';
 
+/// Converts a [DateTime] to the integer milliseconds value that Drift stores
+/// in SQLite DateTimeColumn columns by default (no storeTimeAsText configured).
+/// Use this whenever a raw SQL parameter must hold a DateTime column value.
+int dbDateTimeValue(DateTime value) => value.millisecondsSinceEpoch;
+
 @DriftDatabase(
   tables: <Type>[
     Products,
@@ -101,31 +106,39 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<void> _ensureUncategorizedForInventory(String inventoryId) async {
-    final DateTime now = DateTime.now();
-    final String categoryId = '$inventoryId::uncategorized';
-    await into(categories).insert(
-      CategoriesCompanion.insert(
-        id: categoryId,
-        name: 'Uncategorized',
-        createdAt: Value(now),
-        updatedAt: Value(now),
-        syncStatus: const Value('pending_sync'),
-        version: const Value(1),
-      ),
-      mode: InsertMode.insertOrIgnore,
-    );
+    debugPrint('[AppDatabase] _ensureUncategorizedForInventory start inventoryId=$inventoryId');
+    try {
+      final DateTime now = DateTime.now();
+      final String categoryId = '$inventoryId::uncategorized';
+      await into(categories).insert(
+        CategoriesCompanion.insert(
+          id: categoryId,
+          name: 'Uncategorized',
+          createdAt: Value(now),
+          updatedAt: Value(now),
+          syncStatus: const Value('pending_sync'),
+          version: const Value(1),
+        ),
+        mode: InsertMode.insertOrIgnore,
+      );
 
-    await into(inventoryCategories).insert(
-      InventoryCategoriesCompanion.insert(
-        id: '$inventoryId::inventory-uncategorized',
-        inventoryId: inventoryId,
-        categoryId: categoryId,
-        sortOrder: const Value(0),
-        createdAt: Value(now),
-        updatedAt: Value(now),
-      ),
-      mode: InsertMode.insertOrIgnore,
-    );
+      await into(inventoryCategories).insert(
+        InventoryCategoriesCompanion.insert(
+          id: '$inventoryId::inventory-uncategorized',
+          inventoryId: inventoryId,
+          categoryId: categoryId,
+          sortOrder: const Value(0),
+          createdAt: Value(now),
+          updatedAt: Value(now),
+        ),
+        mode: InsertMode.insertOrIgnore,
+      );
+      debugPrint('[AppDatabase] _ensureUncategorizedForInventory success inventoryId=$inventoryId');
+    } catch (error, stackTrace) {
+      debugPrint('[AppDatabase] _ensureUncategorizedForInventory FAILED inventoryId=$inventoryId error=$error');
+      debugPrint(stackTrace.toString());
+      rethrow;
+    }
   }
 
   Future<void> seedCommonProductsAndAliases() async {

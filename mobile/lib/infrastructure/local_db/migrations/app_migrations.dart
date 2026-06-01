@@ -377,7 +377,7 @@ Future<void> _normalizeLegacyDateTimeStorage(AppDatabase db) async {
 
           await db.customStatement(
             'UPDATE $table SET $column = ? WHERE id = ?',
-            <Object>[parsed, id],
+            <Object>[dbDateTimeValue(parsed), id],
           );
         }
       }
