@@ -9,7 +9,6 @@ class ShoppingListState {
     required this.draftPromptPending,
     required this.draftName,
     required this.quickAddInput,
-    required this.shoppingModeEnabled,
     required this.purchasedCollapsed,
     required this.pendingItems,
     required this.purchasedItems,
@@ -26,7 +25,6 @@ class ShoppingListState {
         draftPromptPending = false,
         draftName = null,
         quickAddInput = '',
-        shoppingModeEnabled = true,
         purchasedCollapsed = true,
         pendingItems = const <ShoppingListItem>[],
         purchasedItems = const <ShoppingListItem>[],
@@ -41,7 +39,6 @@ class ShoppingListState {
   final bool draftPromptPending;
   final String? draftName;
   final String quickAddInput;
-  final bool shoppingModeEnabled;
   final bool purchasedCollapsed;
   final List<ShoppingListItem> pendingItems;
   final List<ShoppingListItem> purchasedItems;
@@ -86,7 +83,6 @@ class ShoppingListState {
     bool? draftPromptPending,
     String? draftName,
     String? quickAddInput,
-    bool? shoppingModeEnabled,
     bool? purchasedCollapsed,
     List<ShoppingListItem>? pendingItems,
     List<ShoppingListItem>? purchasedItems,
@@ -105,7 +101,6 @@ class ShoppingListState {
       draftPromptPending: draftPromptPending ?? this.draftPromptPending,
       draftName: clearDraftName ? null : (draftName ?? this.draftName),
       quickAddInput: quickAddInput ?? this.quickAddInput,
-      shoppingModeEnabled: shoppingModeEnabled ?? this.shoppingModeEnabled,
       purchasedCollapsed: purchasedCollapsed ?? this.purchasedCollapsed,
       pendingItems: pendingItems ?? this.pendingItems,
       purchasedItems: purchasedItems ?? this.purchasedItems,

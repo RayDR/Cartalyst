@@ -388,6 +388,7 @@ class ShoppingListController extends FamilyNotifier<ShoppingListState, String> {
     required String name,
     double? quantity,
     String? unitCode,
+    String? targetInventoryId,
     String? categoryId,
   }) async {
     final String trimmed = name.trim();
@@ -429,6 +430,7 @@ class ShoppingListController extends FamilyNotifier<ShoppingListState, String> {
       shoppingListId: arg,
       productId: matchedProduct?.id,
       categoryId: resolvedCategoryId,
+      targetInventoryId: targetInventoryId,
       rawText: matchedProduct?.canonicalName ?? trimmed,
       quantity: quantity,
       unit: _toSupportedUnit(unitCode),
@@ -583,10 +585,6 @@ class ShoppingListController extends FamilyNotifier<ShoppingListState, String> {
 
   void setPurchasedCollapsed(bool collapsed) {
     state = state.copyWith(purchasedCollapsed: collapsed);
-  }
-
-  void setShoppingModeEnabled(bool enabled) {
-    state = state.copyWith(shoppingModeEnabled: enabled);
   }
 
   void setFocusedItem(String? itemId) {

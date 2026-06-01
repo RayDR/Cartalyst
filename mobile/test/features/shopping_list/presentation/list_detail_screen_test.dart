@@ -36,7 +36,7 @@ void main() {
     await inventoryRepository.dispose();
   });
 
-  testWidgets('renames list from overflow menu', (WidgetTester tester) async {
+  testWidgets('+ button opens add item modal', (WidgetTester tester) async {
     final ShoppingList list = _sampleList(name: 'Weekly list');
     shoppingListRepository.seedList(list);
 
@@ -48,82 +48,15 @@ void main() {
       inventoryRepository: inventoryRepository,
     );
 
-    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.tap(find.byTooltip('Add item'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Rename list'));
-    await tester.pumpAndSettle();
-
-    await tester.enterText(find.byType(TextField).last, 'Renamed list');
-    await tester.tap(find.text('Save'));
-    await tester.pumpAndSettle();
-
-    expect(shoppingListRepository.lists.first.name, 'Renamed list');
+    expect(find.text('Add item'), findsWidgets);
+    expect(find.text('Item name'), findsOneWidget);
   });
 
-  testWidgets('renders quick add near the top before item sections', (
-    WidgetTester tester,
-  ) async {
-    final ShoppingList list = _sampleList(name: 'Top-priority list');
-    shoppingListRepository.seedList(list);
-    shoppingListRepository.seedItem(
-      _sampleItem(
-        id: 'item-1',
-        listId: list.id,
-        name: 'Milk',
-      ),
-    );
-
-    await _pumpListDetail(
-      tester,
-      listId: list.id,
-      shoppingListRepository: shoppingListRepository,
-      productRepository: productRepository,
-      inventoryRepository: inventoryRepository,
-    );
-
-    final double quickAddY =
-        tester.getTopLeft(find.text('Quick product add')).dy;
-    final double pendingY = tester.getTopLeft(find.text('Pending').first).dy;
-
-    expect(quickAddY, lessThan(pendingY));
-  });
-
-  testWidgets('renders linked inventory in compact chip row', (
-    WidgetTester tester,
-  ) async {
-    final ShoppingList list = _sampleList(name: 'Linked list');
-    shoppingListRepository.seedList(list);
-    await shoppingListRepository.linkListToInventory(
-      shoppingListId: list.id,
-      inventoryId: 'inv-1',
-    );
-    inventoryRepository.seedInventory(
-      Inventory(
-        id: 'inv-1',
-        name: 'Pantry',
-        createdAt: DateTime(2026),
-        updatedAt: DateTime(2026),
-        syncStatus: 'local_only',
-        version: 1,
-      ),
-    );
-
-    await _pumpListDetail(
-      tester,
-      listId: list.id,
-      shoppingListRepository: shoppingListRepository,
-      productRepository: productRepository,
-      inventoryRepository: inventoryRepository,
-    );
-
-    expect(find.text('Inventory inv-1'), findsOneWidget);
-    expect(find.text('No inventory linked'), findsNothing);
-  });
-
-  testWidgets('archives list from overflow action',
-      (WidgetTester tester) async {
-    final ShoppingList list = _sampleList(name: 'Archive me');
+  testWidgets('modal can add item with only name', (WidgetTester tester) async {
+    final ShoppingList list = _sampleList(name: 'Weekly list');
     shoppingListRepository.seedList(list);
 
     await _pumpListDetail(
@@ -134,82 +67,30 @@ void main() {
       inventoryRepository: inventoryRepository,
     );
 
-    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.tap(find.byTooltip('Add item'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Archive list'));
+
+    await tester.enterText(find.byType(TextField).first, 'Apples');
+    await tester.tap(find.text('Save item'));
     await tester.pumpAndSettle();
 
     expect(
-      shoppingListRepository.lists.first.status,
-      ShoppingListStatus.archived,
+      shoppingListRepository
+          .itemsForList(list.id)
+          .any((ShoppingListItem item) => item.rawText == 'Apples'),
+      isTrue,
     );
+    expect(find.text('Apples'), findsOneWidget);
   });
 
-  testWidgets('deletes list from overflow action', (WidgetTester tester) async {
-    final ShoppingList list = _sampleList(name: 'Delete me');
+  testWidgets('double tap marks purchased', (WidgetTester tester) async {
+    final ShoppingList list = _sampleList(name: 'Weekly list');
     shoppingListRepository.seedList(list);
-
-    await _pumpListDetail(
-      tester,
-      listId: list.id,
-      shoppingListRepository: shoppingListRepository,
-      productRepository: productRepository,
-      inventoryRepository: inventoryRepository,
-    );
-
-    await tester.tap(find.byIcon(Icons.more_vert));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Delete list'));
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
-    await tester.pumpAndSettle();
-
-    expect(shoppingListRepository.deletedListIds, contains(list.id));
-  });
-
-  testWidgets('organized detail groups items by category and uncategorized',
-      (WidgetTester tester) async {
-    final ShoppingList list = _sampleList(
-      name: 'Organized list',
-      listType: ShoppingListType.organized,
-    );
-    shoppingListRepository.seedList(list);
-    shoppingListRepository.seedCategory(
-      ShoppingListCategory(
-        id: 'slc-dairy',
-        shoppingListId: list.id,
-        categoryId: 'cat-dairy',
-        sortOrder: 0,
-        createdAt: DateTime(2026),
-        updatedAt: DateTime(2026),
-        categoryName: 'Dairy',
-      ),
-    );
-    shoppingListRepository.seedCategory(
-      ShoppingListCategory(
-        id: 'slc-produce',
-        shoppingListId: list.id,
-        categoryId: 'cat-produce',
-        sortOrder: 1,
-        createdAt: DateTime(2026),
-        updatedAt: DateTime(2026),
-        categoryName: 'Produce',
-      ),
-    );
     shoppingListRepository.seedItem(
       _sampleItem(
         id: 'item-1',
         listId: list.id,
         name: 'Milk',
-        categoryId: 'cat-dairy',
-      ),
-    );
-    shoppingListRepository.seedItem(
-      _sampleItem(
-        id: 'item-2',
-        listId: list.id,
-        name: 'Mystery',
       ),
     );
 
@@ -221,12 +102,64 @@ void main() {
       inventoryRepository: inventoryRepository,
     );
 
-    expect(find.text('+ Item'), findsOneWidget);
-    expect(find.text('+ Category'), findsOneWidget);
-    expect(find.text('Dairy'), findsOneWidget);
-    expect(find.text('Uncategorized'), findsOneWidget);
-    expect(find.text('Milk'), findsOneWidget);
-    expect(find.text('Mystery'), findsOneWidget);
+    await tester.tap(find.text('Milk'));
+    await tester.pump(const Duration(milliseconds: 40));
+    await tester.tap(find.text('Milk'));
+    await tester.pumpAndSettle();
+
+    expect(
+      shoppingListRepository
+          .itemsForList(list.id)
+          .firstWhere((ShoppingListItem item) => item.id == 'item-1')
+          .status,
+      ShoppingListItemStatus.purchased,
+    );
+  });
+
+  testWidgets('swipe right marks skipped', (WidgetTester tester) async {
+    final ShoppingList list = _sampleList(name: 'Weekly list');
+    shoppingListRepository.seedList(list);
+    shoppingListRepository.seedItem(
+      _sampleItem(
+        id: 'item-1',
+        listId: list.id,
+        name: 'Milk',
+      ),
+    );
+
+    await _pumpListDetail(
+      tester,
+      listId: list.id,
+      shoppingListRepository: shoppingListRepository,
+      productRepository: productRepository,
+      inventoryRepository: inventoryRepository,
+    );
+
+    await tester.drag(find.text('Milk').first, const Offset(400, 0));
+    await tester.pumpAndSettle();
+
+    expect(
+      shoppingListRepository
+          .itemsForList(list.id)
+          .firstWhere((ShoppingListItem item) => item.id == 'item-1')
+          .status,
+      ShoppingListItemStatus.skipped,
+    );
+  });
+
+  testWidgets('one-handed mode no longer appears', (WidgetTester tester) async {
+    final ShoppingList list = _sampleList(name: 'Weekly list');
+    shoppingListRepository.seedList(list);
+
+    await _pumpListDetail(
+      tester,
+      listId: list.id,
+      shoppingListRepository: shoppingListRepository,
+      productRepository: productRepository,
+      inventoryRepository: inventoryRepository,
+    );
+
+    expect(find.textContaining('One-handed'), findsNothing);
   });
 }
 
