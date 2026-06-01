@@ -1,239 +1,168 @@
-import 'dart:async';
-
-import 'package:cartalyst_mobile/core/widgets/app_card.dart';
+import 'package:cartalyst_mobile/features/home/application/home_dashboard_state.dart';
+import 'package:cartalyst_mobile/features/home/application/home_dashboard_controller.dart';
 import 'package:cartalyst_mobile/features/home/presentation/home_screen.dart';
-import 'package:cartalyst_mobile/features/pantry/domain/entities/inventory.dart';
-import 'package:cartalyst_mobile/features/shopping_list/application/shopping_list_controller.dart'
-    show shoppingListRepositoryProvider;
-import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list.dart';
-import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list_item.dart';
-import 'package:cartalyst_mobile/features/shopping_list/domain/repositories/shopping_list_repository.dart';
+import 'package:cartalyst_mobile/features/inventories/application/inventories_controller.dart';
+import 'package:cartalyst_mobile/features/inventories/application/inventories_state.dart';
+import 'package:cartalyst_mobile/features/shopping_list/application/lists_controller.dart';
+import 'package:cartalyst_mobile/features/shopping_list/application/lists_state.dart';
+import 'package:cartalyst_mobile/infrastructure/local_db/app_database.dart'
+    as local_db;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  late FakeShoppingListRepository repository;
-
-  setUp(() {
-    repository = FakeShoppingListRepository();
-  });
-
-  tearDown(() async {
-    await repository.dispose();
-  });
-
-  Widget buildApp() {
+  Widget buildApp(HomeDashboardState state) {
     return ProviderScope(
       overrides: <Override>[
-        shoppingListRepositoryProvider.overrideWithValue(repository),
+        homeDashboardControllerProvider.overrideWith(
+          () => _TestHomeDashboardController(state),
+        ),
+        listsControllerProvider.overrideWith(_TestListsController.new),
+        inventoriesControllerProvider.overrideWith(
+          _TestInventoriesController.new,
+        ),
       ],
       child: const MaterialApp(home: HomeScreen()),
     );
   }
 
   group('HomeScreen', () {
-    testWidgets('shows empty state when there are no lists',
-        (WidgetTester tester) async {
-      await tester.pumpWidget(buildApp());
+    testWidgets(
+      'shows dashboard tabs and empty states when there is no data',
+      (WidgetTester tester) async {
+      await tester.pumpWidget(
+        buildApp(const HomeDashboardState.initial()),
+      );
       await tester.pumpAndSettle();
 
-      expect(find.text('Cartalyst'), findsOneWidget);
-      expect(find.text('Create shopping list'), findsOneWidget);
-      expect(
-        find.text(
-          'Keep your shopping lists local, organized, and ready whenever you are.',
-        ),
-        findsOneWidget,
-      );
-      expect(find.text('Recent lists'), findsNothing);
-      expect(find.text('Compare package value'), findsNothing);
-    });
+      expect(find.text('Home'), findsOneWidget);
+      expect(find.text('Lists'), findsOneWidget);
+      expect(find.text('Inventories'), findsOneWidget);
+      expect(find.text('Categories'), findsOneWidget);
+      expect(find.text('No lists yet'), findsOneWidget);
+    },
+    );
 
-    testWidgets('shows recent lists when data exists',
-        (WidgetTester tester) async {
-      repository.seedList(
-        ShoppingList(
-          id: 'list-1',
-          name: 'Weekend groceries',
-          status: ShoppingListStatus.active,
-          createdAt: DateTime(2026),
-          updatedAt: DateTime(2026, 1, 1, 10),
-          syncStatus: 'local_only',
-          version: 1,
-        ),
-      );
-      repository.seedList(
-        ShoppingList(
-          id: 'list-2',
-          name: 'Party snacks',
-          status: ShoppingListStatus.active,
-          createdAt: DateTime(2026, 1, 2),
-          updatedAt: DateTime(2026, 1, 2, 10),
-          syncStatus: 'local_only',
-          version: 1,
-        ),
-      );
-      repository.seedList(
-        ShoppingList(
-          id: 'list-3',
-          name: 'House restock',
-          status: ShoppingListStatus.active,
-          createdAt: DateTime(2026, 1, 3),
-          updatedAt: DateTime(2026, 1, 3, 10),
-          syncStatus: 'local_only',
-          version: 1,
-        ),
+    testWidgets(
+      'shows lists inventories and categories with create actions',
+      (WidgetTester tester) async {
+      final DateTime now = DateTime(2026, 1, 3, 10);
+      final HomeDashboardState state = HomeDashboardState(
+        greeting: 'Hello',
+        identity: 'Your smart shopping analyst',
+        lists: <local_db.ShoppingList>[
+          local_db.ShoppingList(
+            id: 'list-1',
+            name: 'Weekend groceries',
+            listType: 'simple',
+            routingMode: 'none',
+            status: 'active',
+            createdAt: now.subtract(const Duration(days: 2)),
+            updatedAt: now.subtract(const Duration(days: 2)),
+            syncStatus: 'local_only',
+            version: 1,
+          ),
+          local_db.ShoppingList(
+            id: 'list-2',
+            name: 'Party snacks',
+            listType: 'simple',
+            routingMode: 'none',
+            status: 'active',
+            createdAt: now.subtract(const Duration(days: 1)),
+            updatedAt: now.subtract(const Duration(days: 1)),
+            syncStatus: 'local_only',
+            version: 1,
+          ),
+        ],
+        inventories: <local_db.Inventory>[
+          local_db.Inventory(
+            id: 'inventory-1',
+            name: 'Pantry',
+            description: null,
+            createdAt: now,
+            updatedAt: now,
+            syncStatus: 'local_only',
+            version: 1,
+          ),
+        ],
+        categories: <local_db.Category>[
+          local_db.Category(
+            id: 'cat-1',
+            name: 'Fruits',
+            color: null,
+            icon: null,
+            createdAt: now,
+            updatedAt: now,
+            syncStatus: 'local_only',
+            version: 1,
+          ),
+          local_db.Category(
+            id: 'cat-uncategorized',
+            name: 'Uncategorized',
+            color: null,
+            icon: null,
+            createdAt: now,
+            updatedAt: now,
+            syncStatus: 'local_only',
+            version: 1,
+          ),
+        ],
       );
 
-      await tester.pumpWidget(buildApp());
+      await tester.pumpWidget(buildApp(state));
       await tester.pumpAndSettle();
 
       expect(find.text('Recent lists'), findsOneWidget);
-      expect(find.text('Create shopping list'), findsOneWidget);
+      expect(find.widgetWithText(TextButton, 'Create list'), findsWidgets);
       expect(find.text('Party snacks'), findsOneWidget);
-      expect(find.text('House restock'), findsOneWidget);
       expect(find.text('Weekend groceries'), findsOneWidget);
 
-      final Finder firstListCard = find.ancestor(
-        of: find.text('House restock'),
-        matching: find.byType(AppCard),
+      await tester.tap(find.text('Inventories'));
+      await tester.pumpAndSettle();
+      expect(find.text('Pantry'), findsOneWidget);
+      expect(find.text('Create inventory'), findsOneWidget);
+
+      await tester.tap(find.text('Categories'));
+      await tester.pumpAndSettle();
+      expect(find.text('Uncategorized'), findsOneWidget);
+      expect(find.text('Fruits'), findsOneWidget);
+    },
+    );
+
+    testWidgets(
+      'opens create list sheet from home',
+      (WidgetTester tester) async {
+      await tester.pumpWidget(
+        buildApp(const HomeDashboardState.initial()),
       );
-      expect(firstListCard, findsOneWidget);
-    });
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Create list'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('New shopping list'), findsOneWidget);
+      expect(find.text('Create list'), findsWidgets);
+    },
+    );
   });
 }
 
-class FakeShoppingListRepository extends ShoppingListRepository {
-  final StreamController<List<ShoppingList>> _allListsController =
-      StreamController<List<ShoppingList>>.broadcast();
+class _TestHomeDashboardController extends HomeDashboardController {
+  _TestHomeDashboardController(this._state);
 
-  final StreamController<List<ShoppingList>> _activeListsController =
-      StreamController<List<ShoppingList>>.broadcast();
-
-  final Map<String, StreamController<List<ShoppingListItem>>>
-      _itemsControllers = <String, StreamController<List<ShoppingListItem>>>{};
-  final Map<String, ShoppingListDraft> _drafts = <String, ShoppingListDraft>{};
-
-  final List<ShoppingList> _lists = <ShoppingList>[];
-
-  void seedList(ShoppingList list) {
-    _lists.add(list);
-  }
+  final HomeDashboardState _state;
 
   @override
-  Stream<List<ShoppingList>> watchAllLists() {
-    Future<void>.microtask(_emitAllLists);
-    return _allListsController.stream;
-  }
+  HomeDashboardState build() => _state;
+}
 
+class _TestListsController extends ListsController {
   @override
-  Stream<List<ShoppingList>> watchActiveLists() {
-    Future<void>.microtask(_emitActiveLists);
-    return _activeListsController.stream;
-  }
+  ListsState build() => const ListsState.initial();
+}
 
+class _TestInventoriesController extends InventoriesController {
   @override
-  Stream<List<ShoppingListItem>> watchItemsForList(String shoppingListId) {
-    final StreamController<List<ShoppingListItem>> controller =
-        _itemsControllers.putIfAbsent(
-      shoppingListId,
-      () => StreamController<List<ShoppingListItem>>.broadcast(),
-    );
-    Future<void>.microtask(() => controller.add(<ShoppingListItem>[]));
-    return controller.stream;
-  }
-
-  @override
-  Future<void> saveShoppingList(ShoppingList shoppingList) async {
-    final int index =
-        _lists.indexWhere((ShoppingList item) => item.id == shoppingList.id);
-    if (index >= 0) {
-      _lists[index] = shoppingList;
-    } else {
-      _lists.add(shoppingList);
-    }
-    _emitAllLists();
-    _emitActiveLists();
-  }
-
-  @override
-  Future<void> saveShoppingListItem(ShoppingListItem item) async {}
-
-  @override
-  Future<void> linkListToInventory({
-    required String shoppingListId,
-    required String inventoryId,
-  }) async {}
-
-  @override
-  Future<void> unlinkListFromInventory({
-    required String shoppingListId,
-    required String inventoryId,
-  }) async {}
-
-  @override
-  Stream<List<Inventory>> watchInventoriesForList(String shoppingListId) {
-    return Stream<List<Inventory>>.value(const <Inventory>[]);
-  }
-
-  @override
-  Stream<List<ShoppingList>> watchListsForInventory(String inventoryId) {
-    return Stream<List<ShoppingList>>.value(const <ShoppingList>[]);
-  }
-
-  @override
-  Future<void> deleteShoppingList(String id) async {
-    _lists.removeWhere((ShoppingList item) => item.id == id);
-    _emitAllLists();
-    _emitActiveLists();
-  }
-
-  @override
-  Future<ShoppingListDraft?> readDraft(String shoppingListId) async {
-    return _drafts[shoppingListId];
-  }
-
-  @override
-  Future<void> saveDraft(ShoppingListDraft draft) async {
-    _drafts[draft.shoppingListId] = draft;
-  }
-
-  @override
-  Future<void> deleteDraft(String shoppingListId) async {
-    _drafts.remove(shoppingListId);
-  }
-
-  void _emitAllLists() {
-    final List<ShoppingList> lists = _lists
-        .where((ShoppingList item) => item.deletedAt == null)
-        .toList(growable: false)
-      ..sort(
-        (ShoppingList a, ShoppingList b) => b.updatedAt.compareTo(a.updatedAt),
-      );
-    _allListsController.add(lists);
-  }
-
-  void _emitActiveLists() {
-    final List<ShoppingList> lists = _lists
-        .where(
-          (ShoppingList item) =>
-              item.deletedAt == null &&
-              item.status == ShoppingListStatus.active,
-        )
-        .toList(growable: false)
-      ..sort(
-        (ShoppingList a, ShoppingList b) => b.updatedAt.compareTo(a.updatedAt),
-      );
-    _activeListsController.add(lists);
-  }
-
-  Future<void> dispose() async {
-    await _allListsController.close();
-    await _activeListsController.close();
-    for (final StreamController<List<ShoppingListItem>> controller
-        in _itemsControllers.values) {
-      await controller.close();
-    }
-  }
+  InventoriesState build() => const InventoriesState.initial();
 }

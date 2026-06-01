@@ -1,29 +1,11 @@
 import 'dart:async';
 
+import 'package:cartalyst_mobile/features/shopping_list/application/shopping_list_controller.dart'
+    show appDatabaseProvider;
 import 'package:cartalyst_mobile/features/home/application/home_dashboard_state.dart';
-import 'package:cartalyst_mobile/features/pantry/data/repositories/local_pantry_repository.dart';
-import 'package:cartalyst_mobile/features/pantry/domain/entities/pantry_item.dart';
-import 'package:cartalyst_mobile/features/pantry/domain/repositories/pantry_repository.dart';
-import 'package:cartalyst_mobile/features/shopping_list/data/repositories/local_shopping_list_repository.dart';
-import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list.dart';
-import 'package:cartalyst_mobile/features/shopping_list/domain/entities/shopping_list_item.dart';
-import 'package:cartalyst_mobile/features/shopping_list/domain/repositories/shopping_list_repository.dart';
-import 'package:cartalyst_mobile/infrastructure/local_db/app_database.dart' show AppDatabase;
+import 'package:cartalyst_mobile/infrastructure/local_db/app_database.dart';
+import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-final homeDatabaseProvider = Provider<AppDatabase>((Ref ref) {
-  final AppDatabase database = AppDatabase();
-  ref.onDispose(database.close);
-  return database;
-});
-
-final homeShoppingListRepositoryProvider = Provider<ShoppingListRepository>((Ref ref) {
-  return LocalShoppingListRepository(ref.watch(homeDatabaseProvider));
-});
-
-final homePantryRepositoryProvider = Provider<PantryRepository>((Ref ref) {
-  return LocalPantryRepository(ref.watch(homeDatabaseProvider));
-});
 
 final homeDashboardControllerProvider =
     NotifierProvider<HomeDashboardController, HomeDashboardState>(
@@ -31,96 +13,72 @@ final homeDashboardControllerProvider =
     );
 
 class HomeDashboardController extends Notifier<HomeDashboardState> {
-  late final ShoppingListRepository _shoppingListRepository;
-  late final PantryRepository _pantryRepository;
+  late final AppDatabase _database;
 
   StreamSubscription<List<ShoppingList>>? _listsSubscription;
-  StreamSubscription<List<ShoppingListItem>>? _itemsSubscription;
-  StreamSubscription<List<PantryItem>>? _pantrySubscription;
+  StreamSubscription<List<Inventory>>? _inventoriesSubscription;
+  StreamSubscription<List<Category>>? _categoriesSubscription;
 
   @override
   HomeDashboardState build() {
-    _shoppingListRepository = ref.watch(homeShoppingListRepositoryProvider);
-    _pantryRepository = ref.watch(homePantryRepositoryProvider);
+    _database = ref.watch(appDatabaseProvider);
 
     ref.onDispose(() {
       _listsSubscription?.cancel();
-      _itemsSubscription?.cancel();
-      _pantrySubscription?.cancel();
+      _inventoriesSubscription?.cancel();
+      _categoriesSubscription?.cancel();
     });
 
-    _subscribeShoppingList();
-    _subscribePantry();
+    _subscribeLists();
+    _subscribeInventories();
+    _subscribeCategories();
 
     return const HomeDashboardState.initial();
   }
 
-  void _subscribeShoppingList() {
+  void _subscribeLists() {
     _listsSubscription?.cancel();
-    _listsSubscription = _shoppingListRepository.watchActiveLists().listen((
-      List<ShoppingList> lists,
-    ) {
-      if (lists.isEmpty) {
-        state = state.copyWith(
-          clearActiveShoppingList: true,
-          pendingCount: 0,
-          purchasedCount: 0,
-          skippedCount: 0,
-          rememberToBuyItems: const <ShoppingListItem>[],
-        );
-        _itemsSubscription?.cancel();
-        return;
-      }
-
-      final ShoppingList active = lists.first;
-      state = state.copyWith(activeShoppingList: active);
-
-      _itemsSubscription?.cancel();
-      _itemsSubscription = _shoppingListRepository
-          .watchItemsForList(active.id)
-          .listen((List<ShoppingListItem> items) {
-            final List<ShoppingListItem> pending = items
-                .where((ShoppingListItem item) =>
-                item.status == ShoppingListItemStatus.pending,
-              )
-                .toList(growable: false);
-            final int purchasedCount = items
-                .where((ShoppingListItem item) =>
-                item.status == ShoppingListItemStatus.purchased,
-              )
-                .length;
-            final int skippedCount = items
-                .where((ShoppingListItem item) =>
-                item.status == ShoppingListItemStatus.skipped,
-              )
-                .length;
-
-            state = state.copyWith(
-              pendingCount: pending.length,
-              purchasedCount: purchasedCount,
-              skippedCount: skippedCount,
-              rememberToBuyItems: pending.take(5).toList(growable: false),
-            );
-          });
+    final query = _database.select(_database.shoppingLists)
+      ..where((tbl) => tbl.deletedAt.isNull())
+      ..orderBy(<OrderingTerm Function($ShoppingListsTable)>[
+        (tbl) => OrderingTerm.desc(tbl.updatedAt),
+      ]);
+    _listsSubscription = query.watch().listen((List<ShoppingList> lists) {
+      state = state.copyWith(
+        greeting: _greetingForNow(),
+        lists: lists,
+      );
     });
   }
 
-  void _subscribePantry() {
-    _pantrySubscription?.cancel();
-    _pantrySubscription = _pantryRepository.watchInventoryItems().listen((
-      List<PantryItem> items,
-    ) {
-      final List<PantryItem> low = items
-          .where((PantryItem item) => item.status == PantryItemStatus.low)
-          .toList(growable: false);
-
-      final List<PantryItem> recent = items.toList(growable: false)
-        ..sort((PantryItem a, PantryItem b) => b.updatedAt.compareTo(a.updatedAt));
-
+  void _subscribeInventories() {
+    _inventoriesSubscription?.cancel();
+    final query = _database.select(_database.inventories)
+      ..where((tbl) => tbl.deletedAt.isNull())
+      ..orderBy(<OrderingTerm Function($InventoriesTable)>[
+        (tbl) => OrderingTerm.asc(tbl.name),
+      ]);
+    _inventoriesSubscription =
+        query.watch().listen((List<Inventory> inventories) {
       state = state.copyWith(
-        runningLowItems: low.take(5).toList(growable: false),
-        recentlyUpdatedPantryItems: recent.take(5).toList(growable: false),
         greeting: _greetingForNow(),
+        inventories: inventories,
+      );
+    });
+  }
+
+  void _subscribeCategories() {
+    _categoriesSubscription?.cancel();
+    final query = _database.select(_database.categories)
+      ..where((tbl) => tbl.deletedAt.isNull())
+      ..orderBy(<OrderingTerm Function($CategoriesTable)>[
+        (tbl) => OrderingTerm.asc(tbl.name),
+      ]);
+    _categoriesSubscription =
+        query.watch().listen((List<Category> categories) {
+      state = state.copyWith(
+        greeting: _greetingForNow(),
+        categories: categories,
       );
     });
   }
