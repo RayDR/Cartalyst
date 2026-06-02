@@ -37,7 +37,7 @@ void main() {
     await tester.scrollUntilVisible(
       find.text('Diagnostic entry 0'),
       500,
-      scrollable: find.byType(CustomScrollView),
+      scrollable: find.byType(Scrollable),
     );
 
     expect(find.text('Diagnostic entry 0'), findsWidgets);
