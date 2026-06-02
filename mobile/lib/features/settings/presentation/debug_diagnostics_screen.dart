@@ -214,7 +214,7 @@ class _DiagnosticEntryCardState extends State<_DiagnosticEntryCard> {
                 ),
                 TextButton.icon(
                   onPressed: () {
-                    Clipboard.setData(ClipboardData(text: stackTrace!));
+                    Clipboard.setData(ClipboardData(text: stackTrace));
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Stack trace copied')),
                     );
@@ -226,7 +226,7 @@ class _DiagnosticEntryCardState extends State<_DiagnosticEntryCard> {
             ),
             if (_stackExpanded) ...<Widget>[
               const SizedBox(height: AppSpacing.xs),
-              _StackTraceBox(stackTrace: stackTrace!),
+              _StackTraceBox(stackTrace: stackTrace),
             ],
           ],
         ],

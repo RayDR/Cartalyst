@@ -80,11 +80,10 @@ Widget _buildSubject(
   bool withBottomNavigation = false,
 }) {
   final Widget screen = withBottomNavigation
-      ? const Scaffold(
-          body: DebugDiagnosticsScreen(),
+      ? Scaffold(
+          body: const DebugDiagnosticsScreen(),
           bottomNavigationBar: NavigationBar(
-            selectedIndex: 0,
-            destinations: <NavigationDestination>[
+            destinations: const <NavigationDestination>[
               NavigationDestination(
                 icon: Icon(Icons.bug_report_outlined),
                 label: 'Debug',
