@@ -20,7 +20,9 @@ class KeyboardAwareScrollView extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
-        final Widget content = fillViewport
+        final bool canFillViewport =
+            fillViewport && constraints.hasBoundedHeight;
+        final Widget content = canFillViewport
             ? ConstrainedBox(
                 constraints: BoxConstraints(minHeight: constraints.maxHeight),
                 child: child,
