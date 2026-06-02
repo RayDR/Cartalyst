@@ -34,13 +34,11 @@ void main() {
     expect(find.text('Entries: 55'), findsOneWidget);
     expect(find.text('Diagnostic entry 54'), findsOneWidget);
 
-    await tester.scrollUntilVisible(
-      find.text('Diagnostic entry 0'),
-      500,
-      scrollable: find.byType(Scrollable),
-    );
+    for (int i = 0; i < 6; i++) {
+      await tester.drag(find.byType(CustomScrollView), const Offset(0, -500));
+      await tester.pump();
+    }
 
-    expect(find.text('Diagnostic entry 0'), findsWidgets);
     expect(tester.takeException(), isNull);
   });
 

@@ -15,8 +15,7 @@ class DebugDiagnosticsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final List<DebugLogEntry> entries =
         ref.watch(debugDiagnosticsEntriesProvider);
-    final DebugDiagnosticsStore store =
-        ref.read(debugDiagnosticsStoreProvider);
+    final DebugDiagnosticsStore store = ref.read(debugDiagnosticsStoreProvider);
 
     return AppScaffold(
       title: 'Debug Diagnostics',
@@ -204,9 +203,7 @@ class _DiagnosticEntryCardState extends State<_DiagnosticEntryCard> {
                     setState(() => _stackExpanded = !_stackExpanded);
                   },
                   icon: Icon(
-                    _stackExpanded
-                        ? Icons.expand_less
-                        : Icons.expand_more,
+                    _stackExpanded ? Icons.expand_less : Icons.expand_more,
                   ),
                   label: Text(
                     _stackExpanded ? 'Hide stack trace' : 'Show stack trace',

@@ -352,16 +352,16 @@ Future<void> _normalizeLegacyDateTimeStorage(AppDatabase db) async {
       }
 
       for (final String column in columns) {
-        final List<QueryRow> rows = await db.customSelect(
+        final List<QueryRow> textRows = await db.customSelect(
           '''
               SELECT id, $column AS value
               FROM $table
               WHERE $column IS NOT NULL
                 AND typeof($column) = 'text'
-              ''',
+               ''',
         ).get();
 
-        for (final QueryRow row in rows) {
+        for (final QueryRow row in textRows) {
           final String id = row.read<String>('id');
           final String? rawValue = row.read<String?>('value');
           if (rawValue == null || rawValue.trim().isEmpty) {
@@ -376,6 +376,34 @@ Future<void> _normalizeLegacyDateTimeStorage(AppDatabase db) async {
           await db.customStatement(
             'UPDATE $table SET $column = ? WHERE id = ?',
             <Object>[dbDateTimeValue(parsed), id],
+          );
+        }
+
+        final List<QueryRow> integerRows = await db.customSelect(
+          '''
+              SELECT id, $column AS value
+              FROM $table
+              WHERE $column IS NOT NULL
+                AND typeof($column) = 'integer'
+              ''',
+        ).get();
+
+        for (final QueryRow row in integerRows) {
+          final String id = row.read<String>('id');
+          final int rawValue = row.read<int>('value');
+          final DateTime? parsed = _parseLegacyDateTimeNumber(rawValue);
+          if (parsed == null) {
+            continue;
+          }
+
+          final int normalized = dbDateTimeValue(parsed);
+          if (normalized == rawValue) {
+            continue;
+          }
+
+          await db.customStatement(
+            'UPDATE $table SET $column = ? WHERE id = ?',
+            <Object>[normalized, id],
           );
         }
       }
@@ -399,11 +427,23 @@ DateTime? _parseLegacyDateTime(String rawValue) {
     return null;
   }
 
-  if (trimmed.length <= 10) {
-    return DateTime.fromMillisecondsSinceEpoch(numeric * 1000);
-  }
+  return _parseLegacyDateTimeNumber(numeric);
+}
 
-  return DateTime.fromMillisecondsSinceEpoch(numeric);
+DateTime? _parseLegacyDateTimeNumber(int numeric) {
+  final int digitCount = numeric.abs().toString().length;
+
+  try {
+    if (digitCount <= 10) {
+      return DateTime.fromMillisecondsSinceEpoch(numeric * 1000);
+    }
+    if (digitCount >= 16) {
+      return DateTime.fromMicrosecondsSinceEpoch(numeric);
+    }
+    return DateTime.fromMillisecondsSinceEpoch(numeric);
+  } on RangeError {
+    return null;
+  }
 }
 
 Future<void> _addColumnIfMissing(
